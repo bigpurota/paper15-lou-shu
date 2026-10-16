@@ -7,7 +7,7 @@ CONFIG  := config.yaml
 DAILY   := data/cache/daily.parquet
 ZIP     := ../paper15-lou-shu-team12.zip
 
-.PHONY: venv data tests sims run report figures p0 base upgrades upgrades-light ledger docs slides all all-light zip clean repro repro-final check-outputs
+.PHONY: tests-log venv data tests sims run report figures p0 base upgrades upgrades-light ledger docs slides all all-light zip clean repro repro-final check-outputs
 .DEFAULT_GOAL := all
 # stages depend on each other through files in results/ (LATEST, upgrade CSVs): keep them sequential
 .NOTPARALLEL:
@@ -112,3 +112,12 @@ all-light: p0 upgrades-light ledger docs check-outputs
 # `make tests` inside p0 runs before the upgrades and therefore sees the previous outputs
 check-outputs: | $(STAMP)
 	$(PYI) -m pytest -q tests/test_manifests.py
+
+# saved pytest log (all tests incl. the output contract) with the code state it ran on; read by build_docs
+tests-log: | $(STAMP)
+	@mkdir -p results/tests_log; f=results/tests_log/pytest_$$(date -u +%Y%m%dT%H%M%SZ).txt; \
+	{ echo "git HEAD: $$(git rev-parse HEAD)"; \
+	  echo "dirty files: $$(git status --porcelain -- src tests config.yaml Makefile mk requirements.txt | wc -l | tr -d ' ')"; \
+	  echo "code state: $$($(PYI) src/build_docs.py --code-hash)"; \
+	  echo "date: $$(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo; \
+	  $(PYI) -m pytest -q 2>&1; } > $$f; tail -1 $$f; echo "wrote $$f"

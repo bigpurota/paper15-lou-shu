@@ -1,21 +1,21 @@
 {
   "mode": "final_clone_make_all",
-  "clone_dir": "<scratch>/final",
-  "clone_head_now": "be5160a",
+  "clone_dir": "<scratch>/finalC",
+  "clone_head_now": "81e501f",
   "clone_head_note": "the canonical outputs were committed from this clone after the run, so its HEAD is the commit that holds them; the code that ran is the git sha in the manifests",
-  "code_commit_run": "06ee202",
-  "data_dir_was_link": true,
-  "data_note": "data/ was a symbolic link to the main repository's cached downloads (data/raw, data/cache): this run proves that the committed code regenerates every result from cached raw data; that the downloads themselves reproduce is shown by the from-scratch clone (results/repro/repro_summary.json)",
+  "code_commit_run": "f526a1b",
+  "data_dir_was_link": false,
+  "data_note": "data/ was a directory in the clone",
   "make_all": {
     "target": "all",
     "rc": 0,
-    "seconds": 495
+    "seconds": 496
   },
-  "tests_summary": "177 passed, 4 xfailed",
+  "tests_summary": "11 passed, 3 xfailed",
   "tests_note": "make all runs the tests first, i.e. before the upgrades rewrite their run_manifest.json files",
-  "canonical_base_run": "20261016T181948Z_3e8eb87e",
-  "repo_latest": "20261016T181948Z_3e8eb87e",
-  "n_manifests": 11,
+  "canonical_base_run": "20261016T211736Z_3e8eb87e",
+  "repo_latest": "20261016T211736Z_3e8eb87e",
+  "n_manifests": 12,
   "n_canonical": 9,
   "canonical_all_same_commit_clean": true,
   "historical_runs": [
@@ -28,16 +28,21 @@
       "run_id": "20261016T135240Z_3e8eb87e",
       "git_sha": "9ddffbb",
       "dirty": true
+    },
+    {
+      "run_id": "20261016T181948Z_3e8eb87e",
+      "git_sha": "06ee202",
+      "dirty": false
     }
   ],
-  "n_canonical_with_home_paths": 8,
+  "n_canonical_with_home_paths": 0,
   "home_path_note": "relative paths in these manifests resolve through the data/ link into the main repository (../../Users/...), which tests/test_manifests.py rejects as absolute paths",
-  "base_compared_with": "20261016T135240Z_3e8eb87e",
+  "base_compared_with": "20261016T181948Z_3e8eb87e",
   "base_n_csv": 29,
   "base_max_abs_diff": 0.0,
   "base_n_not_identical": 0,
-  "results_files_in_clone": 228,
-  "results_files_identical_to_repo": 228,
+  "results_files_in_clone": 273,
+  "results_files_identical_to_repo": 273,
   "logs": [
     "results/repro/final_clone/final_run.txt",
     "results/repro/final_clone/make_all.txt"

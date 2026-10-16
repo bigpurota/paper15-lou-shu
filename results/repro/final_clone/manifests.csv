@@ -1,12 +1,13 @@
 manifest,run_id,role,base_run_id,git_sha,dirty,dirty_scope,n_home_paths
 results/20261016T134056Z_18099336/run_manifest.json,20261016T134056Z_18099336,historical,,8b60380,True,not recorded,3
 results/20261016T135240Z_3e8eb87e/run_manifest.json,20261016T135240Z_3e8eb87e,historical,,9ddffbb,True,not recorded,3
-results/20261016T181948Z_3e8eb87e/run_manifest.json,20261016T181948Z_3e8eb87e,canonical,,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",2
-results/upgrades/amihud_noh/run_manifest.json,20261016T182121Z_amihud_noh,canonical,20261016T181948Z_3e8eb87e,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",2
-results/upgrades/edge_spread/run_manifest.json,20261016T182104Z_3e8eb87e_edge_spread,canonical,20261016T181948Z_3e8eb87e,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",4
-results/upgrades/hf_lambda/run_manifest.json,hf_lambda_20261016T182323Z_3e8eb87e,canonical,20261016T181948Z_3e8eb87e,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",1
-results/upgrades/moex/run_manifest.json,moex_20261016T182325Z_b4264d55,canonical,20261016T181948Z_3e8eb87e,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",1
-results/upgrades/openap_us/run_manifest.json,20261016T182359Z_openap_us,canonical,20261016T181948Z_3e8eb87e,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",4
-results/upgrades/robustness/run_manifest.json,robustness_20261016T182406Z,canonical,20261016T181948Z_3e8eb87e,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",1
-results/upgrades/sentiment/run_manifest.json,sentiment_20261016T182415Z,canonical,20261016T181948Z_3e8eb87e,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",3
-results/simulations/sim_manifest.json,sim_20261016T181946Z,canonical,,06ee202,False,not recorded,0
+results/20261016T181948Z_3e8eb87e/run_manifest.json,20261016T181948Z_3e8eb87e,historical,,06ee202,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",2
+results/20261016T211736Z_3e8eb87e/run_manifest.json,20261016T211736Z_3e8eb87e,canonical,,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/upgrades/amihud_noh/run_manifest.json,20261016T211909Z_amihud_noh,canonical,20261016T211736Z_3e8eb87e,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/upgrades/edge_spread/run_manifest.json,20261016T211852Z_3e8eb87e_edge_spread,canonical,20261016T211736Z_3e8eb87e,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/upgrades/hf_lambda/run_manifest.json,hf_lambda_20261016T212113Z_3e8eb87e,canonical,20261016T211736Z_3e8eb87e,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/upgrades/moex/run_manifest.json,moex_20261016T212115Z_b4264d55,canonical,20261016T211736Z_3e8eb87e,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/upgrades/openap_us/run_manifest.json,20261016T212148Z_openap_us,canonical,20261016T211736Z_3e8eb87e,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/upgrades/robustness/run_manifest.json,robustness_20261016T212156Z,canonical,20261016T211736Z_3e8eb87e,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/upgrades/sentiment/run_manifest.json,sentiment_20261016T212204Z,canonical,20261016T211736Z_3e8eb87e,f526a1b,False,"code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded",0
+results/simulations/sim_manifest.json,sim_20261016T211734Z,canonical,,f526a1b,False,not recorded,0
