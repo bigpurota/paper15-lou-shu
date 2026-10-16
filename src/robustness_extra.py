@@ -8,7 +8,7 @@ Reads:  results/LATEST (base run id, unless --base), results/<base>/*.csv,
         results/simulations/sim_world0_reps.csv, sim_power.csv, results/upgrades/*/*.csv.
 Writes: results/upgrades/robustness/{bootstrap_ci, stability_loyo, stability_excl2021,
         world0_calibration, mde, ledger, ledger_summary, consistency_checks}.csv,
-        run_manifest.json, SUMMARY.md (Russian; every number is read from the CSVs above).
+        run_manifest.json, SUMMARY.md (English; every number is read from the CSVs above).
 
 Conventions (as in the base run): returns in percent per month, NW lags from config,
 FM slopes are time-series means of monthly cross-sectional slopes (so a month-level
@@ -36,6 +36,7 @@ from scipy.stats import norm
 
 from fama_macbeth import fama_macbeth, nw_mean
 from sorts import alpha, portfolio_returns
+from run import rel_path, resolve_panel_cache, resolve_repo_path   # repo-relative paths in manifests
 
 ROOT = Path(__file__).resolve().parents[1]
 log = logging.getLogger("robustness")
@@ -44,7 +45,7 @@ N_DRAWS = 2000
 BLOCK = 6
 POWER_TARGET = 0.80
 N_SEED_REPS = 20      # extra bootstrap seeds used only to measure Monte Carlo noise of the CI bounds
-# Lou & Shu (2017), p. 13: "one standard deviation change (2.53) in ln(A_C)" (Model 2 effect 0.46%/mo).
+# Lou & Shu (2017), pp. 13-14: "one standard deviation change (2.53) in ln(A_C)" (Model 2 effect 0.46%/mo).
 # Used when paper_numbers.yaml has no lou_shu_2017.table4_text.sd_lnA_C entry.
 PAPER_SD_LNA_C = 2.53
 CONTROLS = ["mom", "ret_1"]
@@ -352,7 +353,7 @@ def mde_table(power: pd.DataFrame, w0cal: pd.DataFrame, sim_dims: dict, real_dim
 def paper_effect_rows(paper: dict) -> pd.DataFrame:
     """Effect sizes of Lou & Shu in the same units as our MDE (for comparison).
 
-    FM: slope x s.d. of ln A_C as stated by the paper (p. 13: s.d. 2.53, so 0.183 x 2.53 = 0.46%/mo
+    FM: slope x s.d. of ln A_C as stated by the paper (pp. 13-14: s.d. 2.53, so 0.183 x 2.53 = 0.46%/mo
     in model 2). An earlier version approximated the s.d. from Table 1 quartiles as
     ln(q75/q25)/1.349 = 3.53, which overstated the paper's effect by 40%; that value is kept in
     column `sd_signal_iqr_approx` for reference only. The paper does not say whether 2.53 is pooled
@@ -569,8 +570,8 @@ def sha256_file(path: Path) -> str:
 def git_info() -> dict:
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
-        st = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
-        return {"sha": sha, "dirty": bool(st.strip())}
+        st = subprocess.run(["git", "status", "--porcelain", "--", "src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+        return {"sha": sha, "dirty": bool(st.strip()), "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"}
     except (OSError, subprocess.CalledProcessError):
         return {"sha": None, "dirty": None}
 
@@ -578,14 +579,14 @@ def git_info() -> dict:
 def load_panel(base: str, base_dir: Path, cfg: dict) -> tuple[pd.DataFrame, Path, str]:
     """Base-run panel from data/cache; rebuilt from the daily cache with the base config if absent."""
     man = json.loads((base_dir / "run_manifest.json").read_text())
-    path = Path(man.get("panel_cache") or ROOT / "data" / "cache" / f"panel_{base}.parquet")
+    path = resolve_panel_cache(man, base)
     if path.exists():
         p = pd.read_parquet(path)
         h = sha256_file(path)
     else:
         import analysis
         from run import load_daily
-        daily_path = Path(man["data_source"])
+        daily_path = resolve_repo_path(man["data_source"])
         log.warning("panel cache %s missing: rebuilding from %s", path, daily_path)
         h_daily = sha256_file(daily_path)
         if h_daily != man.get("data_sha256"):
@@ -627,8 +628,8 @@ def _ci_word(r) -> str:
     if "ci_verdict" in r.index and isinstance(r["ci_verdict"], str):
         if r["ci_verdict"].startswith("borderline"):
             k = int(round(r["share_seeds_ci_excludes_0"] * r["n_seed_reps"]))
-            return f"на грани ({k}/{int(r['n_seed_reps'])} сидов без 0)"
-    return "да" if r["ci_excludes_0"] else "нет"
+            return f"borderline ({k}/{int(r['n_seed_reps'])} seeds exclude 0)"
+    return "yes" if r["ci_excludes_0"] else "no"
 
 
 def write_summary(out: Path, base: str, tabs: dict, paper: dict, hlz: float, block: int, n_draws: int) -> str:
@@ -645,21 +646,21 @@ def write_summary(out: Path, base: str, tabs: dict, paper: dict, hlz: float, blo
            "fm3_ResLnA": ls["table4_panelA"]["(3)"]["ResLnA"], "fm4_lnA_C": ls["table4_panelA"]["(4)"]["lnA_C"],
            "fm4_ResLnA": ls["table4_panelA"]["(4)"]["ResLnA"]}
     L = []
-    L.append("# Апгрейд «robustness»: переобучение и статистический вывод\n")
-    L.append(f"_Сгенерировано `src/robustness_extra.py` из CSV в этой папке; базовый прогон `{base}`. "
-             "Руками не правится._\n")
+    L.append("# Upgrade 'robustness': overfitting and statistical inference\n")
+    L.append(f"_Generated by `src/robustness_extra.py` from the CSVs in this folder; base run `{base}`. "
+             "Not edited by hand._\n")
     if not chk["match"].all():
-        L.append("**ВНИМАНИЕ: точечные оценки не совпали с T3/T4 базового прогона (см. consistency_checks.csv).**\n")
-    L.append("## Что проверено\n")
-    L.append(f"1. Блочный бутстрап по месяцам (moving block, блок {block} мес., {n_draws} повторов, seed из config): "
-             "95% перцентильные ДИ для H–L квинтилей A, A_C, Res.A (сырые и альфа CMKT+CMOM) и наклонов FM.")
-    L.append("2. Реестр спецификаций: все t-статистики базового прогона и апгрейдов, флаги |t|>1.96 и "
-             f"|t|>{hlz:g} (Harvey–Liu–Zhu), Бонферрони и BH по семейству уникальных тестов.")
-    L.append("3. Устойчивость: выкидываем по одному календарному году; отдельно — без 2021 г. (бычий рынок).")
-    L.append("4. Размер теста в мире 0 и минимальный обнаружимый эффект (MDE) при мощности 80%.\n")
+        L.append("**WARNING: the point estimates do not match T3/T4 of the base run (see consistency_checks.csv).**\n")
+    L.append("## What was checked\n")
+    L.append(f"1. Block bootstrap over months (moving block, block of {block} months, {n_draws} draws, seed from config): "
+             "95% percentile CIs for the H–L of the A, A_C and Res.A quintiles (raw and CMKT+CMOM alpha) and for the FM slopes.")
+    L.append("2. Specification ledger: every t-statistic of the base run and the upgrades, flags |t|>1.96 and "
+             f"|t|>{hlz:g} (Harvey–Liu–Zhu), Bonferroni and BH over the family of unique tests.")
+    L.append("3. Stability: drop one calendar year at a time; separately, drop 2021 (bull market).")
+    L.append("4. Test size in world 0 and the minimum detectable effect (MDE) at 80% power.\n")
 
-    L.append("## Бутстрап-ДИ против статьи\n")
-    L.append("| статистика | статья (t) | мы | t NW | 95% ДИ бутстрапа | ДИ без 0 |")
+    L.append("## Bootstrap CIs vs the paper\n")
+    L.append("| statistic | paper (t) | us | t NW | 95% bootstrap CI | CI excludes 0 |")
     L.append("|---|---|---|---|---|---|")
     for st in ["hl_A", "hl_A_C", "hl_ResA", "hl_A_alpha", "hl_A_C_alpha", "hl_ResA_alpha",
                "fm1_lnA", "fm2_lnA_C", "fm3_ResLnA", "fm4_lnA_C", "fm4_ResLnA"]:
@@ -668,124 +669,124 @@ def write_summary(out: Path, base: str, tabs: dict, paper: dict, hlz: float, blo
         L.append(f"| {st} | {_f(pe)} ({_f(p['t'])}) | {_f(r['estimate'])} | {_f(r['t_nw'])} | "
                  f"[{_f(r['ci95_lo'])}; {_f(r['ci95_hi'])}] | {_ci_word(r)} |")
     n_ex = int(b.loc[[s for s in pap], "ci_excludes_0"].sum())
-    txt = f"\nИз {len(pap)} ключевых статистик ДИ (seed из config) не содержит нуля у {n_ex}"
+    txt = f"\nOf the {len(pap)} key statistics, the CI (seed from config) excludes zero for {n_ex}"
     if "ci_verdict" in b.columns:
         v = b.loc[[s for s in pap], "ci_verdict"]
         K = int(b["n_seed_reps"].iloc[0])
-        txt += (f"; устойчиво при всех {K} других сидах бутстрапа — у {int((v == 'excludes 0 (all seeds)').sum())}, "
-                f"на грани (результат зависит от сида) — у {int((v == 'borderline (depends on seed)').sum())}")
-    L.append(txt + ". H–L в %/мес; FM — наклон на CMKT-скорректированной доходности "
-             "(% на единицу регрессора; у статьи — FF3). Альфа у нас CMKT+CMOM, у статьи — 4-факторная.\n")
+        txt += (f"; robustly under all {K} other bootstrap seeds for {int((v == 'excludes 0 (all seeds)').sum())}, "
+                f"borderline (the result depends on the seed) for {int((v == 'borderline (depends on seed)').sum())}")
+    L.append(txt + ". H–L in %/month; FM is the slope on the CMKT-adjusted return "
+             "(% per unit of the regressor; the paper uses FF3). Our alpha is on CMKT+CMOM, the paper's on 4 factors.\n")
 
-    L.append("## Устойчивость по годам\n")
-    L.append("| статистика | вся выборка (t) | t min (без года) | t max (без года) | смен знака | лет с \\|t\\|>1.96 |")
+    L.append("## Stability across years\n")
+    L.append("| statistic | full sample (t) | t min (year dropped) | t max (year dropped) | sign flips | years with \\|t\\|>1.96 |")
     L.append("|---|---|---|---|---|---|")
     for _, r in loyo_s.iterrows():
         L.append(f"| {r['stat']} | {_f(r['estimate_full'])} ({_f(r['t_full'])}) | {_f(r['t_min'])} ({r['year_t_min']}) | "
                  f"{_f(r['t_max'])} ({r['year_t_max']}) | {r['n_sign_flips']}/{r['n_years']} | "
                  f"{r['n_abs_t_gt_1.96']}/{r['n_years']} |")
     e = excl.pivot(index="stat", columns="sample", values=["estimate", "t_nw"])
-    L.append("\nБез 2021 года: " + "; ".join(
+    L.append("\nWithout 2021: " + "; ".join(
         f"{st} {_f(e.loc[st, ('estimate', 'full')])} (t {_f(e.loc[st, ('t_nw', 'full')])}) → "
         f"{_f(e.loc[st, ('estimate', 'excl_2021')])} (t {_f(e.loc[st, ('t_nw', 'excl_2021')])})"
         for st in ["hl_A_C", "fm2_lnA_C", "fm3_ResLnA"]) + ".\n")
     w0i = w0.set_index("stat")
 
-    L.append("## Множественные тесты\n")
-    L.append("В семейство входят только строки с ролью `test`, без повторов одной и той же t-статистики. "
-             "Не входят: `control` (контроли FM, нагрузки на факторы, интерцепты), `placebo` (перемешивание), "
-             "`diagnostic` (лаг 0, проверка утечки: там большой |t| ожидаем), `descriptive` (отдельные квинтили, "
-             "описательные моменты), `measurement` (первая ступень оценки меры по монете-месяцу).\n")
-    for fam_src, label in [("BASE", "Только базовый прогон (крипто, Lou–Shu)"),
-                           ("ALL", "Всё: база и все апгрейды (включая США и варианты)")]:
+    L.append("## Multiple testing\n")
+    L.append("The family contains only rows with role `test`, without duplicates of the same t-statistic. "
+             "Excluded: `control` (FM controls, factor loadings, intercepts), `placebo` (shuffling), "
+             "`diagnostic` (lag 0, the leakage check, where a large |t| is expected), `descriptive` (single quintiles, "
+             "descriptive moments), `measurement` (first-stage estimation of a measure per coin-month).\n")
+    for fam_src, label in [("BASE", "Base run only (crypto, Lou–Shu)"),
+                           ("ALL", "Everything: base run and all upgrades (including the US and the variants)")]:
         sel = lsum[lsum["source"] == fam_src]
         if not len(sel):
             continue
         a = sel.iloc[0]
-        L.append(f"- {label}: уникальных тестов {int(a['n_unique'])}; |t|>1.96 у {int(a['n_abs_t_gt_1.96'])} "
-                 f"(при всех нулевых ожидалось бы ≈{_f(a['expected_false_1.96_if_all_null'], 1)}); "
-                 f"|t|>{hlz:g} у {int(a[f'n_abs_t_gt_{hlz:g}'])}. После Бонферрони (порог |t|>{_f(a['bonferroni_crit_t'])}) "
-                 f"значимы {int(a['n_bonferroni_sig'])}, после BH (q<0.05) — {int(a['n_bh_sig'])}.")
+        L.append(f"- {label}: unique tests {int(a['n_unique'])}; |t|>1.96 for {int(a['n_abs_t_gt_1.96'])} "
+                 f"(≈{_f(a['expected_false_1.96_if_all_null'], 2)} expected if all nulls were true); "
+                 f"|t|>{hlz:g} for {int(a[f'n_abs_t_gt_{hlz:g}'])}. After Bonferroni (threshold |t|>{_f(a['bonferroni_crit_t'])}) "
+                 f"{int(a['n_bonferroni_sig'])} are significant, after BH (q<0.05) {int(a['n_bh_sig'])}.")
         if fam_src == "BASE" and (out / "ledger.csv").exists():
             led = pd.read_csv(out / "ledger.csv")
             bs = led[(led["source"] == "base") & led["unique"] & (led["role"] == "test") & led["abs_t_gt_1.96"]]
             n_res = int(bs["test"].str.contains(r"Res", regex=True).sum())
             fpr0 = float(w0i["fpr_1.96"].mean())
-            L.append(f"  Из этих {len(bs)} тестов с |t|>1.96 {n_res} — варианты одной гипотезы про Res.A/ResLnA "
-                     "(сырые доходности, подпериоды, взвешивание, винзоризация, модели с контролями), т. е. "
-                     "сильно коррелированы, а не независимы. С размером NW(6) из мира 0 "
-                     f"(в среднем {_f(100 * fpr0, 1)}% вместо 5%) при всех нулевых ожидалось бы "
-                     f"≈{_f(fpr0 * int(a['n_unique']), 1)} из {int(a['n_unique'])}; из-за корреляции тестов разброс "
-                     "этого числа намного больше биномиального.")
+            L.append(f"  Of these {len(bs)} tests with |t|>1.96, {n_res} are variants of one hypothesis about Res.A/ResLnA "
+                     "(raw returns, subperiods, weighting, winsorisation, models with controls), i.e. they are "
+                     "strongly correlated, not independent. With the NW(6) size from world 0 "
+                     f"({_f(100 * fpr0, 1)}% on average instead of 5%), ≈{_f(fpr0 * int(a['n_unique']), 1)} of "
+                     f"{int(a['n_unique'])} would be expected if all nulls were true; because the tests are correlated, the spread "
+                     "of this number is much wider than binomial.")
     L.append("")
-    L.append("| источник | роль | строк | уникальных | \\|t\\|>1.96 | \\|t\\|>" + f"{hlz:g}" + " |")
+    L.append("| source | role | rows | unique | \\|t\\|>1.96 | \\|t\\|>" + f"{hlz:g}" + " |")
     L.append("|---|---|---|---|---|---|")
     for _, r in lsum[~lsum["source"].isin(["ALL", "BASE"])].iterrows():
         L.append(f"| {r['source']} | {r['role']} | {int(r['n_rows'])} | {int(r['n_unique'])} | "
                  f"{int(r['n_abs_t_gt_1.96'])} | {int(r[f'n_abs_t_gt_{hlz:g}'])} |")
-    L.append("\nПолный перечень — `ledger.csv`.\n")
+    L.append("\nThe full list is in `ledger.csv`.\n")
 
-    L.append("## Размер теста и мощность (симуляции)\n")
+    L.append("## Test size and power (simulations)\n")
     w = w0.set_index("stat")
-    L.append("Мир 0 (премии нет): доля |t|>1.96 — " + ", ".join(
+    L.append("World 0 (no premium): share of |t|>1.96: " + ", ".join(
         f"{s} {_f(100 * w.loc[s, 'fpr_1.96'], 1)}%" for s in w.index if s in ("fm2_lnA_C", "fm3_ResLnA", "hl_A_C")) +
-        f"; доля |t|>{hlz:g} — " + ", ".join(
+        f"; share of |t|>{hlz:g}: " + ", ".join(
         f"{s} {_f(100 * w.loc[s, f'fpr_{hlz:g}'], 1)}%" for s in w.index if s in ("fm2_lnA_C", "fm3_ResLnA", "hl_A_C")) +
-        ". Эмпирический 5%-й порог |t| в мире 0: " + ", ".join(
+        ". Empirical 5% critical |t| in world 0: " + ", ".join(
         f"{s} {_f(w.loc[s, 'crit_abs_t_5pct'])}" for s in w.index if s in ("fm2_lnA_C", "fm3_ResLnA", "hl_A_C")) + ".\n")
     md = mde.set_index(["stat", "method"])
 
     def g(st, m):
         return md["mde"].get((st, m), np.nan)
-    L.append("MDE при мощности 80% (оценки):")
-    L.append(f"- по симуляционной кривой мощности (|t|>1.96), FM lnA_C модель 2: {_f(g('fm2_lnA_C', 'sim_power_curve'))} %/мес "
-             f"на 1 s.d. (диапазон по 95% ДИ мощности [{_f(md['mde_lo'].get(('fm2_lnA_C', 'sim_power_curve')))}; "
+    L.append("MDE at 80% power (estimates):")
+    L.append(f"- from the simulated power curve (|t|>1.96), FM lnA_C model 2: {_f(g('fm2_lnA_C', 'sim_power_curve'))} %/month "
+             f"per 1 s.d. (range from the 95% CI of power [{_f(md['mde_lo'].get(('fm2_lnA_C', 'sim_power_curve')))}; "
              f"{_f(md['mde_hi'].get(('fm2_lnA_C', 'sim_power_curve')))}]); H–L A_C: {_f(g('hl_A_C', 'sim_power_curve'))} "
-             "%/мес на 1 s.d. (единицы премии симуляции, не H–L).")
-    L.append(f"- пересчёт симуляции на наш N×T (√(N·T)-масштаб), FM lnA_C: {_f(g('fm2_lnA_C', 'sim_scaled_to_real_crit_1.96'))} "
-             f"%/мес на 1 s.d.; с порогом мира 0: {_f(g('fm2_lnA_C', 'sim_scaled_to_real_crit_world0_5pct'))}.")
-    L.append(f"- по стандартной ошибке нашей реальной оценки (NW): FM lnA_C — {_f(g('fm2_lnA_C', 'real_se_nw_crit_1.96'))} "
-             f"%/мес на 1 s.d.; H–L A_C — {_f(g('hl_A_C', 'real_se_nw_crit_1.96'))} %/мес "
-             f"(бутстрап-SE: {_f(g('hl_A_C', 'real_se_boot_crit_1.96'))}).")
+             "%/month per 1 s.d. (units of the simulated premium, not H–L).")
+    L.append(f"- simulation rescaled to our N×T (√(N·T) scaling), FM lnA_C: {_f(g('fm2_lnA_C', 'sim_scaled_to_real_crit_1.96'))} "
+             f"%/month per 1 s.d.; with the world-0 critical value: {_f(g('fm2_lnA_C', 'sim_scaled_to_real_crit_world0_5pct'))}.")
+    L.append(f"- from the standard error of our real estimate (NW): FM lnA_C {_f(g('fm2_lnA_C', 'real_se_nw_crit_1.96'))} "
+             f"%/month per 1 s.d.; H–L A_C {_f(g('hl_A_C', 'real_se_nw_crit_1.96'))} %/month "
+             f"(bootstrap SE: {_f(g('hl_A_C', 'real_se_boot_crit_1.96'))}).")
     ms, mr = g("fm2_lnA_C", "sim_scaled_to_real_crit_1.96"), g("fm2_lnA_C", "real_se_nw_crit_1.96")
     if np.isfinite(ms) and np.isfinite(mr):
         ratio = mr / ms
-        L.append(f"- MDE по реальной SE / MDE по симуляции (FM lnA_C) = {_f(ratio)}: "
-                 + ("симуляция существенно недооценивает шум реальных доходностей, опираемся на MDE по реальной SE."
-                    if ratio > 2 else "симуляция и реальная SE согласуются по порядку величины."
-                    if ratio >= 0.5 else "реальная SE заметно меньше симуляционной; MDE по симуляции консервативен."))
+        L.append(f"- MDE from the real SE / MDE from the simulation (FM lnA_C) = {_f(ratio)}: "
+                 + ("the simulation substantially understates the noise of real returns, so we rely on the MDE from the real SE."
+                    if ratio > 2 else "the simulation and the real SE agree in order of magnitude."
+                    if ratio >= 0.5 else "the real SE is clearly smaller than the simulated one; the simulated MDE is conservative."))
     L.append("")
-    for st, pm, name in [("hl_A_C", "paper_effect", "H–L A_C, %/мес"),
-                         ("fm2_lnA_C", "paper_effect_per_sd_estimate", "FM lnA_C (2), %/мес на 1 s.d. (s.d. ln A_C = 2.53 из текста статьи, с. 13)")]:
+    for st, pm, name in [("hl_A_C", "paper_effect", "H–L A_C, %/month"),
+                         ("fm2_lnA_C", "paper_effect_per_sd_estimate", "FM lnA_C (2), %/month per 1 s.d. (s.d. of ln A_C = 2.53 from the paper's text, pp. 13-14)")]:
         pe, mde_r, sig = g(st, pm), g(st, "real_se_nw_crit_1.96"), abs(b.loc[st, "t_nw"]) > 1.96
         if not (np.isfinite(pe) and np.isfinite(mde_r)):
             continue
         if mde_r > pe:
-            verdict = ("наша выборка эффект такого размера с мощностью 80% не обнаруживает"
-                       + ("; незначимость у нас не доказывает отсутствия премии." if not sig
-                          else ", но наша оценка всё же значима — она больше эффекта статьи."))
+            verdict = ("our sample does not detect an effect of this size with 80% power"
+                       + ("; our insignificant result does not prove the absence of a premium." if not sig
+                          else ", yet our estimate is significant: it is larger than the paper's effect."))
         else:
-            verdict = ("эффект такого размера мы обнаружили бы с мощностью ≥80%"
-                       + ("; раз он незначим, премия размера статьи на нашем рынке маловероятна." if not sig
-                          else "; наша оценка значима."))
-        L.append(f"- {name}: эффект статьи {_f(pe)}, наш MDE {_f(mde_r)} (в {_f(mde_r / pe, 1)} раза больше) — {verdict}")
-    L.append("\n## Оговорки\n")
-    L.append(f"- Блочный бутстрап с блоком {block} сохраняет автокорреляцию только внутри блока; перцентильный ДИ при "
-             f"{int(boot['n_months'].min())}–{int(boot['n_months'].max())} месяцах приближённый; некруговой MBB "
-             "недовзвешивает края выборки.")
+            verdict = ("we would detect an effect of this size with ≥80% power"
+                       + ("; since ours is insignificant, a premium of the paper's size is unlikely on our market." if not sig
+                          else "; our estimate is significant."))
+        L.append(f"- {name}: paper's effect {_f(pe)}, our MDE {_f(mde_r)} ({_f(mde_r / pe, 1)} times larger); {verdict}")
+    L.append("\n## Caveats\n")
+    L.append(f"- The block bootstrap with block {block} keeps autocorrelation only within a block; the percentile CI with "
+             f"{int(boot['n_months'].min())}–{int(boot['n_months'].max())} months is approximate; the non-circular MBB "
+             "underweights the ends of the sample.")
     if "ci_verdict" in boot.columns:
-        L.append(f"- «на грани» в таблице бутстрапа: граница ДИ так близка к 0, что при других сидах (диапазон нижней "
-                 "границы в `bootstrap_ci.csv`, столбцы ci95_lo_seed_*) ДИ то исключает, то включает 0; такой результат "
-                 "значимым не считаем.")
-    L.append(f"- Пороги мира 0 оценены по {int(w0['n_reps'].min())} повторам; стандартная ошибка доли ложных "
-             f"срабатываний ≈{_f(100 * float(w0['fpr_1.96_se'].mean()), 1)} п.п., 95%-й квантиль |t| тоже шумный.")
-    L.append("- Эффект статьи на 1 s.d. берём из её текста (s.d. 2.53); не сказано, объединённое это s.d. или "
-             "среднее поперечное, у нас — среднее поперечное. Отношение MDE к эффекту статьи — оценка.")
-    L.append("- Выкидывание года склеивает соседние месяцы в NW-оценке; бета/CMOM не переоцениваются.")
-    L.append("- MDE по симуляции зависит от DGP (шум, число монет); пересчёт на реальный N×T — оценка, не измерение.")
-    L.append(f"- Порог HLZ t>{hlz:g} дан рядом с 1.96; в мире 0 NW(6) даёт завышенный размер теста, поэтому 1.96 мягче номинала.")
+        L.append(f"- 'borderline' in the bootstrap table: the CI bound is so close to 0 that under other seeds (range of the lower "
+                 "bound in `bootstrap_ci.csv`, columns ci95_lo_seed_*) the CI sometimes excludes and sometimes includes 0; we do "
+                 "not count such a result as significant.")
+    L.append(f"- The world-0 thresholds are estimated from {int(w0['n_reps'].min())} replications; the standard error of the "
+             f"false-positive rate is ≈{_f(100 * float(w0['fpr_1.96_se'].mean()), 1)} pp, and the 95% quantile of |t| is noisy too.")
+    L.append("- The paper's effect per 1 s.d. is taken from its text (s.d. 2.53); the paper does not say whether this is a pooled "
+             "or an average cross-sectional s.d.; ours is the average cross-sectional s.d. The ratio of the MDE to the paper's effect is an estimate.")
+    L.append("- Dropping a year joins the neighbouring months in the NW estimate; betas/CMOM are not re-estimated.")
+    L.append("- The simulated MDE depends on the DGP (noise, number of coins); rescaling to the real N×T is an estimate, not a measurement.")
+    L.append(f"- The HLZ bar t>{hlz:g} is shown next to 1.96; in world 0 NW(6) over-rejects, so 1.96 is laxer than its nominal level.")
     if not chk["match"].all():
-        L.append("- Точечные оценки расходятся с базовым прогоном — интерпретация недействительна до исправления.")
+        L.append("- The point estimates differ from the base run; the interpretation is invalid until this is fixed.")
     text = "\n".join(L) + "\n"
     (out / "SUMMARY.md").write_text(text)
     return text
@@ -914,10 +915,10 @@ def main(argv: list[str] | None = None) -> None:
         "base_run_id": base,
         "created_utc": stamp,
         "git": git_info(),
-        "config_path": str(cfg_path.resolve()),
+        "config_path": rel_path(cfg_path),
         "config_sha256": sha256_file(cfg_path),
         "code_sha256": {f: sha256_file(ROOT / f) for f in code_files},
-        "input_sha256": {str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p): sha256_file(p) for p in inputs},
+        "input_sha256": {rel_path(p): sha256_file(p) for p in inputs},
         "seed": seed,
         "params": {"block": a.block, "n_draws": a.draws, "n_seed_reps_ci_stability": N_SEED_REPS,
                    "seed_reps_scheme": "default_rng([seed, k]), k=1..n_seed_reps", "nw_lags": lags, "hlz_threshold": hlz,

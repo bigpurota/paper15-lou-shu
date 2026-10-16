@@ -134,12 +134,12 @@ def _pb(state, b_short, t_short, b_ls, t_ls):
 
 
 def test_verdict_rules():
-    assert S.verdict_sentiment(_pb("sent_mean", -1, -2.5, 1, 2.5)).startswith("предсказание mispricing подтверждается")
-    assert S.verdict_sentiment(_pb("sent_mean", -1, -1.0, 1, 2.5)).startswith("знаки совпадают")
-    assert S.verdict_sentiment(_pb("sent_mean", 1, 2.5, 1, 2.5)).startswith("предсказание mispricing не подтверждается")
-    assert "в пользу объяснения через ликвидность" in S.verdict_illiq(_pb("illiq_ar2", 0, 0, 1, 2.5))
-    assert "против объяснения" in S.verdict_illiq(_pb("illiq_ar2", 0, 0, -1, -2.5))
-    assert S.verdict_illiq(_pb("illiq_ar2", 0, 0, 1, 1.0)).startswith("значимой связи")
+    assert S.verdict_sentiment(_pb("sent_mean", -1, -2.5, 1, 2.5)).startswith("the mispricing prediction is confirmed")
+    assert S.verdict_sentiment(_pb("sent_mean", -1, -1.0, 1, 2.5)).startswith("the signs match")
+    assert S.verdict_sentiment(_pb("sent_mean", 1, 2.5, 1, 2.5)).startswith("the mispricing prediction is not confirmed")
+    assert "evidence for the liquidity explanation" in S.verdict_illiq(_pb("illiq_ar2", 0, 0, 1, 2.5))
+    assert "against the liquidity explanation" in S.verdict_illiq(_pb("illiq_ar2", 0, 0, -1, -2.5))
+    assert S.verdict_illiq(_pb("illiq_ar2", 0, 0, 1, 1.0)).startswith("no significant link")
 
 
 def test_add_lagged_market_alignment_and_gap():

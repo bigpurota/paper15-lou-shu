@@ -38,6 +38,7 @@ import platform
 import subprocess
 import time
 import traceback
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -296,12 +297,25 @@ def main(argv: list[str] | None = None) -> None:
     chk.to_csv(out / "sim_checks.csv", index=False)
 
     errors = {n: int(r["error"].notna().sum()) if "error" in r else 0 for n, r in results.items()}
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    root = Path(__file__).resolve().parent.parent
+    try:
+        dirty_all = bool(subprocess.run(["git", "status", "--porcelain", "--", "src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"], capture_output=True, text=True,
+                                        cwd=root).stdout.strip())
+    except Exception:
+        dirty_all = None
+    code_agg = hashlib.sha256(b"".join(f.read_bytes() for f in sorted(Path(__file__).resolve().parent.glob("*.py")))).hexdigest()
     manifest = {
-        "run_id": f"sim_{time.strftime('%Y%m%d_%H%M%S')}",
+        "run_id": f"sim_{stamp}",
+        "created_utc": stamp,
+        # common provenance keys (tests/test_manifests.py); the older flat keys below are kept for readers
+        "git": {"sha": _git_sha(), "dirty": dirty_all},
+        "code_sha256": {"src/*.py (concatenated, sorted)": code_agg},
+        "data_sha256": "synthetic: no external data (simulated from config 'simulation' section; see config_sha256)",
+        "timings_sec": timing | {"total": wall},
         "seed": int(cfg["seed"]), "seed_scheme": "SeedSequence([seed, world_code, rep, round(premium*1e6)+1e6 or 999999])",
         "git_sha": _git_sha(), "config_sha256": hashlib.sha256(cfg_bytes).hexdigest(),
-        "code_sha256_src": hashlib.sha256(b"".join(f.read_bytes() for f in
-                                                    sorted(Path(__file__).resolve().parent.glob("*.py")))).hexdigest(),
+        "code_sha256_src": code_agg,
         "git_dirty": bool(subprocess.run(["git", "status", "--porcelain", "src"], capture_output=True, text=True,
                                          cwd=Path(__file__).resolve().parent.parent).stdout.strip()),
         "n_reps": {n: len(r) for n, r in results.items()}, "errors": errors,

@@ -350,7 +350,7 @@ def test_end_to_end_synthetic(tmp_path):
     assert {"base", "upgrade:robustness"} <= set(led["source"])
     assert "bootstrap_ci.csv" not in set(led["file"])
     summary = (out / "SUMMARY.md").read_text()
-    assert base in summary and "Бутстрап" in summary
+    assert base in summary and "Bootstrap" in summary
     # determinism: same seed -> same bootstrap table
     first = boot.copy()
     _py("robustness_extra.py", str(tmp_path / "config.yaml"), "--results-dir", str(res),
@@ -361,7 +361,7 @@ def test_end_to_end_synthetic(tmp_path):
     assert "ledger_rebuilt_utc" in json.loads((out / "run_manifest.json").read_text())
     summ = (out / "SUMMARY.md").read_text()                 # ledger section regenerated from the new ledger
     n_all = int(pd.read_csv(out / "ledger_summary.csv").set_index("source").loc["ALL", "n_unique"])
-    assert f"уникальных тестов {n_all};" in summ
+    assert f"unique tests {n_all};" in summ
     # if LATEST moves on, --ledger-only keeps using the manifest's base run (same as the other tables)
     led_before = pd.read_csv(out / "ledger.csv")
     (res / "LATEST").write_text("some_other_run\n")

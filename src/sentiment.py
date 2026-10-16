@@ -15,7 +15,7 @@ Portfolios: EW quintiles of A_C measured at t-2 (Long = Q5 = highest A_C = lowes
 raw returns in % (r_f = 0, D5). Also the FM slope series on ln A_C (base T4 model (2)), recomputed here.
 State variables are z-scored over the return months used, so b is in %/month per 1 s.d.
 (the Baker-Wurgler index used in the paper is also roughly unit-variance); b_raw = b / sd.
-All variants are pre-declared in VARIANTS below and all are reported.
+All variants are listed in VARIANTS below and all are reported (git does not show that the list predates the results).
 
 Usage:  python -I src/sentiment.py config.yaml [--results-dir results] [--out results/upgrades/sentiment]
 Reads:  results/LATEST (base run id), results/<base>/run_manifest.json, factors.csv, T3_portfolios.csv,
@@ -52,7 +52,7 @@ ILLIQ_MIN_COINS = 30          # AR(2) estimation starts at the first month with 
 PORTS = ["Short", "2", "3", "4", "Long", "Long-Short", "FM_lnA_C"]
 log = logging.getLogger("sentiment")
 
-# Pre-declared variants (all reported). Main rows are flagged main=True.
+# Variants not labelled post hoc (all reported; not pre-registered in git). Main rows are flagged main=True.
 STATE_VARS = {
     "sent_mean": ("Fear&Greed, mean of month t-1", True),
     "sent_eom": ("Fear&Greed, last day of month t-1", False),
@@ -63,7 +63,7 @@ STATE_VARS = {
 CONTROLS = {"CMKT+CMOM": ["CMKT", "CMOM"], "CMKT": ["CMKT"],
             "CMKT+CMOM+CMKT(t-1)": ["CMKT", "CMOM", "CMKT_l1"]}
 MAIN_CONTROLS = "CMKT+CMOM"
-# Added at verification (post hoc, NOT pre-declared): both states correlate with the market return of their own
+# Added at verification (post hoc): both states correlate with the market return of their own
 # month t-1, so a lagged-market control separates the state effect from plain market reversal. Reported, never main.
 POST_HOC_CONTROLS = {"CMKT+CMOM+CMKT(t-1)"}
 
@@ -283,20 +283,22 @@ def verdict_sentiment(pb: pd.DataFrame) -> str:
     g = pb[(pb["state"] == "sent_mean") & (pb["controls"] == MAIN_CONTROLS)].set_index("portfolio")
     s, ls = g.loc["Short"], g.loc["Long-Short"]
     if s["b"] < 0 and ls["b"] > 0 and abs(s["t"]) > 1.96 and abs(ls["t"]) > 1.96:
-        return "предсказание mispricing подтверждается: b(short) < 0 и b(long–short) > 0, оба значимы при |t| > 1.96"
+        return "the mispricing prediction is confirmed: b(short) < 0 and b(long–short) > 0, both significant at |t| > 1.96"
     if s["b"] < 0 and ls["b"] > 0:
-        return "знаки совпадают с предсказанием mispricing (b(short) < 0, b(long–short) > 0), но хотя бы один коэффициент незначим при 1.96"
-    return "предсказание mispricing не подтверждается: знаки b(short) / b(long–short) не совпадают с ожидаемыми (< 0 / > 0)"
+        return "the signs match the mispricing prediction (b(short) < 0, b(long–short) > 0), but at least one coefficient is not significant at 1.96"
+    return "the mispricing prediction is not confirmed: the signs of b(short) / b(long–short) differ from the expected ones (< 0 / > 0)"
 
 
 def verdict_illiq(pb: pd.DataFrame) -> str:
     ls = pb[(pb["state"] == "illiq_ar2") & (pb["controls"] == MAIN_CONTROLS)
             & (pb["portfolio"] == "Long-Short")].iloc[0]
     if ls["b"] > 0 and abs(ls["t"]) > 1.96:
-        return "премия значимо больше после роста рыночной неликвидности (b > 0, |t| > 1.96): это в пользу объяснения через ликвидность"
+        return "the premium is significantly larger after a rise in market illiquidity (b > 0, |t| > 1.96): this is evidence for the liquidity explanation"
     if ls["b"] < 0 and abs(ls["t"]) > 1.96:
-        return "премия значимо меньше после роста неликвидности (b < 0): против объяснения через ликвидность, как в статье"
-    return "значимой связи премии с рыночной неликвидностью нет (|t| ≤ 1.96): рост премии, который предсказывает объяснение через ликвидность, не найден"
+        return ("b < 0 (the paper's sign): the premium is significantly smaller after a rise in illiquidity at |t| > 1.96; "
+                "because the AR(2) state is fitted on the full sample and mixes illiquidity with market volatility, "
+                "we do not read this as evidence against the liquidity explanation")
+    return "no significant link between the premium and market illiquidity (|t| ≤ 1.96): the rise in the premium that the liquidity explanation predicts is not found"
 
 
 def robustness_line(pb: pd.DataFrame, main_state: str, states: list[str]) -> str:
@@ -305,79 +307,82 @@ def robustness_line(pb: pd.DataFrame, main_state: str, states: list[str]) -> str
     g = pb[(pb["portfolio"] == "Long-Short") & (pb["state"].isin(states))]
     pre = g[~g["post_hoc"]]
     ph = g[g["post_hoc"] & (g["state"] == main_state)]
-    txt = (f"Устойчивость Long-Short ({', '.join(states)}): t от {_f(pre['t'].min())} до {_f(pre['t'].max())} "
-           f"по {len(pre)} заранее объявленным вариантам; abs(t) > 1.96 в {int((pre['t'].abs() > 1.96).sum())}, "
-           f"abs(t) > 3 в {int((pre['t'].abs() > 3).sum())}")
+    txt = (f"Robustness of Long-Short ({', '.join(states)}): t ranges from {_f(pre['t'].min())} to {_f(pre['t'].max())} "
+           f"over {len(pre)} variants not labelled post hoc; abs(t) > 1.96 in {int((pre['t'].abs() > 1.96).sum())}, "
+           f"abs(t) > 3 in {int((pre['t'].abs() > 3).sum())}")
     if len(ph):
         r = ph.iloc[0]
-        txt += (f"; с добавленным контролем CMKT(t−1) (post hoc) для {main_state}: b = {_f(r['b'])} (t {_f(r['t'])}, "
-                f"{int(r['n_months'])} мес.)")
+        txt += (f"; with the added CMKT(t−1) control (post hoc) for {main_state}: b = {_f(r['b'])} (t {_f(r['t'])}, "
+                f"{int(r['n_months'])} months)")
     return txt + "."
 
 
 def write_summary(out: Path, base_id: str, pvu: pd.DataFrame, pb: pd.DataFrame, pa: pd.DataFrame,
                   jan: pd.DataFrame | None, fng_m: pd.DataFrame, ar2: pd.DataFrame,
                   data_match: bool = True) -> None:
-    L = [f"# Апгрейды 4–5: сентимент, рыночная неликвидность, январь", "",
-         f"Базовый прогон: `{base_id}`. Все числа ниже сгенерированы `src/sentiment.py` из CSV в этой папке.", ""]
+    L = [f"# Upgrades 4–5: sentiment, market illiquidity, January", "",
+         f"Base run: `{base_id}`. Every number below is generated by `src/sentiment.py` from the CSVs in this folder.", ""]
     if not data_match:
-        L += ["**SMOKE-ПРОГОН: дневные данные изменились после базового прогона; числа недействительны, не интерпретировать.**", ""]
+        L += ["**SMOKE RUN: the daily data changed after the base run; the numbers are invalid, do not interpret them.**", ""]
     L += [
-         "## Что проверяли",
-         "- Аналог Table 13: доходности квинтилей по `A_C` (t−2) и long–short регрессируются на Sent_{t−1} "
-         "(Crypto Fear & Greed, среднее за месяц; z-оценка) с контролями CMKT + CMOM, NW(6).",
-         "- Аналог Table 12: Illiq_{t−1} = остаток AR(2) по EW-среднему `A`; та же регрессия; плюс разбиение по медиане.",
-         "- Ряд FM-наклонов на ln A_C (модель (2) из T4) — на тех же переменных состояния.", "",
-         "## Статья против нас (основная спецификация)", "",
-         "Наши b — в %/мес. на 1 s.d. переменной состояния; b статьи — на единицу её индекса (Baker–Wurgler ≈ 1 s.d.; "
-         "уровень Pástor–Stambaugh — не 1 s.d.), поэтому сравнимы знаки и t, а не величины.", "",
-         "| Тест | Строка | Статья b (t) | Мы b (t) | Месяцев | Знак совпал | Мы: abs(t) > 1.96 / > 3 (HLZ) |",
+         "## What we tested",
+         "- Table 13 analogue: returns of the `A_C` (t−2) quintiles and the long–short portfolio are regressed on Sent_{t−1} "
+         "(Crypto Fear & Greed, monthly mean, z-score) with CMKT + CMOM controls, NW(6).",
+         "- Table 12 analogue: Illiq_{t−1} = AR(2) residual of the EW mean of `A`; the same regression, plus a median split.",
+         "- The series of FM slopes on ln A_C (model (2) of T4) on the same state variables.", "",
+         "## Paper vs us (main specification)", "",
+         "Our b is in %/month per 1 s.d. of the state variable; the paper's b is per unit of its index (Baker–Wurgler ≈ 1 s.d.; "
+         "the Pástor–Stambaugh level is not 1 s.d.), so signs and t are comparable, magnitudes are not.", "",
+         "| Test | Row | Paper b (t) | Us b (t) | Months | Same sign | Us: abs(t) > 1.96 / > 3 (HLZ) |",
          "|---|---|---|---|---|---|---|"]
-    yn = lambda x: "да" if x else "нет"
+    yn = lambda x: "yes" if x else "no"
     for _, r in pvu.iterrows():
         L.append(f"| {r['test']} | {r['row']} | {_f(r['paper_b'], 3)} ({_f(r['paper_t'])}) | "
                  f"{_f(r['ours_b'], 3)} ({_f(r['ours_t'])}) | {int(r['n_months'])} | {yn(r['same_sign'])} | "
                  f"{yn(abs(r['ours_t']) > 1.96)} / {yn(abs(r['ours_t']) > 3.0)} |")
     fm = pb[(pb["main"]) & (pb["portfolio"] == "FM_lnA_C")]
-    L += ["", "FM-наклон ln A_C на переменной состояния (CMKT + CMOM): " +
+    L += ["", "FM slope of ln A_C on the state variable (CMKT + CMOM): " +
           "; ".join(f"{r['state']}: b = {_f(r['b'], 3)} (t {_f(r['t'])})" for _, r in fm.iterrows()), "",
-          "## Все варианты (Panel B, b (t), месяцев); строки с * добавлены при проверке (post hoc)", "",
-          "| Состояние | Контроли | Short | Long | Long-Short | FM ln A_C | Месяцев (L-S) |", "|---|---|---|---|---|---|---|"]
+          "## All variants (Panel B, b (t), months); rows marked * were added during verification (post hoc)", "",
+          "| State | Controls | Short | Long | Long-Short | FM ln A_C | Months (L-S) |", "|---|---|---|---|---|---|---|"]
     for (sv, cn), g in pb.groupby(["state", "controls"], sort=False):
         g = g.set_index("portfolio")
         cell = lambda port: f"{_f(g.loc[port, 'b'], 2)} ({_f(g.loc[port, 't'])})"
-        L.append(f"| {sv} | {cn}{' *' if g['post_hoc'].iloc[0] else ''}{' (осн.)' if g['main'].iloc[0] else ''} | "
+        L.append(f"| {sv} | {cn}{' *' if g['post_hoc'].iloc[0] else ''}{' (main)' if g['main'].iloc[0] else ''} | "
                  f"{cell('Short')} | {cell('Long')} | {cell('Long-Short')} | {cell('FM_lnA_C')} | "
                  f"{int(g.loc['Long-Short', 'n_months'])} |")
     hl = pa[pa["regime"] == "High-Low"]
-    L += ["", "Panel A (разбиение по медиане), Long-Short High−Low: " +
+    L += ["", "Panel A (median split), Long-Short High−Low: " +
           "; ".join(f"{r['state']}: {_f(r['Long-Short'])} (t {_f(r['t_Long-Short'])})" for _, r in hl.iterrows()), ""]
-    L += ["## Интерпретация (правила в коде, по t-статистикам)",
-          f"- Сентимент: {verdict_sentiment(pb)}.",
-          f"- Неликвидность: {verdict_illiq(pb)}.",
+    L += ["## Interpretation (rules in the code, based on t-statistics)",
+          f"- Sentiment: {verdict_sentiment(pb)}.",
+          f"- Illiquidity: {verdict_illiq(pb)}.",
           f"- {robustness_line(pb, 'sent_mean', ['sent_mean', 'sent_eom'])}",
           f"- {robustness_line(pb, 'illiq_ar2', ['illiq_ar2', 'illiq_ar2_log', 'illiq_level_log'])}", ""]
     if jan is not None:
         j = jan.set_index("subset")
-        L += ["## Январь (T7 базового прогона) — только плацебо",
-              f"- Наклон ln A_C в январе: {_f(j.loc['January', 'coef'])} (t {_f(j.loc['January', 't'])}, "
-              f"n = {int(j.loc['January', 'n'])}); февраль–декабрь: {_f(j.loc['Feb-Dec', 'coef'])} "
+        L += ["## January (T7 of the base run): placebo only",
+              f"- Slope of ln A_C in January: {_f(j.loc['January', 'coef'])} (t {_f(j.loc['January', 't'])}, "
+              f"n = {int(j.loc['January', 'n'])}); February–December: {_f(j.loc['Feb-Dec', 'coef'])} "
               f"(t {_f(j.loc['Feb-Dec', 't'])}, n = {int(j.loc['Feb-Dec', 'n'])}).",
-              "- В крипте нет налогового года и window dressing по январю, поэтому это плацебо, а не тест mispricing; "
-              "при ~7 январях мощности нет.", ""]
+              "- The paper's January test (Section 4.1, \"Tests of the Liquidity Explanation\") asks whether the volume "
+              "premium shares the documented January seasonality of the liquidity premium; it is a test of the liquidity "
+              f"explanation, not of mispricing. With only {int(j.loc['January', 'n'])} Januaries our version has very "
+              "little power, so for us it is a placebo.", ""]
     nvar = pb[["state", "controls", "post_hoc"]].drop_duplicates()
-    L += ["## Оговорки",
-          f"- Перебрано {len(nvar)} пар (переменная состояния × контроли; из них {int(nvar['post_hoc'].sum())} "
-          "добавлены при проверке — контроль CMKT(t−1)), все в `panel_b.csv` / `panel_a.csv`; "
-          "основная спецификация объявлена заранее (`STATE_VARS`, `MAIN_CONTROLS` в коде).",
-          f"- Fear & Greed: месяцев с данными {int(fng_m['sent_mean'].notna().sum())}; индекс строится по цене и объёму BTC "
-          "(волатильность, моментум, соцсети), т.е. он частично механически связан с рынком — отсюда контроль CMKT.",
-          f"- AR(2) по EW `A` оценён на {int(ar2.iloc[0]['n'])} месяцах остатков ({ar2.iloc[0]['first']}–{ar2.iloc[0]['last']}; "
-          f"ряд начинается с первого месяца с ≥ {ILLIQ_MIN_COINS} монетами, первые 2 месяца уходят на лаги), φ1 = {_f(ar2.iloc[0]['phi1'])}, φ2 = {_f(ar2.iloc[0]['phi2'])}.",
-          f"- AR(2) оценён на всей выборке (как у Pástor–Stambaugh и в разделе 5 статьи) — look-ahead в коэффициентах; "
-          f"в статье в Table 12 — уровень меры Pástor–Stambaugh, а не наша инновация EW `A`.",
-          "- Статья сортирует по `AT_C` (оборачиваемость), мы — по `A_C` (D2); FF4 заменён на CMKT + CMOM (D6).",
-          f"- Порог HLZ: |t| > 3 отмечен в `panel_b.csv` (столбец `sig_hlz`).", ""]
+    L += ["## Caveats",
+          f"- {len(nvar)} pairs were tried (state variable × controls; {int(nvar['post_hoc'].sum())} of them "
+          "were added during verification: the CMKT(t−1) control), all in `panel_b.csv` / `panel_a.csv`; "
+          "the main specification is the one marked in the code (`STATE_VARS`, `MAIN_CONTROLS`); git does not show that it predates the results (code and results were committed together).",
+          f"- Fear & Greed: {int(fng_m['sent_mean'].notna().sum())} months with data; the index is built from BTC price and volume "
+          "(volatility, momentum, social media), so it is partly mechanically linked to the market, hence the CMKT control.",
+          f"- The AR(2) on EW `A` is estimated on {int(ar2.iloc[0]['n'])} months of residuals ({ar2.iloc[0]['first']}–{ar2.iloc[0]['last']}; "
+          f"the series starts in the first month with ≥ {ILLIQ_MIN_COINS} coins, and the first 2 months are used for the lags), φ1 = {_f(ar2.iloc[0]['phi1'])}, φ2 = {_f(ar2.iloc[0]['phi2'])}.",
+          f"- The AR(2) is estimated on the full sample (as in Pástor–Stambaugh; Section 5 of the paper does not say whether "
+          f"its AR(2) uses the full sample or a rolling window), so its coefficients contain look-ahead; Table 12 of the paper "
+          f"uses the level of the Pástor–Stambaugh measure, not our innovation in EW `A`.",
+          "- The paper sorts on `AT_C` (turnover); we sort on `A_C` (D2); FF4 is replaced by CMKT + CMOM (D6).",
+          f"- HLZ threshold: |t| > 3 is flagged in `panel_b.csv` (column `sig_hlz`).", ""]
     (out / "SUMMARY.md").write_text("\n".join(L))
 
 
@@ -435,7 +440,7 @@ def main(argv: list[str] | None = None) -> None:
     fng_m = fng_monthly(fng_d)
     lap("fng")
 
-    daily_path = Path(bman["data_source"])
+    daily_path = base.resolve_repo_path(bman["data_source"])
     daily_hash = base.sha256_file(daily_path)
     data_match = daily_hash == bman["data_sha256"]
     if not data_match and a.allow_data_mismatch:
@@ -450,7 +455,7 @@ def main(argv: list[str] | None = None) -> None:
     ill_states, ar2_fits = illiq_states(illiq)
     lap("illiquidity")
 
-    panel_path = Path(bman["panel_cache"])
+    panel_path = base.resolve_panel_cache(bman, base_id)
     panel = _to_period(pd.read_parquet(panel_path))
     prem = premium_series(panel, q)
     factors = _to_period(pd.read_csv(bdir / "factors.csv")).set_index("month")[["CMKT", "CMOM"]]
@@ -480,7 +485,8 @@ def main(argv: list[str] | None = None) -> None:
     _csv(pa, out / "panel_a.csv")
     _csv(pvu, out / "paper_vs_us.csv")
     if jan is not None:
-        _csv(jan.assign(note="placebo: no tax-year motive in crypto"), out / "january_placebo.csv")
+        _csv(jan.assign(note="placebo: too few Januaries for the paper's January-seasonality test (Sec. 4.1)"),
+             out / "january_placebo.csv")
     write_summary(out, base_id, pvu, pb, pa, jan, fng_m, pd.DataFrame(ar2_fits), data_match)
     lap("write")
 
@@ -491,12 +497,12 @@ def main(argv: list[str] | None = None) -> None:
         "base_run_id": base_id,
         "created_utc": stamp,
         "git": base.git_info(),
-        "config_path": str(cfg_path.resolve()),
+        "config_path": base.rel_path(cfg_path),
         "config_sha256": base.sha256_file(cfg_path),
         "code_sha256": {f: base.sha256_file(ROOT / "src" / f) for f in code_files},
-        "data": {"fng_json": str(fng_path.resolve()), "fng_sha256": base.sha256_file(fng_path),
-                 "fng_url": FNG_URL, "daily": str(daily_path), "daily_sha256": daily_hash,
-                 "panel_cache": str(panel_path), "panel_sha256": base.sha256_file(panel_path)},
+        "data": {"fng_json": base.rel_path(fng_path), "fng_sha256": base.sha256_file(fng_path),
+                 "fng_url": FNG_URL, "daily": base.rel_path(daily_path), "daily_sha256": daily_hash,
+                 "panel_cache": base.rel_path(panel_path), "panel_sha256": base.sha256_file(panel_path)},
         "seed": int(cfg["seed"]),
         "params": {"nw_lags": lags, "quantiles": q, "fng_min_days": FNG_MIN_DAYS,
                    "illiq_min_coins": ILLIQ_MIN_COINS, "main_controls": MAIN_CONTROLS,

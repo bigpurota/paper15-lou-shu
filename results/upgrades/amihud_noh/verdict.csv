@@ -1,25 +1,25 @@
 test,question,sample,dep,model,var,coef,t,n_months,LS_predicts,AN_predicts,outcome_1.96,outcome_3,supports_1.96,supports_3,main_spec
-V0,"Предпосылка A&N: cov(|r|,1/DVol) < 0, т.е. средний DIF < 0",monthly,-,mean of monthly CS mean DIF,DIF,-0.24370120594746622,-27.674109995298167,93,0,-,-,-,A&N,A&N,True
-V0,"Предпосылка A&N: cov(|r|,1/DVol) < 0, т.е. средний DIF < 0",12m,-,mean of monthly CS mean DIF,DIF,-0.32598725628133374,-18.543610559463513,101,0,-,-,-,A&N,A&N,True
-V1,Пропущенный член DIF прайсится сверх ln A_C и ln|Ret| (A&N col.3),monthly,ret_adj,AN col3: lnA_C+ln|Ret|+DIF,DIF,-1.6381149473652639,-0.435958734774713,87,0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),True
-V1,Пропущенный член DIF прайсится сверх ln A_C и ln|Ret| (A&N col.3),monthly,ret,AN col3: lnA_C+ln|Ret|+DIF,DIF,-0.37946361412076324,-0.12507490842739896,87,0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),False
-V1,Пропущенный член DIF прайсится сверх ln A_C и ln|Ret| (A&N col.3),12m,ret_adj,AN col3: ln|R|+lnIDVOL+DIF,DIF,14.114669949170413,1.5495356969221221,83,0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),True
-V1,Пропущенный член DIF прайсится сверх ln A_C и ln|Ret| (A&N col.3),12m,ret,AN col3: ln|R|+lnIDVOL+DIF,DIF,11.64299936854482,1.2574392376999526,83,0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),False
-V2,DIF прайсится сверх lnLSIlliq (A&N col.2),monthly,ret_adj,AN col2: lnLSIlliq+DIF,DIF,5.182430297548783,1.7000867672185669,87,0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),True
-V2,DIF прайсится сверх lnLSIlliq (A&N col.2),monthly,ret,AN col2: lnLSIlliq+DIF,DIF,5.42763558548531,2.0261852440360726,87,0,+,+,0,A&N,LS (H0 не отвергнута),False
-V2,DIF прайсится сверх lnLSIlliq (A&N col.2),12m,ret_adj,AN col2: lnLSIlliq+DIF,DIF,10.777296807800768,1.5090410957057647,84,0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),True
-V2,DIF прайсится сверх lnLSIlliq (A&N col.2),12m,ret,AN col2: lnLSIlliq+DIF,DIF,8.059043947652956,1.1325152204684135,84,0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),False
-V3,Знак Res.lnA при ln A_C и IVOL (LS T4(5) = A&N col.4),monthly,ret_adj,AN col4 = LS T4(5): ResLnA+lnA_C+ivol,ResLnA,-6.329644113445131,-1.9816667142254687,87,-/0,+,-,0,LS,LS (H0 не отвергнута),True
-V3,Знак Res.lnA при ln A_C и IVOL (LS T4(5) = A&N col.4),monthly,ret,AN col4 = LS T4(5): ResLnA+lnA_C+ivol,ResLnA,-6.037047010616665,-2.6152070589110212,87,-/0,+,-,0,LS,LS (H0 не отвергнута),False
-V3,Знак Res.lnA при ln A_C и IVOL (LS T4(5) = A&N col.4),12m,ret_adj,AN col4: RlnILLIQ+lnIDVOL+ivol,RlnILLIQ,-2.3266716876739766,-0.3860664254674414,83,-/0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),True
-V3,Знак Res.lnA при ln A_C и IVOL (LS T4(5) = A&N col.4),12m,ret,AN col4: RlnILLIQ+lnIDVOL+ivol,RlnILLIQ,-0.829806104446819,-0.16011196734047048,83,-/0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),False
-V4,"fDIF (DIF из lnCV2, ln b, lnLSIlliq) прайсится (A&N p.6)",12m,ret_adj,"AN fDIF (3 comps, intercept)",fDIF_int,45.11727603641056,2.1357948116812424,83,0,+,+,0,A&N,LS (H0 не отвергнута),True
-V4,"fDIF (DIF из lnCV2, ln b, lnLSIlliq) прайсится (A&N p.6)",12m,ret,"AN fDIF (3 comps, intercept)",fDIF_int,34.51624304561402,1.971407098905403,83,0,+,+,0,A&N,LS (H0 не отвергнута),False
-V5,Res.lnA после контроля ln|Ret| и IVOL (канал волатильности),monthly,ret_adj,C4: lnA_C+ResLnA+ln|Ret|+ivol,ResLnA,-0.14284699690941138,-0.0465217220516056,86,-/0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),True
-V5,Res.lnA после контроля ln|Ret| и IVOL (канал волатильности),monthly,ret,C4: lnA_C+ResLnA+ln|Ret|+ivol,ResLnA,0.19669382258334422,0.06417262081223354,86,-/0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),False
-V5,Res.lnA после контроля ln|Ret| и IVOL (канал волатильности),12m,ret_adj,C4: lnIDVOL+RlnILLIQ+ln|R|+ivol,RlnILLIQ,3.0037530517661777,0.5637550099810799,80,-/0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),True
-V5,Res.lnA после контроля ln|Ret| и IVOL (канал волатильности),12m,ret,C4: lnIDVOL+RlnILLIQ+ln|R|+ivol,RlnILLIQ,0.6579401533453177,0.16524201003338954,80,-/0,+,0,0,LS (H0 не отвергнута),LS (H0 не отвергнута),False
-V6,Объём (ln A_C / lnIDVOL) прайсится при ln|Ret| (обе стороны согласны),monthly,ret_adj,LS eq6: lnA_C+ln|Ret|,lnA_C,0.8136352026417187,1.4562636445552077,87,+,+,0,0,никто,никто,True
-V6,Объём (ln A_C / lnIDVOL) прайсится при ln|Ret| (обе стороны согласны),monthly,ret,LS eq6: lnA_C+ln|Ret|,lnA_C,0.8688505644539969,1.5789721712753397,87,+,+,0,0,никто,никто,False
-V6,Объём (ln A_C / lnIDVOL) прайсится при ln|Ret| (обе стороны согласны),12m,ret_adj,LS eq6: lnIDVOL+ln|R|,lnIDVOL,0.9085802389630082,1.0132118961439038,84,+,+,0,0,никто,никто,True
-V6,Объём (ln A_C / lnIDVOL) прайсится при ln|Ret| (обе стороны согласны),12m,ret,LS eq6: lnIDVOL+ln|R|,lnIDVOL,0.8227595022654823,1.0784902635669864,84,+,+,0,0,никто,никто,False
+V0,"A&N premise: cov(|r|, 1/DVol) < 0, i.e. mean DIF < 0",monthly,-,mean of monthly CS mean DIF,DIF,-0.24370120594746622,-27.674109995298167,93,0,-,-,-,A&N,A&N,True
+V0,"A&N premise: cov(|r|, 1/DVol) < 0, i.e. mean DIF < 0",12m,-,mean of monthly CS mean DIF,DIF,-0.32598725628133374,-18.543610559463513,101,0,-,-,-,A&N,A&N,True
+V1,The omitted term DIF is priced beyond ln A_C and ln|Ret| (A&N col. 3),monthly,ret_adj,AN col3: lnA_C+ln|Ret|+DIF,DIF,-1.6381149473652639,-0.435958734774713,87,0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),True
+V1,The omitted term DIF is priced beyond ln A_C and ln|Ret| (A&N col. 3),monthly,ret,AN col3: lnA_C+ln|Ret|+DIF,DIF,-0.37946361412076324,-0.12507490842739896,87,0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),False
+V1,The omitted term DIF is priced beyond ln A_C and ln|Ret| (A&N col. 3),12m,ret_adj,AN col3: ln|R|+lnIDVOL+DIF,DIF,14.114669949170413,1.5495356969221221,83,0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),True
+V1,The omitted term DIF is priced beyond ln A_C and ln|Ret| (A&N col. 3),12m,ret,AN col3: ln|R|+lnIDVOL+DIF,DIF,11.64299936854482,1.2574392376999526,83,0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),False
+V2,DIF is priced beyond lnLSIlliq (A&N col. 2),monthly,ret_adj,AN col2: lnLSIlliq+DIF,DIF,5.182430297548783,1.7000867672185669,87,0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),True
+V2,DIF is priced beyond lnLSIlliq (A&N col. 2),monthly,ret,AN col2: lnLSIlliq+DIF,DIF,5.42763558548531,2.0261852440360726,87,0,+,+,0,A&N,LS (H0 not rejected),False
+V2,DIF is priced beyond lnLSIlliq (A&N col. 2),12m,ret_adj,AN col2: lnLSIlliq+DIF,DIF,10.777296807800768,1.5090410957057647,84,0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),True
+V2,DIF is priced beyond lnLSIlliq (A&N col. 2),12m,ret,AN col2: lnLSIlliq+DIF,DIF,8.059043947652956,1.1325152204684135,84,0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),False
+V3,Sign of Res.lnA given ln A_C and IVOL (LS T4(5) = A&N col. 4),monthly,ret_adj,AN col4 = LS T4(5): ResLnA+lnA_C+ivol,ResLnA,-6.329644113445131,-1.9816667142254687,87,-/0,+,-,0,LS,LS (H0 not rejected),True
+V3,Sign of Res.lnA given ln A_C and IVOL (LS T4(5) = A&N col. 4),monthly,ret,AN col4 = LS T4(5): ResLnA+lnA_C+ivol,ResLnA,-6.037047010616665,-2.6152070589110212,87,-/0,+,-,0,LS,LS (H0 not rejected),False
+V3,Sign of Res.lnA given ln A_C and IVOL (LS T4(5) = A&N col. 4),12m,ret_adj,AN col4: RlnILLIQ+lnIDVOL+ivol,RlnILLIQ,-2.3266716876739766,-0.3860664254674414,83,-/0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),True
+V3,Sign of Res.lnA given ln A_C and IVOL (LS T4(5) = A&N col. 4),12m,ret,AN col4: RlnILLIQ+lnIDVOL+ivol,RlnILLIQ,-0.829806104446819,-0.16011196734047048,83,-/0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),False
+V4,"fDIF (DIF fitted from lnCV2, ln b, lnLSIlliq) is priced (A&N p. 6)",12m,ret_adj,"AN fDIF (3 comps, intercept)",fDIF_int,45.11727603641056,2.1357948116812424,83,0,+,+,0,A&N,LS (H0 not rejected),True
+V4,"fDIF (DIF fitted from lnCV2, ln b, lnLSIlliq) is priced (A&N p. 6)",12m,ret,"AN fDIF (3 comps, intercept)",fDIF_int,34.51624304561402,1.971407098905403,83,0,+,+,0,A&N,LS (H0 not rejected),False
+V5,Res.lnA after controlling for ln|Ret| and IVOL (volatility channel),monthly,ret_adj,C4: lnA_C+ResLnA+ln|Ret|+ivol,ResLnA,-0.14284699690941138,-0.0465217220516056,86,-/0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),True
+V5,Res.lnA after controlling for ln|Ret| and IVOL (volatility channel),monthly,ret,C4: lnA_C+ResLnA+ln|Ret|+ivol,ResLnA,0.19669382258334422,0.06417262081223354,86,-/0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),False
+V5,Res.lnA after controlling for ln|Ret| and IVOL (volatility channel),12m,ret_adj,C4: lnIDVOL+RlnILLIQ+ln|R|+ivol,RlnILLIQ,3.0037530517661777,0.5637550099810799,80,-/0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),True
+V5,Res.lnA after controlling for ln|Ret| and IVOL (volatility channel),12m,ret,C4: lnIDVOL+RlnILLIQ+ln|R|+ivol,RlnILLIQ,0.6579401533453177,0.16524201003338954,80,-/0,+,0,0,LS (H0 not rejected),LS (H0 not rejected),False
+V6,Volume (ln A_C / lnIDVOL) is priced given ln|Ret| (both sides agree),monthly,ret_adj,LS eq6: lnA_C+ln|Ret|,lnA_C,0.8136352026417187,1.4562636445552077,87,+,+,0,0,neither,neither,True
+V6,Volume (ln A_C / lnIDVOL) is priced given ln|Ret| (both sides agree),monthly,ret,LS eq6: lnA_C+ln|Ret|,lnA_C,0.8688505644539969,1.5789721712753397,87,+,+,0,0,neither,neither,False
+V6,Volume (ln A_C / lnIDVOL) is priced given ln|Ret| (both sides agree),12m,ret_adj,LS eq6: lnIDVOL+ln|R|,lnIDVOL,0.9085802389630082,1.0132118961439038,84,+,+,0,0,neither,neither,True
+V6,Volume (ln A_C / lnIDVOL) is priced given ln|Ret| (both sides agree),12m,ret,LS eq6: lnIDVOL+ln|R|,lnIDVOL,0.8227595022654823,1.0784902635669864,84,+,+,0,0,neither,neither,False

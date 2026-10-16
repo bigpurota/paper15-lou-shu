@@ -60,6 +60,41 @@ def code_hash(src: Path = SRC) -> str:
     return h.hexdigest()
 
 
+def rel_path(path) -> str:
+    """Path as written into manifests/CSVs/SUMMARY: relative to the repo root (no user name, portable).
+    A location outside the repo (e.g. a test's tmp dir) becomes '../..'-relative to the root, so that
+    resolve_repo_path() still round-trips it on the same machine."""
+    import os
+    p = Path(path)
+    p = (p if p.is_absolute() else Path.cwd() / p).resolve()
+    root = ROOT.resolve()
+    try:
+        return p.relative_to(root).as_posix()
+    except ValueError:
+        try:
+            return Path(os.path.relpath(p, root)).as_posix()
+        except ValueError:                       # other drive (Windows): nothing relative exists
+            return p.name
+
+
+def resolve_repo_path(p) -> Path:
+    """Inverse of rel_path for paths read back from manifests (repo-relative; absolute in old ones)."""
+    q = Path(p)
+    return q if q.is_absolute() else ROOT / q
+
+
+def resolve_panel_cache(manifest: dict, run_id: str, cache_dir: Path | None = None) -> Path:
+    """Base-run panel parquet: manifest 'panel_cache' (repo-relative; absolute in older manifests),
+    falling back to <cache_dir or data/cache>/panel_<run_id>.parquet when that path does not exist."""
+    p = manifest.get("panel_cache")
+    if p:
+        q = Path(p)
+        q = q if q.is_absolute() else ROOT / q
+        if q.exists():
+            return q
+    return Path(cache_dir or ROOT / "data" / "cache") / f"panel_{run_id}.parquet"
+
+
 def frame_hash(df: pd.DataFrame) -> str:
     """Content hash of an in-memory frame (used for --synthetic data)."""
     return hashlib.sha256(pd.util.hash_pandas_object(df, index=False).to_numpy().tobytes()).hexdigest()
@@ -68,8 +103,8 @@ def frame_hash(df: pd.DataFrame) -> str:
 def git_info(root: Path = ROOT) -> dict:
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
-        st = subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True, check=True).stdout
-        return {"sha": sha, "dirty": bool(st.strip())}
+        st = subprocess.run(["git", "status", "--porcelain", "--", "src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"], cwd=root, capture_output=True, text=True, check=True).stdout
+        return {"sha": sha, "dirty": bool(st.strip()), "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"}
     except (OSError, subprocess.CalledProcessError):
         return {"sha": None, "dirty": None}
 
@@ -223,7 +258,7 @@ def main(argv: list[str] | None = None) -> str:
             data_src, data_hash = f"synthetic:{a.synthetic}", frame_hash(daily)
         else:
             daily = load_daily(Path(a.daily))
-            data_src, data_hash = str(Path(a.daily).resolve()), sha256_file(Path(a.daily))
+            data_src, data_hash = rel_path(a.daily), sha256_file(Path(a.daily))
     audit_info = {"enabled": False}
     if data_audit.audit_config(cfg)["enabled"]:
         with stage("audit"):
@@ -256,7 +291,7 @@ def main(argv: list[str] | None = None) -> str:
         "created_utc": stamp,
         "tag": a.tag,
         "git": git_info(),
-        "config_path": str(cfg_path.resolve()),
+        "config_path": rel_path(cfg_path),
         "config_sha256": cfg_hash,
         "code_sha256": code_hash(),
         "data_source": data_src,
@@ -272,7 +307,7 @@ def main(argv: list[str] | None = None) -> str:
                  "panel_months": int(months.nunique())},
         "peak_rss_mb": round(peak_rss_mb(), 1),
         "tables": sorted(f"{k}.csv" for k in tables),
-        "panel_cache": str((Path(a.cache_dir) / f"panel_{run_id}.parquet").resolve()),
+        "panel_cache": rel_path(Path(a.cache_dir) / f"panel_{run_id}.parquet"),
     }
     (out / "run_manifest.json").write_text(json.dumps(manifest, indent=2))
     (Path(a.results_dir) / "LATEST").write_text(run_id + "\n")

@@ -186,9 +186,9 @@ def test_classify_and_supports():
     assert an.supports("+", "0", "+") == "A&N"
     assert an.supports("0", "0", "+") == an.LS_NULL
     assert an.supports("-", "-", "+") == "LS"
-    assert an.supports("-", "0", "+") == "никто"
-    assert an.supports("+", "+", "+") == "оба"
-    assert an.supports("0", "-", "+") == "никто"
+    assert an.supports("-", "0", "+") == "neither"
+    assert an.supports("+", "+", "+") == "both"
+    assert an.supports("0", "-", "+") == "neither"
     # "-/0": LS allow an insignificant or a significantly negative residual coefficient
     assert an.supports("0", "-/0", "+") == an.LS_NULL
     assert an.supports("-", "-/0", "+") == "LS"
@@ -217,7 +217,7 @@ def test_verdict_rule():
     assert vc["verdict"] == "LS" and vc["LS_1.96"] == 2
     vc = an.verdict_counts(_vt({("V6", "monthly"): 5.0}), 3.0).iloc[0]   # non-discriminating test ignored
     assert vc["verdict"] == "none"
-    vc = an.verdict_counts(_vt({}), 3.0).iloc[0]          # V3/V5 insignificant: LS not rejected, not "никто"
+    vc = an.verdict_counts(_vt({}), 3.0).iloc[0]          # V3/V5 insignificant: LS not rejected, not "neither"
     assert vc["none_1.96"] == 0 and vc["LS_null_1.96"] == vc["n_tests"]
 
 
@@ -268,7 +268,7 @@ def test_entry_script_end_to_end(tmp_path):
     d = pd.read_csv(out / "describe.csv").set_index("sample")
     assert d.loc["12m", "n_coin_months_in_return_panel"] > 0
     s = (out / "SUMMARY.md").read_text()
-    assert "Вердикт" in s and base_id in s and "nan" not in s.lower().replace("n/a", "")
+    assert "Verdict" in s and base_id in s and "nan" not in s.lower().replace("n/a", "")
 
     # a changed daily file must stop the run unless explicitly allowed
     daily.assign(close=daily["close"] * 1.01).to_parquet(daily_path, index=False)

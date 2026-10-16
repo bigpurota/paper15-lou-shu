@@ -107,8 +107,8 @@ fmTopValFourRes,-133.3847288899827,-133.38,FM (4) ResLnA: monthly slope in that 
 fmExFourRes,-6.646632023471577,-6.65,FM (4) ResLnA: slope without that month,panel cache (run_manifest.json: panel_cache)
 fmExFourResT,-2.5363263289702433,-2.54,FM (4) ResLnA: NW t without that month,panel cache (run_manifest.json: panel_cache)
 fmReproDiffFourRes,0.0,0.000000,|FM (4) ResLnA from panel - T4_fm.csv| (should be ~0),panel cache (run_manifest.json: panel_cache)
-sdPaper,2.53,2.53,"paper s.d. of ln A_C (Lou & Shu 2017, p. 13)",paper text p. 13
-psPaper,0.46298999999999996,0.46,"paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper p. 13)",paper_numbers.yaml
+sdPaper,2.53,2.53,"paper s.d. of ln A_C (Lou & Shu 2017, pp. 13-14)",paper text pp. 13-14
+psPaper,0.46298999999999996,0.46,"paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper pp. 13-14)",paper_numbers.yaml
 fprFmTwo,8.0,8.0,"world 0: % of runs with |t|>1.96, fm2_lnA_C",sim_world_summary.csv
 fprFmTwoLo,4.64176083998225,4.6,95% CI low,sim_world_summary.csv
 fprFmTwoHi,12.66648560220817,12.7,95% CI high,sim_world_summary.csv

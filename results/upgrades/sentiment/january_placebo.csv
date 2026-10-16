@@ -1,3 +1,3 @@
 subset,coef,t,n,note
-January,0.698504771052333,0.3926551868587137,7,placebo: no tax-year motive in crypto
-Feb-Dec,0.7657327624687518,1.6160637809466452,80,placebo: no tax-year motive in crypto
+January,0.698504771052333,0.3926551868587137,7,placebo: too few Januaries for the paper's January-seasonality test (Sec. 4.1)
+Feb-Dec,0.7657327624687518,1.6160637809466452,80,placebo: too few Januaries for the paper's January-seasonality test (Sec. 4.1)

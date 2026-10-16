@@ -1,0 +1,10 @@
+=== make venv start 19:28:26
+=== make venv rc=0 took 1s
+=== make data start 19:28:27
+=== make data rc=0 took 2313s
+=== make tests start 20:07:00
+=== make tests rc=0 took 123s
+=== make p0 start 20:09:03
+=== make p0 rc=0 took 247s
+=== make upgrades-light start 20:13:10
+=== make upgrades-light rc=0 took 852s

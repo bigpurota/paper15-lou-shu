@@ -1,0 +1,15 @@
+git HEAD: c631dba60163f0e975e8a34592529a080cf8b0e4
+dirty files: 60
+code state: c631dba+a20181a5ff2494b6
+code state = HEAD + sha256(git diff HEAD -- src tests config.yaml Makefile mk requirements.txt + untracked files there), from src/build_docs.py --code-hash
+date: 2026-10-16T18:07:13Z
+command: make tests (.venv/bin/python -I -m pytest -q -rx)
+......................................................................xx [ 39%]
+..x....x................................................................ [ 79%]
+.....................................                                    [100%]
+=========================== short test summary info ============================
+XFAIL tests/test_manifests.py::test_manifest_contract[20261016T134056Z_18099336/run_manifest.json] - regenerated in clean-clone run: absolute path at .config_path: /Users/purota/rs3-paper15/impl/config.yaml; absolute path at .data_source: /Users/purota/rs3-paper15/impl/data/cache/daily.parquet; absolute path at .panel_cache: /Users/purota/rs3-paper15/impl/data/cache/panel_20261016T134
+XFAIL tests/test_manifests.py::test_manifest_contract[20261016T135240Z_3e8eb87e/run_manifest.json] - regenerated in clean-clone run: absolute path at .config_path: /Users/purota/rs3-paper15/impl/config.yaml; absolute path at .data_source: /Users/purota/rs3-paper15/impl/data/cache/daily.parquet; absolute path at .panel_cache: /Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135
+XFAIL tests/test_manifests.py::test_manifest_contract[upgrades/hf_lambda/run_manifest.json] - regenerated in clean-clone run: absolute path at .base_panel: /Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135
+XFAIL tests/test_manifests.py::test_manifest_contract[simulations/sim_manifest.json] - regenerated in clean-clone run: missing created_utc; missing code_sha256; missing timings_sec; missing git {sha, dirty}; missing data/input hash block (one of ['data_sha256', 'input_sha256', 'inputs', 'input_data', 'data'])
+177 passed, 4 xfailed in 68.44s (0:01:08)

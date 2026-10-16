@@ -1,4 +1,5 @@
-# Lou & Shu (2017) on Binance spot: one command reproduces everything (`make all`).
+# Lou & Shu (2017) on Binance spot. `make all` is the intended single command (data -> tests -> sims -> run ->
+# report -> upgrades -> ledger -> docs); a run from a clean clone is pending (README, "What was not done").
 PY      := .venv/bin/python
 PYI     := $(PY) -I
 CONFIG  := config.yaml

@@ -48,7 +48,8 @@ CONTROLS = ["mom", "ret_1"]
 SENS_MIN_OBS = (None, 30, 50)   # minimum coins per FM cross-section; None = base rule k + 10
 log = logging.getLogger("amihud_noh")
 
-# Pre-registered choices of this upgrade (fixed before any real-data run; see SUMMARY caveats)
+# Main choices of this upgrade. NOT pre-registered in git: this module and its results were first committed
+# together (aa8f4aa); only the monthly DIF model (V1 monthly) was in src/analysis.py before the first real-data run.
 AN_SPEC = {
     "window_months": 12,          # A&N: 12 months ending in s (Amihud 2002)
     "min_days": 200,              # A&N fn. 9: >= 200 trading days with return and volume
@@ -295,27 +296,27 @@ AN12_IVOL_MODELS = {
 # "-/0" either (LS 2017, Introduction: the coefficient on the residual Amihud measure "is either
 # insignificant or significantly negative"; corrected at verification, it was "-").
 VERDICT_TESTS = [
-    ("V1", "Пропущенный член DIF прайсится сверх ln A_C и ln|Ret| (A&N col.3)",
+    ("V1", "The omitted term DIF is priced beyond ln A_C and ln|Ret| (A&N col. 3)",
      "monthly", "AN col3: lnA_C+ln|Ret|+DIF", "DIF", "0", "+"),
-    ("V1", "Пропущенный член DIF прайсится сверх ln A_C и ln|Ret| (A&N col.3)",
+    ("V1", "The omitted term DIF is priced beyond ln A_C and ln|Ret| (A&N col. 3)",
      "12m", "AN col3: ln|R|+lnIDVOL+DIF", "DIF", "0", "+"),
-    ("V2", "DIF прайсится сверх lnLSIlliq (A&N col.2)",
+    ("V2", "DIF is priced beyond lnLSIlliq (A&N col. 2)",
      "monthly", "AN col2: lnLSIlliq+DIF", "DIF", "0", "+"),
-    ("V2", "DIF прайсится сверх lnLSIlliq (A&N col.2)",
+    ("V2", "DIF is priced beyond lnLSIlliq (A&N col. 2)",
      "12m", "AN col2: lnLSIlliq+DIF", "DIF", "0", "+"),
-    ("V3", "Знак Res.lnA при ln A_C и IVOL (LS T4(5) = A&N col.4)",
+    ("V3", "Sign of Res.lnA given ln A_C and IVOL (LS T4(5) = A&N col. 4)",
      "monthly", "AN col4 = LS T4(5): ResLnA+lnA_C+ivol", "ResLnA", "-/0", "+"),
-    ("V3", "Знак Res.lnA при ln A_C и IVOL (LS T4(5) = A&N col.4)",
+    ("V3", "Sign of Res.lnA given ln A_C and IVOL (LS T4(5) = A&N col. 4)",
      "12m", "AN col4: RlnILLIQ+lnIDVOL+ivol", "RlnILLIQ", "-/0", "+"),
-    ("V4", "fDIF (DIF из lnCV2, ln b, lnLSIlliq) прайсится (A&N p.6)",
+    ("V4", "fDIF (DIF fitted from lnCV2, ln b, lnLSIlliq) is priced (A&N p. 6)",
      "12m", "AN fDIF (3 comps, intercept)", "fDIF_int", "0", "+"),
-    ("V5", "Res.lnA после контроля ln|Ret| и IVOL (канал волатильности)",
+    ("V5", "Res.lnA after controlling for ln|Ret| and IVOL (volatility channel)",
      "monthly", "C4: lnA_C+ResLnA+ln|Ret|+ivol", "ResLnA", "-/0", "+"),
-    ("V5", "Res.lnA после контроля ln|Ret| и IVOL (канал волатильности)",
+    ("V5", "Res.lnA after controlling for ln|Ret| and IVOL (volatility channel)",
      "12m", "C4: lnIDVOL+RlnILLIQ+ln|R|+ivol", "RlnILLIQ", "-/0", "+"),
-    ("V6", "Объём (ln A_C / lnIDVOL) прайсится при ln|Ret| (обе стороны согласны)",
+    ("V6", "Volume (ln A_C / lnIDVOL) is priced given ln|Ret| (both sides agree)",
      "monthly", "LS eq6: lnA_C+ln|Ret|", "lnA_C", "+", "+"),
-    ("V6", "Объём (ln A_C / lnIDVOL) прайсится при ln|Ret| (обе стороны согласны)",
+    ("V6", "Volume (ln A_C / lnIDVOL) is priced given ln|Ret| (both sides agree)",
      "12m", "LS eq6: lnIDVOL+ln|R|", "lnIDVOL", "+", "+"),
 ]
 
@@ -326,7 +327,7 @@ def classify(t: float, bar: float) -> str:
     return "+" if t >= bar else ("-" if t <= -bar else "0")
 
 
-LS_NULL = "LS (H0 не отвергнута)"
+LS_NULL = "LS (H0 not rejected)"
 
 
 def supports(outcome: str, ls: str, an: str) -> str:
@@ -336,17 +337,18 @@ def supports(outcome: str, ls: str, an: str) -> str:
         return "n/a"
     hit = [name for name, p in [("LS", ls), ("A&N", an)] if outcome in p.split("/")]
     if outcome == "0":
-        return LS_NULL if hit == ["LS"] else ("никто" if not hit else "A&N (H0 не отвергнута)")
-    return {0: "никто", 1: hit[0] if hit else "никто", 2: "оба"}[len(hit)]
+        return LS_NULL if hit == ["LS"] else ("neither" if not hit else "A&N (H0 not rejected)")
+    return {0: "neither", 1: hit[0] if hit else "neither", 2: "both"}[len(hit)]
 
 
 VERDICT_TEXT = {
-    "AN": "данные ближе к A&N: пропущенный член / Res.lnA несут положительно прайсящуюся информацию "
-          "(есть тест сильнее порога HLZ).",
-    "AN_weak": "перевес в пользу A&N только на уровне 1.96; порог HLZ не пройден ни одним тестом — вывод слабый.",
-    "LS": "данные ближе к LS: значимые результаты различающих тестов имеют знак, предсказанный LS.",
-    "none": "данные не различают гипотезы: значимых различающих результатов нет или они уравновешены; "
-            "незначимый DIF согласуется с LS, но при короткой выборке это может быть нехватка мощности, а не доказательство.",
+    "AN": "the data lean towards A&N: the omitted term / Res.lnA carry positively priced information "
+          "(at least one test clears the HLZ bar).",
+    "AN_weak": "A&N lead only at the 1.96 level; no test clears the HLZ bar, so the conclusion is weak.",
+    "LS": "the data lean towards LS: the significant discriminating results have the sign LS predict.",
+    "none": "the data do not discriminate between the hypotheses: there are no significant discriminating results, "
+            "or they offset each other; an insignificant DIF is consistent with LS, but in a short sample it may "
+            "reflect low power rather than evidence.",
 }
 
 
@@ -362,7 +364,7 @@ def verdict_counts(v: pd.DataFrame, hlz: float, dep: str = "ret_adj") -> pd.Data
         row[f"AN_{bar}"] = int((col == "A&N").sum())
         row[f"LS_{bar}"] = int((col == "LS").sum())
         row[f"LS_null_{bar}"] = int((col == LS_NULL).sum())
-        row[f"none_{bar}"] = int((col == "никто").sum())
+        row[f"none_{bar}"] = int((col == "neither").sum())
     if row["AN_1.96"] > row["LS_1.96"]:
         code = "AN" if row[f"AN_{hk}"] >= 1 else "AN_weak"
     elif row["LS_1.96"] > row["AN_1.96"]:
@@ -378,7 +380,7 @@ def verdict_table(fm: pd.DataFrame, premise: pd.DataFrame, bars: tuple[float, fl
     """One row per decisive test x dependent variable; outcome at |t| >= 1.96 and >= HLZ bar."""
     rows = []
     for _, r in premise.iterrows():   # V0: the premise cov(|r|, 1/dvol) < 0 <=> mean DIF < 0
-        rows.append({"test": "V0", "question": "Предпосылка A&N: cov(|r|,1/DVol) < 0, т.е. средний DIF < 0",
+        rows.append({"test": "V0", "question": "A&N premise: cov(|r|, 1/DVol) < 0, i.e. mean DIF < 0",
                      "sample": r["sample"], "dep": "-", "model": "mean of monthly CS mean DIF", "var": "DIF",
                      "coef": r["mean_DIF"], "t": r["t_mean_DIF"], "n_months": r["n_months"],
                      "LS_predicts": "0", "AN_predicts": "-"})
@@ -538,6 +540,33 @@ def cs_residual_multi(df: pd.DataFrame, y: str, xs: list[str], by: str, min_obs:
     return df[y] - fit
 
 
+
+# key-regression rows (ret_adj) that have one paper value: (sample, our model, our var, paper model, paper var)
+SCALE_PAIRS = [("monthly", "AN col3: lnA_C+ln|Ret|+DIF", "DIF", "AN col3", "DIF"),
+               ("12m", "AN col3: ln|R|+lnIDVOL+DIF", "DIF", "AN col3", "DIF"),
+               ("monthly", "AN col2: lnLSIlliq+DIF", "DIF", "AN col2", "DIF"),
+               ("12m", "AN col2: lnLSIlliq+DIF", "DIF", "AN col2", "DIF"),
+               ("monthly", "LS eq6: lnA_C+ln|Ret|", "lnA_C", "LS T2(3)", "lnA_C"),
+               ("12m", "LS eq6: lnIDVOL+ln|R|", "lnIDVOL", "LS T2(3)", "lnA_C"),
+               ("monthly", "LS eq6: lnA_C+ln|Ret|", "ln_absret", "LS T2(3)", "ln_absret"),
+               ("12m", "LS eq6: lnIDVOL+ln|R|", "ln_absR", "LS T2(3)", "ln_absret"),
+               ("12m", "AN fDIF (3 comps, intercept)", "fDIF_int", "AN fDIF_int", "fDIF_int")]
+
+
+def scale_ratios(fm: pd.DataFrame, pr: pd.DataFrame) -> pd.DataFrame:
+    """|our coefficient / paper coefficient| for SCALE_PAIRS (text of SUMMARY.md; build_docs.py uses the same pairs)."""
+    pr = pr.reset_index() if "model" not in pr.columns else pr
+    rows = []
+    for sample, model, var, pm, pv in SCALE_PAIRS:
+        o = fm[(fm["sample"] == sample) & (fm["dep"] == "ret_adj") & (fm["model"] == model) & (fm["var"] == var)]
+        p = pr[(pr["model"] == pm) & (pr["var"] == pv)]
+        if len(o) == 1 and len(p) == 1:
+            a, b = float(o["coef"].iloc[0]), float(p["coef"].iloc[0])
+            rows.append({"sample": sample, "model": model, "var": var, "ours": a, "paper": b,
+                         "ratio": abs(a / b), "opposite_sign": a * b < 0})
+    return pd.DataFrame(rows)
+
+
 def paper_reference() -> pd.DataFrame:
     """Paper numbers to set next to ours: from src/paper_numbers.yaml plus AN_TEXT above."""
     pn = yaml.safe_load((Path(__file__).resolve().parent / "paper_numbers.yaml").read_text())
@@ -579,29 +608,30 @@ def summary_md(tables: dict[str, pd.DataFrame], manifest: dict, hlz: float) -> s
     pr = tables["paper_reference"].set_index(["model", "var"])
     dm, d12 = d.loc["monthly"], d.loc["12m"]
     hk = f"{hlz:g}"
-    L = [f"# Апгрейд 1: Amihud & Noh (2021) против Lou & Shu (2017)", "",
-         f"Базовый прогон: `{manifest['base_run_id']}`; прогон апгрейда: `{manifest['run_id']}`; "
+    L = [f"# Upgrade 1: Amihud & Noh (2021) vs Lou & Shu (2017)", "",
+         f"Base run: `{manifest['base_run_id']}`; upgrade run: `{manifest['run_id']}`; "
          f"git `{(manifest['git']['sha'] or '')[:8]}`{' (dirty)' if manifest['git']['dirty'] else ''}. "
-         f"Все числа ниже сгенерированы кодом (`src/amihud_noh.py`) из CSV этой папки.", ""]
+         f"Every number below is generated by code (`src/amihud_noh.py`) from the CSVs in this folder.", ""]
     if not manifest.get("data_matches_base", True):
-        L += ["**ВНИМАНИЕ: daily.parquet не совпадает с данными базового прогона (хэш). Числа не интерпретировать.**", ""]
-    L += ["## Что проверяли",
-          "- `ILLIQ = LSIlliq + cov(|r|, 1/DVol)`: Lou & Shu неявно считают ковариацию нулём. "
-          "`DIF = lnILLIQ − ln|R| − lnIDVOL` — пропущенный член (A&N, ур. 6–8).",
-          "- (a) месячные меры базовой панели; (b) 12-месячные меры A&N (≥200 дней, без одного максимального дня, "
-          "цензура 1%), лаг 2 месяца; (c) канал IVOL; (d) вердикт. FM, Newey–West 6 лагов, контроли Ret[−12,−2], Ret[−1]; "
-          "основная зависимая — CMKT-adjusted (`ret_adj`), робастность — сырая (`ret`).", "",
-          "## Предпосылка: ковариация отрицательна?",
-          f"- Месячные меры: доля монето-месяцев с COV<0 = {_f(dm['share_COV_negative_pooled'])}; "
-          f"средний DIF = {_f(dm['mean_DIF'])} (t = {_f(dm['t_mean_DIF'], 2)}); corr(DIF, lnA) = {_f(dm['corr_DIF_lnA'])}.",
-          f"- 12 мес.: доля COV<0 = {_f(d12['share_COV_negative_pooled'])}; средний DIF = {_f(d12['mean_DIF'])} "
+        L += ["**WARNING: daily.parquet does not match the base run's data (hash). Do not interpret the numbers.**", ""]
+    L += ["## What we tested",
+          "- `ILLIQ = LSIlliq + cov(|r|, 1/DVol)`: Lou & Shu implicitly set the covariance to zero. "
+          "`DIF = lnILLIQ − ln|R| − lnIDVOL` is the omitted term (A&N, eqs. 6–8).",
+          "- (a) monthly measures of the base panel; (b) 12-month A&N measures (≥200 days, the single highest day "
+          "excluded, 1% censoring), lagged 2 months; (c) the IVOL channel; (d) the verdict. FM, Newey–West with 6 lags, "
+          "controls Ret[−12,−2] and Ret[−1]; the main dependent variable is the CMKT-adjusted return (`ret_adj`), "
+          "the raw return (`ret`) is a robustness check.", "",
+          "## Premise: is the covariance negative?",
+          f"- Monthly measures: share of coin-months with COV<0 = {_f(dm['share_COV_negative_pooled'])}; "
+          f"mean DIF = {_f(dm['mean_DIF'])} (t = {_f(dm['t_mean_DIF'], 2)}); corr(DIF, lnA) = {_f(dm['corr_DIF_lnA'])}.",
+          f"- 12 months: share COV<0 = {_f(d12['share_COV_negative_pooled'])}; mean DIF = {_f(d12['mean_DIF'])} "
           f"(A&N: {_f(AN_TEXT['mean_DIF'], 2)}); corr(DIF, lnILLIQ) = {_f(d12['corr_DIF_lnILLIQ'])} "
-          f"(A&N: {_f(AN_TEXT['corr_DIF_lnILLIQ'], 2)}); доля b≤0 = {_f(d12['share_b_nonpositive'])} "
-          f"(A&N: {_f(AN_TEXT['share_b_negative'])}); R² DIF на (lnCV², ln b, lnLSIlliq) = "
+          f"(A&N: {_f(AN_TEXT['corr_DIF_lnILLIQ'], 2)}); share b≤0 = {_f(d12['share_b_nonpositive'])} "
+          f"(A&N: {_f(AN_TEXT['share_b_negative'])}); R² of DIF on (lnCV², ln b, lnLSIlliq) = "
           f"{_f(d12['r2_DIF_on_components_int'], 2)} (A&N: {_f(AN_TEXT['r2_DIF_on_components_int'], 2)}); "
           f"corr(DIF, ln(1−b·CV²/LSIlliq)) = {_f(d12['corr_DIF_DIF_approx'])}.", "",
-          "## Ключевые регрессии (основная спецификация, `ret_adj`)",
-          "| Модель | Переменная | Мы: месяц | Мы: 12 мес. | Статья |", "|---|---|---|---|---|"]
+          "## Key regressions (main specification, `ret_adj`)",
+          "| Model | Variable | Us: monthly | Us: 12 months | Papers |", "|---|---|---|---|---|"]
     key = [("AN col3", "DIF", "AN col3: lnA_C+ln|Ret|+DIF", "AN col3: ln|R|+lnIDVOL+DIF", "DIF", ("AN col3", "DIF")),
            ("AN col2", "DIF", "AN col2: lnLSIlliq+DIF", "AN col2: lnLSIlliq+DIF", "DIF", ("AN col2", "DIF")),
            ("LS eq6", "ln A_C", "LS eq6: lnA_C+ln|Ret|", "LS eq6: lnIDVOL+ln|R|", ("lnA_C", "lnIDVOL"), ("LS T2(3)", "lnA_C")),
@@ -616,7 +646,8 @@ def summary_md(tables: dict[str, pd.DataFrame], manifest: dict, hlz: float) -> s
         cm = _get(fm, "monthly", "ret_adj", mm, vm) if mm else (np.nan, np.nan, 0)
         c12 = _get(fm, "12m", "ret_adj", m12, v12)
         if ref == "none":
-            paper = "— (в статьях нет)"
+            paper = ("A&N col. 4 with ln|R| in place of IdioVol: 'similar' (fn. 14, no numbers), i.e. RlnILLIQ > 0; "
+                     "neither paper uses both controls together; LS: not reported")
         elif ref is None:
             a, b = pr.loc[("LS T4(5)", "ResLnA")], pr.loc[("AN col4", "RlnILLIQ")]
             paper = f"LS {_f(a['coef'])} ({_f(a['t'], 2)}); A&N {_f(b['coef'])} ({_f(b['t'], 2)})"
@@ -624,77 +655,81 @@ def summary_md(tables: dict[str, pd.DataFrame], manifest: dict, hlz: float) -> s
             r = pr.loc[ref]
             paper = f"{_f(r['coef'])} ({_f(r['t'], 2)})"
         L.append(f"| {name} | {label} | {_f(cm[0])} ({_f(cm[1], 2)}) | {_f(c12[0])} ({_f(c12[1], 2)}) | {paper} |")
-    L += ["", "Коэффициенты в % в месяц, в скобках t (NW). Статья: LS — FF3-adjusted, A&N — избыточная доходность с Size и B/M.", ""]
+    L += ["", "Coefficients in % per month, NW t-statistics in parentheses. Papers: LS use FF3-adjusted returns; A&N use excess returns with Size and B/M controls.", ""]
 
     c_m, c_12 = ch.loc["monthly"], ch.loc["12m"]
-    L += ["## Канал IVOL: что такое Res.lnA",
-          f"- corr(Res.lnA, ln|Ret|) = {_f(c_m['corr_res_ln_absret'])} (месяц), {_f(c_12['corr_res_ln_absret'])} (12 мес.); "
+    L += ["## The IVOL channel: what Res.lnA is",
+          f"- corr(Res.lnA, ln|Ret|) = {_f(c_m['corr_res_ln_absret'])} (monthly), {_f(c_12['corr_res_ln_absret'])} (12 months); "
           f"corr(Res.lnA, IVOL) = {_f(c_m['corr_res_ivol'])} / {_f(c_12['corr_res_ivol'])}; "
           f"corr(Res.lnA, DIF) = {_f(c_m['corr_res_DIF'])} / {_f(c_12['corr_res_DIF'])}.",
-          f"- Средний R² Res.lnA на ln|Ret| = {_f(c_m['r2_res_on_ln_absret'], 2)} / {_f(c_12['r2_res_on_ln_absret'], 2)}; "
-          f"на ln|Ret|+IVOL = {_f(c_m['r2_res_on_ln_absret_ivol'], 2)} / {_f(c_12['r2_res_on_ln_absret_ivol'], 2)}; "
-          f"на ln|Ret|+DIF = {_f(c_m['r2_res_on_ln_absret_DIF'], 2)} / {_f(c_12['r2_res_on_ln_absret_DIF'], 2)} "
-          "(почти тождество: lnA = ln|Ret| + lnA_C + DIF).", ""]
+          f"- Mean R² of Res.lnA on ln|Ret| = {_f(c_m['r2_res_on_ln_absret'], 2)} / {_f(c_12['r2_res_on_ln_absret'], 2)}; "
+          f"on ln|Ret|+IVOL = {_f(c_m['r2_res_on_ln_absret_ivol'], 2)} / {_f(c_12['r2_res_on_ln_absret_ivol'], 2)}; "
+          f"on ln|Ret|+DIF = {_f(c_m['r2_res_on_ln_absret_DIF'], 2)} / {_f(c_12['r2_res_on_ln_absret_DIF'], 2)} "
+          "(almost an identity: lnA = ln|Ret| + lnA_C + DIF).", ""]
     share = c_m["r2_res_on_ln_absret_ivol"]
     if np.isfinite(share):
-        L.append(f"- Вывод по (c): ln|Ret| и IVOL объясняют {'большую часть' if share >= 0.5 else 'меньшую часть'} "
-                 f"вариации Res.lnA в месячных мерах (R² = {_f(share, 2)}); остаток Res.lnA ⟂ (ln|Ret|, IVOL) близок к "
+        L.append(f"- Conclusion on (c): ln|Ret| and IVOL explain {'most' if share >= 0.5 else 'a minority'} "
+                 f"of the variation in Res.lnA for the monthly measures (R² = {_f(share, 2)}); the part of Res.lnA ⟂ (ln|Ret|, IVOL) is close to "
                  f"DIF ⟂ (ln|Ret|, ln A_C, IVOL): corr = {_f(c_m['corr_res_perp_DIF_perp'], 2)}.")
     c1 = _get(fm, "monthly", "ret_adj", "C1 = LS T4(4): lnA_C+ResLnA", "ResLnA")
     c3 = _get(fm, "monthly", "ret_adj", "C3: lnA_C+ResLnA+ivol", "ResLnA")
     c4 = _get(fm, "monthly", "ret_adj", "C4: lnA_C+ResLnA+ln|Ret|+ivol", "ResLnA")
     c5 = _get(fm, "monthly", "ret_adj", "C5: lnA_C+ResLnA_perp", "ResLnA_perp")
-    L += [f"- FM (месяц, `ret_adj`), Res.lnA: без контроля {_f(c1[0])} (t {_f(c1[1], 2)}); +IVOL {_f(c3[0])} "
-          f"(t {_f(c3[1], 2)}); +ln|Ret|+IVOL {_f(c4[0])} (t {_f(c4[1], 2)}); часть Res.lnA, ортогональная "
-          f"ln|Ret| и IVOL: {_f(c5[0])} (t {_f(c5[1], 2)}).", ""]
+    L += [f"- FM (monthly, `ret_adj`), Res.lnA: no control {_f(c1[0])} (t {_f(c1[1], 2)}); +IVOL {_f(c3[0])} "
+          f"(t {_f(c3[1], 2)}); +ln|Ret|+IVOL {_f(c4[0])} (t {_f(c4[1], 2)}); the part of Res.lnA orthogonal to "
+          f"ln|Ret| and IVOL: {_f(c5[0])} (t {_f(c5[1], 2)}).", ""]
 
-    # fDIF: every variant (V4 uses only the pre-specified fDIF_int) and the Taylor diagnostic of eq. (8)
-    L += ["## fDIF и приближение Тейлора (A&N ур. 7–8)",
-          f"- corr(DIF, ln(1−b·CV²/LSIlliq)) = {_f(d12['corr_DIF_DIF_approx'])}; доля окон, где аргумент ≤ 0 "
-          f"(приближение не определено) = {_f(d12['share_DIF_approx_undefined'])}; средний CV² = "
-          f"{_f(d12['mean_CV2_avg_month'], 2)} (A&N: {_f(AN_TEXT['mean_CV2'], 3)}); средний b = "
-          f"{_f(d12['mean_b_avg_month'], 4)} (A&N: {_f(AN_TEXT['mean_b'], 3)}; масштабы dvol несравнимы); "
+    # fDIF: every variant (V4 uses only the main fDIF_int) and the Taylor diagnostic of eq. (8)
+    L += ["## fDIF and the Taylor approximation (A&N eqs. 7–8)",
+          f"- corr(DIF, ln(1−b·CV²/LSIlliq)) = {_f(d12['corr_DIF_DIF_approx'])}; share of windows where the argument is ≤ 0 "
+          f"(approximation undefined) = {_f(d12['share_DIF_approx_undefined'])}; mean CV² = "
+          f"{_f(d12['mean_CV2_avg_month'], 2)} (A&N: {_f(AN_TEXT['mean_CV2'], 3)}); mean b = "
+          f"{_f(d12['mean_b_avg_month'], 4)} (A&N: {_f(AN_TEXT['mean_b'], 3)}; dvol scales are not comparable); "
           f"corr(ln b, lnLSIlliq) = {_f(d12['corr_lnb_lnLSIlliq'], 2)} (A&N: {_f(AN_TEXT['corr_lnb_lnLSIlliq'], 2)}); "
           f"corr(lnCV², lnLSIlliq) = {_f(d12['corr_lnCV2_lnLSIlliq'], 2)} (A&N: {_f(AN_TEXT['corr_lnCV2_lnLSIlliq'], 2)}).",
-          f"- R² DIF на компоненты: (lnCV², ln b, lnLSIlliq) {_f(d12['r2_DIF_on_components_int'], 2)} с константой / "
-          f"{_f(d12['r2_DIF_on_components_noint'], 2)} без (A&N: {_f(AN_TEXT['r2_DIF_on_components_int'], 2)} / "
+          f"- R² of DIF on its components: (lnCV², ln b, lnLSIlliq) {_f(d12['r2_DIF_on_components_int'], 2)} with an intercept / "
+          f"{_f(d12['r2_DIF_on_components_noint'], 2)} without (A&N: {_f(AN_TEXT['r2_DIF_on_components_int'], 2)} / "
           f"{_f(AN_TEXT['r2_DIF_on_components_noint'], 2)}); (lnCV², ln b) {_f(d12['r2_DIF_on_lnCV2_lnb_int'], 2)} / "
-          f"{_f(d12['r2_DIF_on_lnCV2_lnb_noint'], 2)} (A&N: {_f(AN_TEXT['r2_DIF_on_lnCV2_lnb_int'], 2)} / {_f(AN_TEXT['r2_DIF_on_lnCV2_lnb_noint'], 2)}). R² без константы нецентрированный и "
-          "завышен средним DIF ≠ 0.",
-          "", "| Вариант fDIF | coef (t), `ret_adj` | coef (t), `ret` | A&N |", "|---|---|---|---|"]
+          f"{_f(d12['r2_DIF_on_lnCV2_lnb_noint'], 2)} (A&N: {_f(AN_TEXT['r2_DIF_on_lnCV2_lnb_int'], 2)} / {_f(AN_TEXT['r2_DIF_on_lnCV2_lnb_noint'], 2)}). R² without an intercept is uncentred and "
+          "inflated by the non-zero mean of DIF.",
+          "", "| fDIF variant | coef (t), `ret_adj` | coef (t), `ret` | A&N |", "|---|---|---|---|"]
     for model, var in [("AN fDIF (3 comps, intercept)", "fDIF_int"), ("AN fDIF (3 comps, no intercept)", "fDIF_noint"),
                        ("AN fDIF (lnCV2, ln b, intercept)", "fDIF_bcv_int"),
                        ("AN fDIF (lnCV2, ln b, no intercept)", "fDIF_bcv_noint")]:
         a, r_ = _get(fm, "12m", "ret_adj", model, var), _get(fm, "12m", "ret", model, var)
         ref = pr.loc[(f"AN {var}", var)]
-        L.append(f"| {model}{' (V4, заранее выбран)' if var == 'fDIF_int' else ''} | {_f(a[0])} ({_f(a[1], 2)}) | "
+        L.append(f"| {model}{' (V4, main variant, not pre-registered)' if var == 'fDIF_int' else ''} | {_f(a[0])} ({_f(a[1], 2)}) | "
                  f"{_f(r_[0])} ({_f(r_[1], 2)}) | {_f(ref['coef'])} ({_f(ref['t'], 2)}) |")
-    L += ["", f"Коэффициенты на крипте на порядок больше, чем у A&N, у всех переменных (например, ln|Ret| в LS eq6 выше): "
-          f"поперечное sd доходности `ret_adj` ≈ {_f(d12['cs_sd_ret_adj_avg_month'], 1)}% в месяц. Для fDIF добавляется "
-          f"малый разброс регрессора: sd(fDIF) = {_f(d12['sd_fDIF_int_avg_month'], 3)} против sd(DIF) = "
-          f"{_f(d12['sd_DIF_avg_month'], 3)} (≈ √R²). Поэтому с A&N сравниваются только знак и t.", ""]
+    rat = scale_ratios(fm, pr)
+    L += ["", f"Our coefficients are on a different scale from the papers': in the key-regression rows with a single paper "
+          f"value, |ours / paper| ranges from {_f(rat['ratio'].min(), 1)} to {_f(rat['ratio'].max(), 1)} "
+          f"(median {_f(rat['ratio'].median(), 1)}; {int((rat['ratio'] < 10).sum())} of {len(rat)} below 10; "
+          f"{int(rat['opposite_sign'].sum())} with the opposite sign), "
+          f"which is consistent with coin returns being far more dispersed (a hypothesis): the cross-sectional s.d. of `ret_adj` is ≈ {_f(d12['cs_sd_ret_adj_avg_month'], 1)}% per month. For fDIF the regressor "
+          f"also has a small spread: sd(fDIF) = {_f(d12['sd_fDIF_int_avg_month'], 3)} vs sd(DIF) = "
+          f"{_f(d12['sd_DIF_avg_month'], 3)} (≈ √R²). We therefore compare only sign and t with A&N.", ""]
 
     main = v[v["main_spec"]]
-    L += ["## Вердикт: кто прав на наших данных (основная спецификация)",
-          "| Тест | Выборка | Переменная | coef | t | LS | A&N | |t|≥1.96 → | |t|≥" + hk + " → |",
+    L += ["## Verdict: who is right on our data (main specification)",
+          "| Test | Sample | Variable | coef | t | LS | A&N | |t|≥1.96 → | |t|≥" + hk + " → |",
           "|---|---|---|---|---|---|---|---|---|"]
     for _, r in main.iterrows():
         L.append(f"| {r['test']} | {r['sample']} | {r['var']} | {_f(r['coef'])} | {_f(r['t'], 2)} | {r['LS_predicts']} | "
                  f"{r['AN_predicts']} | {r['supports_1.96']} | {r['supports_' + hk]} |")
     vcs = tables["verdict_counts"].set_index("dep")
     vc = vcs.loc["ret_adj"]
-    L += ["", f"Различающих тестов (V1–V5, где LS и A&N предсказывают разное): {vc['n_tests']}. "
-          f"При |t|≥1.96: за A&N — {vc['AN_1.96']}, за LS (значимый знак LS) — {vc['LS_1.96']}, "
-          f"H0 LS не отвергнута — {vc['LS_null_1.96']}, ни за кого — {vc['none_1.96']}. "
-          f"При |t|≥{hk}: за A&N — {vc['AN_' + hk]}, за LS — {vc['LS_' + hk]}.",
-          f"**Итог по заранее заданному правилу:** {vc['verdict_text']}", ""]
+    L += ["", f"Discriminating tests (V1–V5, where LS and A&N predict different outcomes): {vc['n_tests']}. "
+          f"At |t|≥1.96: for A&N {vc['AN_1.96']}, for LS (significant LS sign) {vc['LS_1.96']}, "
+          f"LS H0 not rejected {vc['LS_null_1.96']}, for neither {vc['none_1.96']}. "
+          f"At |t|≥{hk}: for A&N {vc['AN_' + hk]}, for LS {vc['LS_' + hk]}.",
+          f"**Outcome of our verdict rule (not pre-registered: the rule and its results were committed together):** {vc['verdict_text']}", ""]
     if "ret" in vcs.index:
         vr = vcs.loc["ret"]
-        L += [f"Робастность (сырая доходность `ret`): за A&N {vr['AN_1.96']}/{vr['AN_' + hk]}, за LS "
-              f"{vr['LS_1.96']}/{vr['LS_' + hk]} (при 1.96/{hk}); итог: `{vr['verdict']}`.", ""]
+        L += [f"Robustness (raw return `ret`): for A&N {vr['AN_1.96']}/{vr['AN_' + hk]}, for LS "
+              f"{vr['LS_1.96']}/{vr['LS_' + hk]} (at 1.96/{hk}); outcome: `{vr['verdict']}`.", ""]
         drv = v[(v["dep"] == "ret") & (v["supports_1.96"] == "A&N") & (v["test"] != "V0")]
         if len(drv):
-            L += ["Перевес на `ret` дают: " + "; ".join(
+            L += ["The A&N lead on `ret` comes from: " + "; ".join(
                 f"{r['test']} {r['sample']} {r['var']} t = {_f(r['t'], 2)}" for _, r in drv.iterrows()) + ".", ""]
     col3 = _get(fm, "12m", "ret_adj", "AN col3: ln|R|+lnIDVOL+DIF", "DIF")
     c2_12 = _get(fm, "12m", "ret_adj", "C2: lnIDVOL+RlnILLIQ+ln|R|", "RlnILLIQ")
@@ -706,11 +741,11 @@ def summary_md(tables: dict[str, pd.DataFrame], manifest: dict, hlz: float) -> s
     sv = tables["sensitivity_min_obs"]
     sc = tables["sensitivity_min_obs_counts"]
     labels = list(dict.fromkeys(sv["min_obs"]))
-    L += ["## Чувствительность к размеру поперечного сечения (добавлено при проверке, не предрегистрировано)",
-          f"Первые месяцы FM содержат мало монет (наименьшее сечение в основной спецификации: "
-          f"{int(sv.loc[sv['min_obs'] == labels[0], 'min_n'].min())} монет). Ниже те же тесты, если требовать "
-          "не меньше 30 или 50 монет в месяце (все варианты показаны, основная спецификация не менялась).", "",
-          "| Тест | Выборка | Переменная | " + " | ".join(f"t, min={x}" for x in labels) + " |",
+    L += ["## Sensitivity to cross-section size (added during verification, not pre-registered)",
+          f"The first FM months contain few coins (smallest cross-section in the main specification: "
+          f"{int(sv.loc[sv['min_obs'] == labels[0], 'min_n'].min())} coins). Below are the same tests when at least "
+          "30 or 50 coins per month are required (all variants are shown; the main specification was not changed).", "",
+          "| Test | Sample | Variable | " + " | ".join(f"t, min={x}" for x in labels) + " |",
           "|---|---|---|" + "---|" * len(labels)]
     base_rows = sv[(sv["min_obs"] == labels[0]) & (sv["dep"] == "ret_adj")]
     for _, r in base_rows.iterrows():
@@ -718,43 +753,46 @@ def summary_md(tables: dict[str, pd.DataFrame], manifest: dict, hlz: float) -> s
         for x in labels:
             m_ = sv[(sv["min_obs"] == x) & (sv["dep"] == "ret_adj") & (sv["test"] == r["test"]) &
                     (sv["sample"] == r["sample"]) & (sv["var"] == r["var"])]
-            ts.append(f"{_f(m_['t'].iloc[0], 2)} ({int(m_['n_months'].iloc[0])} мес.)" if len(m_) else "n/a")
+            ts.append(f"{_f(m_['t'].iloc[0], 2)} ({int(m_['n_months'].iloc[0])} mo.)" if len(m_) else "n/a")
         L.append(f"| {r['test']} | {r['sample']} | {r['var']} | " + " | ".join(ts) + " |")
-    L += ["", "Итог по правилу при разных порогах (`ret_adj` / `ret`): " + "; ".join(
+    L += ["", "Rule outcome under different minimums (`ret_adj` / `ret`): " + "; ".join(
           f"min={x}: `{sc[(sc['min_obs'] == x) & (sc['dep'] == 'ret_adj')]['verdict'].iloc[0]}` / "
           f"`{sc[(sc['min_obs'] == x) & (sc['dep'] == 'ret')]['verdict'].iloc[0]}`" for x in labels)
-          + f". Различающих результатов с |t| ≥ {hk} при всех порогах и обеих зависимых: "
+          + f". Discriminating results with |t| ≥ {hk} across all minimums and both dependent variables: "
           f"{int((sv['t'].abs() >= hlz).sum())}. "
-          + ("Итог правила меняется в зависимости от порога, поэтому его нельзя считать устойчивым."
-             if sc["verdict"].nunique() > 1 else "Итог правила от порога не зависит."), ""]
+          + ("The rule outcome changes with the minimum, so it cannot be considered robust."
+             if sc["verdict"].nunique() > 1 else "The rule outcome does not depend on the minimum."), ""]
     L += [
-          "## Оговорки",
-          "- Предсказание LS для Res.lnA / RlnILLIQ (V3, V5) закодировано как «−/0»: LS (2017, введение) пишут, что "
-          "коэффициент остаточной меры «either insignificant or significantly negative». При проверке исправлено "
-          "с «−»; итоговое правило от этого не зависит (оно сравнивает только значимые результаты), меняются лишь "
-          "метки «ни за кого» → «H0 LS не отвергнута».",
-          f"- Тесты не независимы. Так как lnILLIQ = ln|R| + lnIDVOL + DIF, модель [lnIDVOL, RlnILLIQ, ln|R|] — "
-          f"перепараметризация col.3: 12 мес. коэффициент RlnILLIQ = {_f(c2_12[0])} (t {_f(c2_12[1], 2)}), DIF в col.3 = "
-          f"{_f(col3[0])} (t {_f(col3[1], 2)}). V1–V5 строятся из одних и тех же регрессоров в разных комбинациях и сильно зависимы; "
-          "подсчёт «за кого» — описательный, не формальный тест.",
-          f"- В месячной панели сигналы винзоризованы по отдельности (база), поэтому тождество lnA = ln|Ret| + lnA_C + DIF "
-          f"нарушено в {_f(100 * dm['share_identity_broken'], 1)}% монето-месяцев: месячный C2 Res.lnA = {_f(m_c2[0])} "
-          f"(t {_f(m_c2[1], 2)}) против DIF в col.3 = {_f(m_col3[0])} (t {_f(m_col3[1], 2)}).",
-          f"- 12 мес.: поперечный разброс ln|R| мал (sd = {_f(mom.loc['ln_absR', 'std'], 2)} против "
-          f"{_f(mom.loc['lnIDVOL', 'std'], 2)} у lnIDVOL; A&N: {_f(AN_TEXT['sd_ln_absR'], 2)} и "
-          f"{_f(AN_TEXT['sd_lnIDVOL'], 2)}), поэтому corr(lnILLIQ, lnIDVOL) = {_f(cr.loc['lnILLIQ', 'lnIDVOL'], 3)} "
-          f"(A&N: {_f(AN_TEXT['corr_lnILLIQ_lnIDVOL'], 2)} — это не особенность крипты). Сверх объёма ILLIQ несёт "
-          "только ln|R| и DIF.",
-          "- IVOL в 12-мес. моделях — базовая IVOL (12 мес., окно кончается в s = t−2, остатки на дневной EW CMKT, "
-          "а не FF3 как у A&N).",
-          "- Нет контроля Size и B/M (D2, D3): у A&N и LS они есть; ln A_C частично играет роль размера.",
-          f"- Месяцев с мерами: {int(dm['n_months'])}; месяцев в FM: {fm_months[0]}–{fm_months[-1]} против 588 (LS) "
-          f"и 744 (A&N): мощность ниже, порог HLZ t>{hk} показан рядом с 1.96.",
-          "- `b` и CV² считаются по всем дням окна (A&N не исключают для них день); у ILLIQ, |R|, IDVOL исключён "
-          "один максимальный день каждого. Цензура 1% — по ILLIQ, |R|, IDVOL, DIF (Size нет).",
-          "- Перебор вариантов: все модели этого файла (fm.csv, обе зависимые переменные, 4 варианта fDIF) "
-          "перечислены целиком; спецификация не подбиралась.",
-          f"- Робастность на сырой доходности: строки `dep = ret` в `verdict.csv` и `fm.csv`.", ""]
+          "## Caveats",
+          "- The LS prediction for Res.lnA / RlnILLIQ (V3, V5) is coded as '−/0': LS (2017, Introduction) write that "
+          "the coefficient on the residual measure is 'either insignificant or significantly negative'. It was "
+          "corrected from '−' during verification; the rule does not depend on this (it compares only significant "
+          "results); only the labels change from 'neither' to 'LS (H0 not rejected)'.",
+          f"- The tests are not independent. Since lnILLIQ = ln|R| + lnIDVOL + DIF, the model [lnIDVOL, RlnILLIQ, ln|R|] is "
+          f"a reparametrisation of col. 3: the 12-month RlnILLIQ coefficient = {_f(c2_12[0])} (t {_f(c2_12[1], 2)}), DIF in col. 3 = "
+          f"{_f(col3[0])} (t {_f(col3[1], 2)}). V1–V5 use the same regressors in different combinations and are strongly dependent; "
+          "the 'who wins' count is descriptive, not a formal test.",
+          f"- In the monthly panel the signals are winsorised separately (base run), so the identity lnA = ln|Ret| + lnA_C + DIF "
+          f"fails in {_f(100 * dm['share_identity_broken'], 1)}% of coin-months: monthly C2 Res.lnA = {_f(m_c2[0])} "
+          f"(t {_f(m_c2[1], 2)}) vs DIF in col. 3 = {_f(m_col3[0])} (t {_f(m_col3[1], 2)}).",
+          f"- 12 months: the cross-sectional spread of ln|R| is small (sd = {_f(mom.loc['ln_absR', 'std'], 2)} vs "
+          f"{_f(mom.loc['lnIDVOL', 'std'], 2)} for lnIDVOL; A&N: {_f(AN_TEXT['sd_ln_absR'], 2)} and "
+          f"{_f(AN_TEXT['sd_lnIDVOL'], 2)}), so corr(lnILLIQ, lnIDVOL) = {_f(cr.loc['lnILLIQ', 'lnIDVOL'], 3)} "
+          f"(A&N: {_f(AN_TEXT['corr_lnILLIQ_lnIDVOL'], 2)}, so this is not specific to crypto). Beyond volume, ILLIQ carries "
+          "only ln|R| and DIF.",
+          "- IVOL in the 12-month models is the base IVOL (12 months, window ending at s = t−2, residuals on the daily EW CMKT, "
+          "not FF3 as in A&N).",
+          "- No Size or B/M control (D2, D3): A&N and LS have them; ln A_C partly plays the role of size.",
+          f"- Months with measures: {int(dm['n_months'])}; FM months: {fm_months[0]}–{fm_months[-1]} vs 588 (LS) "
+          f"and 744 (A&N): power is lower, so the HLZ bar t>{hk} is shown next to 1.96.",
+          "- `b` and CV² use all days of the window (A&N, fn. 10, do not say whether the highest day is excluded for them); "
+          "for ILLIQ, |R| and IDVOL the single highest day of each is excluded. The 1% censoring is on ILLIQ, |R|, IDVOL "
+          "and DIF (there is no Size).",
+          "- Specification search: every model of this upgrade (fm.csv, both dependent variables, 4 fDIF variants) "
+          "is reported in full. git does not show that the specification or the verdict rule predates the results "
+          "(code and results were committed together); only the monthly DIF model (V1 monthly) was in the code "
+          "before the first real-data run.",
+          f"- Robustness on raw returns: rows with `dep = ret` in `verdict.csv` and `fm.csv`.", ""]
     return "\n".join(L)
 
 
@@ -804,8 +842,8 @@ def main(argv: list[str] | None = None) -> Path:
     base_id = a.base_run or (res_dir / "LATEST").read_text().strip()
     base_manifest_path = res_dir / base_id / "run_manifest.json"
     bm = json.loads(base_manifest_path.read_text())
-    panel_path = Path(bm.get("panel_cache") or Path(a.cache_dir) / f"panel_{base_id}.parquet")
-    daily_path = Path(a.daily or bm["data_source"])
+    panel_path = base.resolve_panel_cache(bm, base_id, Path(a.cache_dir))
+    daily_path = Path(a.daily) if a.daily else base.resolve_repo_path(bm["data_source"])
 
     t0 = time.perf_counter()
     daily_sha = base.sha256_file(daily_path)
@@ -834,13 +872,13 @@ def main(argv: list[str] | None = None) -> Path:
         "base_run_id": base_id,
         "created_utc": stamp,
         "git": base.git_info(),
-        "config_path": str(cfg_path.resolve()),
+        "config_path": base.rel_path(cfg_path),
         "config_sha256": base.sha256_file(cfg_path),
         "code_sha256": {f: base.sha256_file(src / f) for f in CODE_FILES + ["paper_numbers.yaml"]},
         "inputs": {
-            "daily": {"path": str(daily_path.resolve()), "sha256": daily_sha},
-            "base_panel": {"path": str(panel_path.resolve()), "sha256": base.sha256_file(panel_path)},
-            "base_manifest": {"path": str(base_manifest_path.resolve()), "sha256": base.sha256_file(base_manifest_path)},
+            "daily": {"path": base.rel_path(daily_path), "sha256": daily_sha},
+            "base_panel": {"path": base.rel_path(panel_path), "sha256": base.sha256_file(panel_path)},
+            "base_manifest": {"path": base.rel_path(base_manifest_path), "sha256": base.sha256_file(base_manifest_path)},
         },
         "data_matches_base": bool(match),
         "audit": audit_info,

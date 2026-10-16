@@ -79,8 +79,22 @@ lou_shu_2017:
     corr_ATC_lambda: 0.352
     fm_ln_lambda: {coef: -0.034, t: -0.67}   # model (1)
 
+  table8:                          # NYSE/AMEX 1983-2012, FF3-adjusted returns, Panel A January / Panel B other months
+    source: "Table 8, Panels A and B, column ln(lambda) (p. 51)"
+    jan_ln_lambda: {coef: 0.485, t: 2.15}
+    nonjan_ln_lambda: {coef: -0.078, t: -1.45}
+
+  table11:                         # caption: 1964-2012; FF3-adjusted returns; Panel A January / Panel B other months
+    source: "Table 11, Panels A and B, models (1) and (2) (p. 55)"
+    jan_ln_ATC: {coef: -0.367, t: -2.27}          # model (1)
+    nonjan_ln_ATC: {coef: 0.230, t: 6.28}         # model (1)
+    jan_ln_lambda_m2: {coef: -0.077, t: -0.41}    # model (2), with ln(AT_C) and spreads
+    nonjan_ln_lambda_m2: {coef: -0.075, t: -1.76} # model (2)
+    jan_ln_lambda_m4: {coef: -0.082, t: -0.42}    # model (4), with ln(TO) and spreads
+    nonjan_ln_lambda_m4: {coef: -0.113, t: -2.38} # model (4)
+
 amihud_noh_2021:
-  sample: {market: "NYSE/AMEX/NASDAQ (CRSP)", period: "1955-2016", months: 744,
+  sample: {market: "NYSE/AMEX common stocks, share codes 10/11, average price $5-$1000 (CRSP; fn. 10)", period: "1955-2016", months: 744,
            note: "measures over 12 months ending in s, lagged 2 months; excess returns"}
   source: "Amihud & Noh (2021), Table 1 (p. 15) and text p. 5-6"
   col2: {lnLSIlliq: {coef: 0.111, t: 2.64}, DIF: {coef: 1.219, t: 4.42}}

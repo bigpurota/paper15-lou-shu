@@ -22,7 +22,7 @@ root of the mean monthly s2 over 12 months ending at t-2, >= 6 months); half-spr
 noise) or per-coin "floor" / "abs" (abs = upper bound).
 
 Non-positive EDGE (the estimator returns a signed root; s^2 < 0 happens when the true spread is small
-relative to noise). Rule, fixed before looking at returns:
+relative to noise). Rule (set in the code; git does not show that it predates the results):
   main  "floor": within each month's panel cross-section, non-positive estimates are set to the
         smallest positive estimate of that month (they are read as "spread too small to measure"),
         then winsorized 1/99% per month as in the paper, then logged;
@@ -55,6 +55,7 @@ from fama_macbeth import fama_macbeth, nw_mean
 from measures import cs_residual, mean_cs_corr, winsorize_cs
 from sorts import alpha, assign_quantiles
 import data_audit
+import run as base   # repo-relative path helpers (rel_path, resolve_panel_cache)
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw" / "klines"
@@ -452,8 +453,8 @@ def sha256_file(path: Path) -> str:
 def git_info() -> dict:
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
-        st = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
-        return {"sha": sha, "dirty": bool(st.strip())}
+        st = subprocess.run(["git", "status", "--porcelain", "--", "src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+        return {"sha": sha, "dirty": bool(st.strip()), "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"}
     except (OSError, subprocess.CalledProcessError):
         return {"sha": None, "dirty": None}
 
@@ -489,8 +490,8 @@ def _f(x, nd=2):
 
 def _sig(t, hlz):
     a = abs(t)
-    return (f"значим и проходит HLZ |t|>{hlz:g}" if a > hlz else
-            (f"значим при 1.96, но не проходит HLZ |t|>{hlz:g}" if a > 1.96 else f"незначим (|t| < 1.96 < {hlz:g} HLZ)"))
+    return (f"significant and clears HLZ |t|>{hlz:g}" if a > hlz else
+            (f"significant at 1.96 but does not clear HLZ |t|>{hlz:g}" if a > 1.96 else f"not significant (|t| < 1.96 < {hlz:g} HLZ)"))
 
 
 def write_summary(out: Path, ctx: dict) -> None:
@@ -518,71 +519,74 @@ def write_summary(out: Path, ctx: dict) -> None:
     nv = len(one)
     sgn = cst.set_index(["window", "rule"])["coef"].le(0) & nco.set_index(["window", "rule"])["coef"].gt(0)
     pattern = int(sgn.sum())
-    L = [f"# Апгрейд 3: спред EDGE и экономическая значимость премии",
+    n_gap_chk = int((chk["n_gaps"] > 0).sum()) if len(chk) and "n_gaps" in chk else 0
+    L = [f"# Upgrade 3: the EDGE spread and the economic significance of the premium",
          "",
-         f"Базовый прогон: `{ctx['base_run_id']}`; прогон апгрейда: `{ctx['run_id']}`. Все числа ниже — из CSV в этой папке.",
+         f"Base run: `{ctx['base_run_id']}`; upgrade run: `{ctx['run_id']}`. Every number below comes from the CSVs in this folder.",
          "",
-         "## Что проверяли",
-         "- EDGE (Ardia, Guidotti, Kroencke 2024) — своя реализация по дневным OHLC внутри месяца (≥"
-         f"{ctx['min_pairs']} пар соседних дней). Сверка с пакетом `bidask` {ctx['bidask_version']}: "
-         f"{len(chk)} случайных монето-месяцев, макс. |расхождение| = {chk['abs_diff'].max():.1e}." if len(chk) and "abs_diff" in chk else
-         "- EDGE: сверка с `bidask` не выполнена (пакет не установлен).",
-         f"- Неположительные оценки: {ed['share_nonpos']:.1%} монето-месяцев с оценкой (медиана EDGE {ed['median_edge_pct']:.3f}%): "
-         "на дневных свечах спред монеты за месяц почти целиком шум. Основное правило — floor "
-         "(минимальная положительная оценка месяца), робастность — drop, abs и окно 12 мес. (все варианты в CSV).",
-         "- Аналог Table 9 Panel C (EDGE вместо ES), аналог Table 10 (cost/non-cost части ln A), издержки long–short по квинтилям A_C.",
+         "## What we tested",
+         "- EDGE (Ardia, Guidotti, Kroencke 2024): our own implementation on daily OHLC within the month (≥"
+         f"{ctx['min_pairs']} pairs of adjacent days). Cross-check against the `bidask` package {ctx['bidask_version']}: "
+         f"{len(chk)} coin-months (random draw stratified so that up to a third are months with missing days; "
+         f"{n_gap_chk} of them have gaps; `edge_bidask_check.csv`), max |difference| = {chk['abs_diff'].max():.1e}."
+         if len(chk) and "abs_diff" in chk else
+         "- EDGE: the cross-check against `bidask` was not run (package not installed).",
+         f"- Non-positive estimates: {ed['share_nonpos']:.1%} of coin-months with an estimate (median EDGE {ed['median_edge_pct']:.3f}%): "
+         "on daily candles a coin's monthly spread estimate is almost pure noise. The main rule is floor "
+         "(the smallest positive estimate of the month); robustness: drop, abs and a 12-month window (all variants in the CSVs).",
+         "- Analogue of Table 9 Panel C (EDGE instead of ES), analogue of Table 10 (cost/non-cost parts of ln A), long–short costs of the A_C quintiles.",
          "",
-         "## Ключевые числа (правило floor) против статьи",
-         "| Показатель | Статья (ES, NYSE/AMEX) | Мы (EDGE, Binance) |",
+         "## Key numbers (floor rule) vs the paper",
+         "| Statistic | Paper (ES, NYSE/AMEX) | Us (EDGE, Binance) |",
          "|---|---|---|",
-         f"| corr(спред, A) | {P['corr_ES_A']:.3f} | {c['corr_EDGE_A']:.3f} |",
-         f"| corr(спред, A_C) | {P['corr_ES_A_C']:.3f} | {c['corr_EDGE_A_C']:.3f} |",
-         f"| corr(спред, Res.A) | {P['corr_ES_ResA']:.3f} | {c['corr_EDGE_ResA']:.3f} |",
-         f"| FM: ln спред отдельно | {P['fm_lnES_alone']['coef']:.3f} (t {P['fm_lnES_alone']['t']:.2f}) | {e1['coef']:.3f} (t {e1['t']:.2f}) |",
-         f"| FM: ln A_C вместе со спредом (статья: модель 4, + QS, ES, RS, λ) | {P['fm_lnAC_with_benchmarks']['coef']:.3f} (t {P['fm_lnAC_with_benchmarks']['t']:.2f}) | {a2['coef']:.3f} (t {a2['t']:.2f}); ln EDGE {e2['coef']:.3f} (t {e2['t']:.2f}) |",
-         f"| T10: cost отдельно | {P['t10_cost_alone']['coef']:.3f} (t {P['t10_cost_alone']['t']:.2f}) | {c1['coef']:.3f} (t {c1['t']:.2f}) |",
-         f"| T10: non-cost отдельно | {P['t10_noncost_alone']['coef']:.3f} (t {P['t10_noncost_alone']['t']:.2f}) | {n2['coef']:.3f} (t {n2['t']:.2f}) |",
-         f"| T10: вместе, cost / non-cost | {P['t10_both_cost']['coef']:.3f} (t {P['t10_both_cost']['t']:.2f}) / {P['t10_both_noncost']['coef']:.3f} (t {P['t10_both_noncost']['t']:.2f}) | {c3['coef']:.3f} (t {c3['t']:.2f}) / {n3['coef']:.3f} (t {n3['t']:.2f}) |",
-         f"| Окно 12 мес.: corr(EDGE, A_C); ln EDGE в FM | — | {c12['corr_EDGE_A_C']:.3f}; {g(w12, '(1) lnEDGE', 'lnEDGE')['coef']:.3f} (t {g(w12, '(1) lnEDGE', 'lnEDGE')['t']:.2f}) |",
+         f"| corr(spread, A) | {P['corr_ES_A']:.3f} | {c['corr_EDGE_A']:.3f} |",
+         f"| corr(spread, A_C) | {P['corr_ES_A_C']:.3f} | {c['corr_EDGE_A_C']:.3f} |",
+         f"| corr(spread, Res.A) | {P['corr_ES_ResA']:.3f} | {c['corr_EDGE_ResA']:.3f} |",
+         f"| FM: ln spread alone | {P['fm_lnES_alone']['coef']:.3f} (t {P['fm_lnES_alone']['t']:.2f}) | {e1['coef']:.3f} (t {e1['t']:.2f}) |",
+         f"| FM: ln A_C together with the spread (paper: model 4, + QS, ES, RS, λ) | {P['fm_lnAC_with_benchmarks']['coef']:.3f} (t {P['fm_lnAC_with_benchmarks']['t']:.2f}) | {a2['coef']:.3f} (t {a2['t']:.2f}); ln EDGE {e2['coef']:.3f} (t {e2['t']:.2f}) |",
+         f"| T10: cost alone | {P['t10_cost_alone']['coef']:.3f} (t {P['t10_cost_alone']['t']:.2f}) | {c1['coef']:.3f} (t {c1['t']:.2f}) |",
+         f"| T10: non-cost alone | {P['t10_noncost_alone']['coef']:.3f} (t {P['t10_noncost_alone']['t']:.2f}) | {n2['coef']:.3f} (t {n2['t']:.2f}) |",
+         f"| T10: together, cost / non-cost | {P['t10_both_cost']['coef']:.3f} (t {P['t10_both_cost']['t']:.2f}) / {P['t10_both_noncost']['coef']:.3f} (t {P['t10_both_noncost']['t']:.2f}) | {c3['coef']:.3f} (t {c3['t']:.2f}) / {n3['coef']:.3f} (t {n3['t']:.2f}) |",
+         f"| 12-month window: corr(EDGE, A_C); ln EDGE in FM | — | {c12['corr_EDGE_A_C']:.3f}; {g(w12, '(1) lnEDGE', 'lnEDGE')['coef']:.3f} (t {g(w12, '(1) lnEDGE', 'lnEDGE')['t']:.2f}) |",
          "",
-         "## Премия против издержек (квинтили A_C, EW, %/мес.; полуспред ноги = sqrt(среднего s²)/2)",
-         f"- Валовый H–L: {_f(k['hl_gross_pct'])} (t {_f(k['hl_gross_t'])}); оборот long/short: {_f(k['turnover_long'])}/{_f(k['turnover_short'])} в месяц; "
-         f"средний полуспред long/short: {_f(k['half_spread_long_pct'])}%/{_f(k['half_spread_short_pct'])}%.",
-         f"- Издержки long–short: {_f(k['cost_ls_pct'])}%/мес.; чистый H–L: {_f(k['hl_net_pct'])} (t {_f(k['hl_net_t'])}), "
-         f"{_f(k['hl_net_pct_per_year'], 1)}%/год; запас по издержкам: ×{_f(k['breakeven_cost_multiple'])}.",
-         f"- Консервативный вариант (|EDGE| по каждой монете, правило abs; шум делает его завышенным относительно EDGE, но не гарантированной верхней границей истинного спреда): {_f(ka['cost_ls_pct'])}%/мес., чистый H–L {_f(ka['hl_net_pct'])} (t {_f(ka['hl_net_t'])}).",
-         f"- Надёжность основной оценки: в {k['share_months_hs_zero_long']:.0%} месяцев long-ноги и {k['share_months_hs_zero_short']:.0%} месяцев short-ноги "
-         "среднее s² ноги ≤ 0, и полуспред ноги принят равным 0 — EDGE по дневным свечам не различает спред даже на уровне портфеля; цифру издержек нельзя читать как измерение.",
-         f"- Не зависящая от EDGE граница: издержки на сторону (полуспред + комиссия), при которых средний чистый H–L = 0: {_f(k['breakeven_cost_per_side_pct'])}% "
-         f"(при обороте long+short {_f(k['turnover_long'] + k['turnover_short'])} в месяц).",
-         f"- Доп. вариант (не пререгистрирован): + комиссия {_f(k['fee_per_side_pct'], 2)}% на сторону = {_f(k['fee_ls_pct'])}%/мес.; "
-         f"чистый H–L после спреда и комиссии {_f(k['hl_net_fee_pct'])} (t {_f(k['hl_net_fee_t'])}), альфа {_f(k['hl_net_fee_alpha_pct'])} (t {_f(k['hl_net_fee_alpha_t'])}).",
+         "## Premium vs costs (A_C quintiles, EW, %/month; leg half-spread = sqrt(mean s²)/2)",
+         f"- Gross H–L: {_f(k['hl_gross_pct'])} (t {_f(k['hl_gross_t'])}); turnover long/short: {_f(k['turnover_long'])}/{_f(k['turnover_short'])} per month; "
+         f"mean half-spread long/short: {_f(k['half_spread_long_pct'])}%/{_f(k['half_spread_short_pct'])}%.",
+         f"- Long–short costs: {_f(k['cost_ls_pct'])}%/month; net H–L: {_f(k['hl_net_pct'])} (t {_f(k['hl_net_t'])}), "
+         f"{_f(k['hl_net_pct_per_year'], 1)}%/year; cost cushion: ×{_f(k['breakeven_cost_multiple'])}.",
+         f"- Conservative variant (|EDGE| per coin, abs rule; noise inflates it relative to EDGE, but it is not a guaranteed upper bound on the true spread): {_f(ka['cost_ls_pct'])}%/month, net H–L {_f(ka['hl_net_pct'])} (t {_f(ka['hl_net_t'])}).",
+         f"- Reliability of the main estimate: in {k['share_months_hs_zero_long']:.0%} of months for the long leg and {k['share_months_hs_zero_short']:.0%} for the short leg "
+         "the leg's mean s² is ≤ 0 and its half-spread is set to 0, so daily-candle EDGE cannot resolve the spread even at the portfolio level; the cost figure must not be read as a measurement.",
+         f"- EDGE-free bound: the cost per side (half-spread + fee) at which the mean net H–L is 0: {_f(k['breakeven_cost_per_side_pct'])}% "
+         f"(at a long+short turnover of {_f(k['turnover_long'] + k['turnover_short'])} per month).",
+         f"- Extra variant (not pre-registered): + a fee of {_f(k['fee_per_side_pct'], 2)}% per side = {_f(k['fee_ls_pct'])}%/month; "
+         f"net H–L after spread and fee {_f(k['hl_net_fee_pct'])} (t {_f(k['hl_net_fee_t'])}), alpha {_f(k['hl_net_fee_alpha_pct'])} (t {_f(k['hl_net_fee_alpha_t'])}).",
          "",
-         "## Интерпретация",
-         f"- ln EDGE отдельно: {_sig(e1['t'], hlz)} (знак {'+' if e1['coef'] > 0 else '−'}); ln A_C при контроле EDGE: {_sig(a2['t'], hlz)}.",
-         f"- Non-cost часть ln A: {_sig(n2['t'], hlz)}; cost часть: {_sig(c1['t'], hlz)}."
-         + (" Как в статье, прайсится часть Amihud, не связанная со спредом." if abs(n2['t']) > 1.96 and abs(c1['t']) <= 1.96 and n2['coef'] > 0 else
-            " Картина статьи (прайсится только non-cost часть) на наших данных статистически не воспроизводится."),
-         f"- По всем {nv} вариантам (окно × правило): ln EDGE отдельно > 0 в {int((one['coef'] > 0).sum())} из {nv} (в статье знак −); "
-         f"cost-часть > 0 в {int((cst['coef'] > 0).sum())} из {nv}; non-cost > 0 в {int((nco['coef'] > 0).sum())} из {nv}. "
-         f"Макс. |t| по EDGE / A_C / cost / non-cost во всех вариантах = {focal['t'].abs().max():.2f}"
-         + (" (< 1.96). " if focal['t'].abs().max() < 1.96 else " (≥ 1.96 хотя бы в одном варианте). ")
-         + f"Знаковая картина статьи (cost ≤ 0, non-cost > 0) — в {pattern} из {nv} вариантов.",
-         "- Премия " + ("переживает издержки: чистый H–L значим." if k['hl_net_t'] > 1.96 else
-                       ("положительна после издержек, но статистически незначима (и валовая тоже)." if k['hl_net_pct'] > 0 else
-                        "не переживает издержки: чистый H–L ≤ 0.")),
+         "## Interpretation",
+         f"- ln EDGE alone: {_sig(e1['t'], hlz)} (sign {'+' if e1['coef'] > 0 else '−'}); ln A_C controlling for EDGE: {_sig(a2['t'], hlz)}.",
+         f"- Non-cost part of ln A: {_sig(n2['t'], hlz)}; cost part: {_sig(c1['t'], hlz)}."
+         + (" As in the paper, the part of the Amihud measure unrelated to the spread is priced." if abs(n2['t']) > 1.96 and abs(c1['t']) <= 1.96 and n2['coef'] > 0 else
+            " The paper's pattern (only the non-cost part is priced) is not statistically reproduced on our data."),
+         f"- Across all {nv} variants (window × rule): ln EDGE alone > 0 in {int((one['coef'] > 0).sum())} of {nv} (the paper's sign is −); "
+         f"cost part > 0 in {int((cst['coef'] > 0).sum())} of {nv}; non-cost > 0 in {int((nco['coef'] > 0).sum())} of {nv}. "
+         f"Max |t| over EDGE / A_C / cost / non-cost across all variants = {focal['t'].abs().max():.2f}"
+         + (" (< 1.96). " if focal['t'].abs().max() < 1.96 else " (≥ 1.96 in at least one variant). ")
+         + f"The paper's sign pattern (cost ≤ 0, non-cost > 0) holds in {pattern} of {nv} variants.",
+         "- The premium " + ("survives costs: the net H–L is significant." if k['hl_net_t'] > 1.96 else
+                       ("is positive after costs but not statistically significant (nor is the gross one)." if k['hl_net_pct'] > 0 else
+                        "does not survive costs: the net H–L is ≤ 0.")),
          "",
-         "## Оговорки",
-         "- EDGE — оценка по дневным свечам, а не наблюдаемый спред; для ликвидных монет истинный спред мал и оценка шумная (отсюда отрицательные s²). "
-         "ТЗ (task.md, стр. 59) предполагает часовые бары — это отступление.",
-         f"- Крипта торгуется 24/7: медианный |open − close предыдущего дня| = {ed['median_abs_open_gap_bp']:.1f} bp (open = прошлому close в {ed['share_open_eq_prev_close']:.0%} дней) "
-         f"при медианном дневном размахе high−low {ed['median_hl_range_bp']:.0f} bp. Медианный вес второго момента EDGE (на этом разрыве) = {ed['median_weight_moment2']:.4f}: "
-         "оценка почти целиком определяется отскоком между последней сделкой дня и первой сделкой следующего.",
-         f"- T10, cost-часть: Cost = a_t + b_t·ln EDGE, поэтому месячный коэффициент = (коэф. ln EDGE)/b_t. Наклон b_t < 0 в {c1['first_stage_slope_share_neg']:.0%} месяцев, "
-         f"min |b_t| = {c1['first_stage_slope_min_abs']:.4f}; месячные коэффициенты при cost: медиана {c1['cost_coef_monthly_median']:.2f}, макс. |·| {c1['cost_coef_monthly_max_abs']:.0f}. "
-         "Среднее FM по cost-части определяется несколькими месяцами — сравнивать со статьёй можно только t, не величину.",
-         "- Издержки: основная оценка — только полуспред (комиссия — отдельной строкой выше); без price impact крупного объёма и стоимости/доступности шорта (многие неликвидные монеты нельзя занять).",
-         "- Разложение ln A на cost/non-cost оценивается на панели монет с доходностью в t (как и FM), а не на полном сечении t−2.",
+         "## Caveats",
+         "- EDGE is an estimate from daily candles, not an observed spread; for liquid coins the true spread is small and the estimate is noisy (hence negative s²). "
+         "The task (task.md, line 59) envisages hourly bars; this is a deviation.",
+         f"- Crypto trades 24/7: the median |open − previous day's close| = {ed['median_abs_open_gap_bp']:.1f} bp (open = previous close on {ed['share_open_eq_prev_close']:.0%} of days) "
+         f"against a median daily high−low range of {ed['median_hl_range_bp']:.0f} bp. The median weight of EDGE's second moment (on this gap) = {ed['median_weight_moment2']:.4f}: "
+         "the estimate is driven almost entirely by the bounce between the last trade of one day and the first trade of the next.",
+         f"- T10, cost part: Cost = a_t + b_t·ln EDGE, so the monthly coefficient = (coefficient on ln EDGE)/b_t. The slope b_t < 0 in {c1['first_stage_slope_share_neg']:.0%} of months, "
+         f"min |b_t| = {c1['first_stage_slope_min_abs']:.4f}; monthly cost coefficients: median {c1['cost_coef_monthly_median']:.2f}, max |·| {c1['cost_coef_monthly_max_abs']:.0f}. "
+         "The FM mean of the cost part is driven by a few months, so only t, not magnitude, can be compared with the paper.",
+         "- Costs: the main estimate is the half-spread only (the fee is a separate line above); it excludes the price impact of large orders and the cost/availability of shorting (many illiquid coins cannot be borrowed).",
+         "- The decomposition of ln A into cost/non-cost is estimated on the panel of coins with a return in t (as in FM), not on the full t−2 cross-section.",
          ]
     (out / "SUMMARY.md").write_text("\n".join(L) + "\n")
 
@@ -612,8 +616,8 @@ def main(argv: list[str] | None = None) -> None:
     base_id = (res_dir / "LATEST").read_text().strip()
     base_dir = res_dir / base_id
     base_man = json.loads((base_dir / "run_manifest.json").read_text())
-    panel_path = Path(base_man["panel_cache"])
-    daily_path = Path(base_man["data_source"])
+    panel_path = base.resolve_panel_cache(base_man, base_id)
+    daily_path = base.resolve_repo_path(base_man["data_source"])
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -706,13 +710,13 @@ def main(argv: list[str] | None = None) -> None:
     manifest = {
         "run_id": run_id, "upgrade": "edge_spread", "created_utc": stamp,
         "base_run_id": base_id, "base_config_sha256": base_man.get("config_sha256"),
-        "git": git_info(), "config_path": str(cfg_path.resolve()), "config_sha256": cfg_hash,
+        "git": git_info(), "config_path": base.rel_path(cfg_path), "config_sha256": cfg_hash,
         "code_sha256": {f: sha256_file(ROOT / "src" / f) for f in CODE_FILES},
         "data_sha256": {"panel": sha256_file(panel_path), "daily": sha256_file(daily_path),
                         "base_factors_csv": sha256_file(base_dir / "factors.csv"),
                         "ohlc_daily": sha256_file(OHLC_PATH), "edge_monthly": sha256_file(EDGE_PATH)},
-        "data_paths": {"panel": str(panel_path), "daily": str(daily_path), "ohlc_daily": str(OHLC_PATH),
-                       "edge_monthly": str(EDGE_PATH)},
+        "data_paths": {"panel": base.rel_path(panel_path), "daily": base.rel_path(daily_path),
+                       "ohlc_daily": base.rel_path(OHLC_PATH), "edge_monthly": base.rel_path(EDGE_PATH)},
         "alignment": align, "edge": ed, "checks": checks, "seed": seed,
         "versions": {"python": sys.version.split()[0], "bidask": bver,
                      **{k: im.version(k) for k in ["pandas", "numpy", "statsmodels"]}},

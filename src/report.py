@@ -32,7 +32,7 @@ PAPER = Path(__file__).resolve().parent / "paper_numbers.yaml"
 T_CRIT = 1.96
 Z_POWER80 = 0.8416212335729143          # Phi^{-1}(0.80): MDE = (1.96 + 0.84) * SE
 CONTROLS = ["mom", "ret_1"]
-# Lou & Shu (2017), p. 13: "one standard deviation change (2.53) in ln(A_C)" gives 0.46%/mo in model (2).
+# Lou & Shu (2017), pp. 13-14: "one standard deviation change (2.53) in ln(A_C)" gives 0.46%/mo in model (2).
 # Used when paper_numbers.yaml has no lou_shu_2017.table4_text.sd_lnA_C entry (same rule as
 # robustness_extra.PAPER_SD_LNA_C, so README, slides and robustness/mde.csv quote one paper effect).
 PAPER_SD_LNA_C = 2.53
@@ -141,7 +141,7 @@ WHY = {
              "{paperMonths} and {paperAvgObs}). MDE80 = {mde}.",
     "FMlnAC": "Same sign, not significant. Per log unit of ln A_C, MDE80 = {mde} against the paper's slope "
               "{paper}. Per 1 s.d. of ln A_C, each in its own s.d., our slope is {psUs}%/mo and MDE80 = {mdePs} "
-              "(our cross-sectional s.d. {sdLnAC}), against the paper's {psPaper} (its s.d. {sdPaper}, p. 13); "
+              "(our cross-sectional s.d. {sdLnAC}), against the paper's {psPaper} (its s.d. {sdPaper}, pp. 13–14); "
               "the paper's slope times our s.d. is {psPaperOurSd}. "
               "Without the most influential month ({fmTopMonthTwo}) the slope is {fmExTwo} (t {fmExTwoT}). "
               "First half {subAFm} (t {subAFmT}), second half {subBFm} (t {subBFmT}).",
@@ -397,8 +397,10 @@ class Diag:
 
 
 def _panel(rd: Path, man: dict) -> pd.DataFrame | None:
+    """Manifest 'panel_cache' is repo-relative (absolute in older manifests): resolve it against ROOT,
+    fall back to data/cache/panel_<run_id>.parquet."""
     p = man.get("panel_cache")
-    cands = [Path(p)] if p else []
+    cands = [(Path(p) if Path(p).is_absolute() else ROOT / p)] if p else []
     cands.append(ROOT / "data" / "cache" / f"panel_{rd.name}.parquet")
     for c in cands:
         if c.exists():
@@ -577,9 +579,9 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
             D.add(f"fmReproDiff{key}", abs(c - _fm(t4, model, var)[0]),
                   f"|FM {model} {var} from panel - T4_fm.csv| (should be ~0)", src, d=6)
     sd_paper = float(ls.get("table4_text", {}).get("sd_lnA_C", PAPER_SD_LNA_C))
-    D.add("sdPaper", sd_paper, "paper s.d. of ln A_C (Lou & Shu 2017, p. 13)", "paper text p. 13", d=2)
+    D.add("sdPaper", sd_paper, "paper s.d. of ln A_C (Lou & Shu 2017, pp. 13-14)", "paper text pp. 13-14", d=2)
     D.add("psPaper", ls["table4_panelA"]["(2)"]["lnA_C"]["coef"] * sd_paper,
-          "paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper p. 13)", "paper_numbers.yaml")
+          "paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper pp. 13-14)", "paper_numbers.yaml")
 
     # simulations: size of the tests in world 0 and power in world V
     ws = _read(sim_dir, "sim_world_summary")
@@ -708,12 +710,13 @@ def build_robustness(rd: Path, us: dict, diag: dict[str, float]) -> pd.DataFrame
                 add(stat, half, _fm(sp, model, var, subsample=half), "R_subperiods.csv")
     for stat, key in [("HL A raw", "A"), ("HL A_C raw", "AC"), ("HL Res.A raw", "ResA")]:
         if f"exMean{key}" in diag:
-            add(stat, "without most influential month", (diag[f"exMean{key}"], diag[f"exT{key}"]),
+            add(stat, "without most influential month (post hoc)", (diag[f"exMean{key}"], diag[f"exT{key}"]),
                 "T3_portfolios.csv")
     for stat, key in [("FM ln A_C (2)", "Two"), ("FM Res.lnA (3)", "Three"), ("FM ln A_C (4)", "FourAC"),
                       ("FM Res.lnA (4)", "FourRes")]:
         if f"fmEx{key}" in diag:
-            add(stat, "without most influential month", (diag[f"fmEx{key}"], diag[f"fmEx{key}T"]), "panel cache")
+            add(stat, "without most influential month (post hoc)", (diag[f"fmEx{key}"], diag[f"fmEx{key}T"]),
+                "panel cache")
     return pd.DataFrame(rows)
 
 
@@ -762,6 +765,18 @@ def fmt(x: float, t: float | None) -> str:
     return s if t is None or not math.isfinite(t) else f"{s} (t {t:.2f})"
 
 
+def deviation_ranges(path: Path = ROOT / "DEVIATIONS.md") -> str:
+    """'D1–D18, upgrade deviations U1–U8 and journal entries J1–J2', read from the ids in DEVIATIONS.md."""
+    import re
+    txt = path.read_text() if path.exists() else ""
+
+    def rng(prefix: str, pat: str) -> str:
+        ids = sorted({int(x) for x in re.findall(pat, txt, re.M)})
+        return f"{prefix}{ids[0]}–{prefix}{ids[-1]}" if ids else f"{prefix}?"
+    return (rng("D", r"^\| D(\d+) \|") + ", upgrade deviations " + rng("U", r"^\| U(\d+) \|")
+            + " and journal entries " + rng("J", r"^### J(\d+) "))
+
+
 def md_cell(s: str) -> str:
     return str(s).replace("|", "\\|")
 
@@ -788,6 +803,9 @@ def key_findings(df: pd.DataFrame, rob: pd.DataFrame, diag: pd.DataFrame) -> lis
     n_sig = int((t["us_t"].abs() >= T_CRIT).sum())
     n_hlz = int((t["us_t"].abs() > hlz).sum())
     counts = t["match"].value_counts()
+    same_sign = [math.copysign(1, a) == math.copysign(1, b) for a, b in zip(t["paper"], t["us"])]
+    n_same = int(sum(same_sign))
+    n_yes_opp = int(sum(1 for m, ss in zip(t["match"], same_sign) if m == "yes" and not ss))
     r = df.set_index("id")
     f = lambda i: fmt(r.loc[i, "us"], r.loc[i, "us_t"])  # noqa: E731
     sig = lambda i: abs(r.loc[i, "us_t"]) >= T_CRIT  # noqa: E731
@@ -799,12 +817,19 @@ def key_findings(df: pd.DataFrame, rob: pd.DataFrame, diag: pd.DataFrame) -> lis
     lines = [
         f"- **Scorecard.** Of {len(t)} Lou & Shu coefficient rows, {int(counts.get('yes', 0))} match, "
         f"{int(counts.get('sign only', 0))} match in sign only and {int(counts.get('no', 0))} "
-        f"{'is' if int(counts.get('no', 0)) == 1 else 'are'} 'no' (opposite sign); "
+        f"{'is' if int(counts.get('no', 0)) == 1 else 'are'} 'no' under the rule below the table; by sign alone, "
+        f"{n_same} of {len(t)} have the paper's sign ({n_yes_opp} 'yes' rows have the opposite sign but are "
+        "insignificant in both samples, which the rule counts as a match); "
         f"{n_sig} of these t-statistics have |t| ≥ 1.96 and {n_hlz} have |t| > {hlz:g} (HLZ bar). Several rows "
         "are overlapping specifications of the same few signals, so they are not independent tests. "
         f"Against Amihud & Noh (2021), {int(an['match'].eq('no').sum())} of {len(an)} rows have the opposite "
         "sign (A&N col. 4 is the same regression as our model (5)). "
-        f"{same} of {len(rob)} robustness variants keep the base conclusion (`robustness_vs_base.csv`).",
+        f"{same} of {len(rob)} robustness variants keep the base conclusion (`robustness_vs_base.csv`; same sign and "
+        f"same side of 1.96; the {int(rob['variant'].str.contains('post hoc').sum())} variants without the most "
+        f"influential month were added after the first real-data run and are labelled post hoc): {int(((rob['same_conclusion'] == 'yes') & (rob['base_t'].abs() < 1.96)).sum())} of them "
+        "are insignificant estimates that stay insignificant, and "
+        f"{int(((rob['same_conclusion'] == 'yes') & (rob['base_t'].abs() >= 1.96)).sum())} of the "
+        f"{int((rob['base_t'].abs() >= 1.96).sum())} variants of significant base estimates stay significant.",
         f"- **Volume component (A_C).** Sorts give {f('HLACrawCoef')} and FM gives {f('FMlnAC')}; both have the "
         f"paper's sign, and they are {'significant' if sig('HLACrawCoef') or sig('FMlnAC') else 'not significant'}. "
         f"The most influential month for the sort is {c['topMonthAC']} (H-L {c['topValAC']}%, CMKT "
@@ -873,7 +898,7 @@ def write_md(df: pd.DataFrame, rob: pd.DataFrame, diag: pd.DataFrame, rd: Path, 
               "Q75/Q25 ratios are positive by construction, so they get *yes* or *no* on magnitude alone. "
               "*Months needed* (in the A_C sort row) assumes the SE falls as 1/sqrt(T): an estimate. "
               "Units: H-L and alphas in %/month; FM slopes in %/month per unit of the regressor (paper: "
-              "FF3-adjusted; us: CMKT-adjusted, D4). Deviations D1–D17, upgrade deviations U1–U8 and journal entries J1–J2: `DEVIATIONS.md`.",
+              "FF3-adjusted; us: CMKT-adjusted, D4). Deviations " + deviation_ranges() + ": `DEVIATIONS.md`.",
               "", "## Robustness of our results (base vs variant)", "",
               "*Same conclusion* = same sign and same side of |t| = 1.96 as the base estimate.", "",
               "| Statistic | Variant | Base | Variant estimate | Same conclusion? |", "|---|---|---|---|---|"]
@@ -945,7 +970,7 @@ def write_manifest(rd: Path, sim_dir: Path, man: dict, timings: dict) -> None:
     import subprocess
     try:
         sha = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-        dirty = bool(subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain"], capture_output=True,
+        dirty = bool(subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--", "src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"], capture_output=True,
                                     text=True).stdout.strip())
     except Exception:
         sha, dirty = None, None

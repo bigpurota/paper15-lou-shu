@@ -1,0 +1,50 @@
+{
+  "clone_commit": "c631dba60163f0e975e8a34592529a080cf8b0e4",
+  "repo_base_run": "20261016T135240Z_3e8eb87e",
+  "clone_base_run": "20261016T171236Z_3e8eb87e",
+  "steps": [
+    {
+      "target": "venv",
+      "rc": 0,
+      "seconds": 1
+    },
+    {
+      "target": "data",
+      "rc": 0,
+      "seconds": 2313
+    },
+    {
+      "target": "tests",
+      "rc": 0,
+      "seconds": 123
+    },
+    {
+      "target": "p0",
+      "rc": 0,
+      "seconds": 247
+    },
+    {
+      "target": "upgrades-light",
+      "rc": 0,
+      "seconds": 852
+    }
+  ],
+  "all_steps_rc0": true,
+  "n_files_compared": 98,
+  "n_identical": 88,
+  "n_numbers_identical_text_differs": 10,
+  "n_not_identical": 0,
+  "upgrades_compared": [
+    "amihud_noh",
+    "edge_spread",
+    "moex",
+    "openap_us",
+    "robustness",
+    "sentiment"
+  ],
+  "not_covered": [
+    "hf_lambda"
+  ],
+  "daily_sha256_repo": "47d0542600dbce83",
+  "verdict": "reproduced_except_not_covered"
+}

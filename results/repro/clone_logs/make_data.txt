@@ -1,0 +1,17 @@
+.venv/bin/python -I src/data_binance.py config.yaml
+eligible symbols: 679
+  0/679 symbols
+  50/679 symbols
+  100/679 symbols
+  150/679 symbols
+  200/679 symbols
+  250/679 symbols
+  300/679 symbols
+  350/679 symbols
+  400/679 symbols
+  450/679 symbols
+  500/679 symbols
+  550/679 symbols
+  600/679 symbols
+  650/679 symbols
+daily rows: 788,692; symbols with data: 678

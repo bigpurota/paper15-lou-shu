@@ -1,15 +1,15 @@
 {
   "stage": "report",
   "base_run_id": "20261016T135240Z_3e8eb87e",
-  "created_utc": "20261016T161812Z",
+  "created_utc": "20261016T180125Z",
   "git": {
-    "sha": "aa8f4aa517b75d38b4ac066b252585257c031053",
+    "sha": "c631dba60163f0e975e8a34592529a080cf8b0e4",
     "dirty": true
   },
   "code_sha256": {
-    "report.py": "791eb9fcd50856ae13909b4fb2845546adb4fe02c0c3ad775839f42598ea9448",
+    "report.py": "c377d23ddd2f6c412f6b40e262e45840a346b7a0c4b7ec2240d8d73f426a88af",
     "figures.py": "82e32829127ced38c0add7d255d06323df87ae8bea5cf00b4f59bb31a6ac53f9",
-    "paper_numbers.yaml": "2a4339f7bd1e9a771d5349b7a12e4b782c81f3314055f1ec0c34bf9b910a33ae",
+    "paper_numbers.yaml": "ddd3b031e9d03d702192094f236f56b3bba6c6c21f5d27aaf421d35c70863325",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
     "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64"
   },
@@ -55,7 +55,7 @@
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "seed": 20261017,
   "timings_sec": {
-    "build": 1.586,
-    "write": 0.024
+    "build": 1.597,
+    "write": 0.025
   }
 }

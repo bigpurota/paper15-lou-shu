@@ -1,14 +1,14 @@
 {
-  "run_id": "moex_20261016T144811Z_b4264d55",
-  "created_utc": "20261016T144811Z",
+  "run_id": "moex_20261016T173550Z_b4264d55",
+  "created_utc": "20261016T173550Z",
   "upgrade": "moex",
   "base_run_id": "20261016T135240Z_3e8eb87e",
   "base_run_note": "MOEX data and tests are independent of the Binance base run; its id is recorded for provenance.",
   "git": {
-    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "sha": "c631dba60163f0e975e8a34592529a080cf8b0e4",
     "dirty": true
   },
-  "config_path": "/Users/purota/rs3-paper15/impl/config.yaml",
+  "config_path": "config.yaml",
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "spec": {
     "data": {
@@ -90,7 +90,7 @@
   "spec_sha256": "b4264d55708e84c0c6c39e4e900ddcceb10f9c4cfc9f3e050c9edeb418635af0",
   "code_sha256": {
     "data_moex.py": "8ccb3b190523f20a4dacad6d9ec014dbf2c6a1378a56dd239e45e80ad11ab810",
-    "run_moex.py": "b19dac5da806a26310ca6136438136798f69461b818a984f0fa3f0d59de75717",
+    "run_moex.py": "bbdf2077891bf974941015410d6d008c43d8da5c4721408f9cccee000f0c0909",
     "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64",
     "factors.py": "ee81e16f6a9e5bf439e0f884f3d4c3ae379276f14e2b8020ee683a02a09dcf9c",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
@@ -107,15 +107,15 @@
     "moex_splits.parquet": "2a51554f987517afb7e6a1b0e88e0367c49a91bd66c902f9da15ac8e3328a0d2",
     "moex_universe.parquet": "20d68ee38723f330bd7b12ce97f73438521a6f26ccf9bf4e0b080392f85f359e"
   },
-  "raw_cache": "/Users/purota/rs3-paper15/impl/data/raw/moex",
+  "raw_cache": "data/raw/moex",
   "seed": 20261017,
   "timings_sec": {
-    "data": 0.121,
-    "monthly": 2.44,
-    "main": 10.213,
-    "variants": 16.809,
-    "report": 2.262,
-    "total": 31.845
+    "data": 0.132,
+    "monthly": 2.433,
+    "main": 10.097,
+    "variants": 16.729,
+    "report": 2.251,
+    "total": 31.642
   },
   "rows": {
     "daily_rows": 571303,

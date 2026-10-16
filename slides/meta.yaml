@@ -1,3 +1,3 @@
 # Title slide and README header (read by src/build_docs.py). Fill in before `make docs slides`.
-team: []          # e.g. ["Имя Фамилия", "Имя Фамилия"]
+team: ["Andrey Tsember", "Sofya Shapovalova", "Ksenia Stepanova", "Marat Bineman", "Alexia Fox"]   # Latin spelling; check with the team
 repo_url: "https://github.com/bigpurota/paper15-lou-shu"      # public GitHub URL of this repository

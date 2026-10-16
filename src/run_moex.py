@@ -10,7 +10,7 @@ of the previous year), Ret[-12,-2], Ret[-1], IVOL. No B/M (deviation M5).
 Reproduces T1 (corr A-A_C, AT-AT_C, Q75/Q25), T3 (quintiles; terciles as robustness), T4 models
 (1)-(5) for A and AT, NW(6), and writes a paper-vs-MOEX CSV and a code-generated SUMMARY.md.
 
-Pre-registered choices (fixed before any MOEX result was computed; see MOEX_SPEC):
+Main choices (set in MOEX_SPEC; NOT pre-registered in git: this module and its results were first committed together):
   * universe: TYPE == common_share (no preferred shares, depositary receipts, funds), as share
     codes 10/11 in the paper; >= 10 valid days in the estimation month;
     main filter: mean daily VALUE >= 100,000 RUB in the estimation month (removes only near-dead
@@ -48,6 +48,7 @@ import pandas as pd
 import yaml
 
 import data_moex
+from run import rel_path   # repo-relative paths in manifests
 from analysis import _fm_block, _no_attrs
 from factors import cmkt_monthly, ivol_monthly, rolling_betas
 from fama_macbeth import fama_macbeth, nw_mean
@@ -92,7 +93,7 @@ DEVIATIONS_MOEX = [
      "Second market (upgrade 6); TQBR became the main T+ board only in mid-2014 (EQBR before)",
      "Far fewer months and stocks (about 100-250 per month) -> lower power"),
     ("M2", "Share codes 10/11", "TYPE == common_share (no preferred shares, DRs, funds); mean daily VALUE >= 100k RUB "
-     "(robustness 1M RUB); >= 10 valid days", "Closest analogue of ordinary common shares; filter fixed before results",
+     "(robustness 1M RUB); >= 10 valid days", "Closest analogue of ordinary common shares; filter set in MOEX_SPEC (git does not confirm that it predates the results)",
      "Thresholds are nominal RUB (inflation ignored)"),
     ("M3", "Shares outstanding from CRSP each month", "ISSUESIZE as of today for all months; volume split-adjusted to today's units",
      "ISS gives only the current ISSUESIZE", "Turnover and ME are mis-measured for firms with buybacks/SPOs; "
@@ -107,10 +108,11 @@ DEVIATIONS_MOEX = [
      "return kept", "Daily return over a month-long gap is not a daily return", "March 2022 has < 10 valid days -> no measures"),
     ("M8", "PERMNO links across ticker changes", "SECID is the identifier; renamed/re-registered tickers are separate stocks",
      "ISS history is per SECID", "A few series end early (like a delisting at the last price)"),
-    ("M9", "CRSP corporate-action adjustments", "Two verified manual corrections after a scan of all daily moves > x2.5 "
+    ("M9", "CRSP corporate-action adjustments", "Two manual corrections after a scan of all daily moves > x2.5 (scan output not saved) "
      "not explained by a recorded split/dividend: BELU 1:8 split on 2024-08-22 (not in ISS split history; ratio 8 "
      "escapes the power-of-10 inference rule); LNZL 2021-07 dividend 15,219.50 RUB kept although its yield (65%) "
-     "exceeds the 50% error guard", "Public sources (MOEX notice / company board decision), see data_flags.csv",
+     "exceeds the 50% error guard", "Checked manually against public sources (MOEX notice / company board decision), described in MOEX_SPEC; "
+     "no links or copies are stored; flags in data_flags.csv",
      "Removes a spurious -88% month (BELU 2024-08) and a spurious large negative month (LNZL 2021-07); "
      "the main specification without these corrections is reported as a variant"),
 ]
@@ -140,8 +142,8 @@ def git_info() -> dict:
     import subprocess
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
-        st = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
-        return {"sha": sha, "dirty": bool(st.strip())}
+        st = subprocess.run(["git", "status", "--porcelain", "--", "src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+        return {"sha": sha, "dirty": bool(st.strip()), "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"}
     except (OSError, subprocess.CalledProcessError):
         return {"sha": None, "dirty": None}
 
@@ -466,21 +468,21 @@ def summary_md(out: Path, base_run_id: str, run_id: str) -> str:
     main = meta[meta["variant"] == "main"].iloc[0]
     g = lambda item: pv[pv["item"] == item].iloc[0]
 
-    L = [f"# Апгрейд 6: второй рынок — MOEX, режим TQBR", "",
-         f"_Сгенерировано `src/run_moex.py`, run_id `{run_id}`, базовый прогон `{base_run_id}`. "
-         "Все числа — из CSV в этой папке._", "",
-         "## Что проверяли",
-         "Те же меры и тесты, что и на Binance, на обыкновенных акциях Мосбиржи (режим TQBR): "
-         "`A`, `A_C` по рублёвому объёму `VALUE`, `AT`, `AT_C` по обороту `VOLUME/ISSUESIZE`; "
-         "T1 (корреляции, Q75/Q25), T3 (квинтили, терцили — робастность), T4 (модели 1–5 для `A` и `AT`), "
-         "контроли `ln ME`, `Ret[-12,-2]`, `Ret[-1]`, Newey–West(6).", "",
-         f"Выборка: доходности {main['return_start']}–{main['return_end']} "
-         f"({int(main['n_months'])} мес.), {int(main['n_stocks'])} акций, "
-         f"в среднем {main['avg_stocks_per_month']:.0f} акций в месяц "
-         f"(фильтр: средний дневной `VALUE` ≥ {main['min_mean_value_rub']:,.0f} руб.); "
-         f"FM модели (1): {int(main['n_months_fm_A1'])} мес., в среднем {main['avg_obs_fm_A1']:.0f} наблюдений.", "",
-         "## Ключевые числа: статья против MOEX", "",
-         "| Показатель | Статья | t | MOEX | t |", "|---|---|---|---|---|"]
+    L = [f"# Upgrade 6: a second market, MOEX, TQBR board", "",
+         f"_Generated by `src/run_moex.py`, run_id `{run_id}`, base run `{base_run_id}`. "
+         "Every number comes from the CSVs in this folder._", "",
+         "## What we tested",
+         "The same measures and tests as on Binance, on Moscow Exchange common shares (TQBR board): "
+         "`A`, `A_C` from rouble volume `VALUE`, `AT`, `AT_C` from turnover `VOLUME/ISSUESIZE`; "
+         "T1 (correlations, Q75/Q25), T3 (quintiles; terciles as robustness), T4 (models 1–5 for `A` and `AT`), "
+         "controls `ln ME`, `Ret[-12,-2]`, `Ret[-1]`, Newey–West(6).", "",
+         f"Sample: returns {main['return_start']}–{main['return_end']} "
+         f"({int(main['n_months'])} months), {int(main['n_stocks'])} stocks, "
+         f"{main['avg_stocks_per_month']:.0f} stocks per month on average "
+         f"(filter: mean daily `VALUE` ≥ {main['min_mean_value_rub']:,.0f} RUB); "
+         f"FM model (1): {int(main['n_months_fm_A1'])} months, {main['avg_obs_fm_A1']:.0f} observations on average.", "",
+         "## Key numbers: paper vs MOEX", "",
+         "| Statistic | Paper | t | MOEX | t |", "|---|---|---|---|---|"]
     keys = ["corr(A, A_C)", "corr(AT, AT_C)", "Q75/Q25 of A_C", "Q75/Q25 of absret",
             "Quintile H-L on A, raw (%/mo)", "Quintile H-L on A_C, raw (%/mo)", "Quintile H-L on ResA, raw (%/mo)",
             "Quintile H-L on AT, raw (%/mo)", "Quintile H-L on AT_C, raw (%/mo)", "Quintile H-L on ResAT, raw (%/mo)",
@@ -505,9 +507,9 @@ def summary_md(out: Path, base_run_id: str, run_id: str) -> str:
     def verdict(item):
         r = g(item)
         t = r["moex_t"]
-        sig = f"значим (|t| > {tc})" if abs(t) > tc else "не значим"
-        hlz = f", проходит порог HLZ t > {hz}" if abs(t) > hz else ""
-        same = "тот же знак, что в статье" if np.sign(r["moex"]) == np.sign(r["paper"]) else "знак противоположен статье"
+        sig = f"significant (|t| > {tc})" if abs(t) > tc else "not significant"
+        hlz = f", clears the HLZ bar t > {hz}" if abs(t) > hz else ""
+        same = "same sign as the paper" if np.sign(r["moex"]) == np.sign(r["paper"]) else "sign opposite to the paper"
         return f"{_f(r['moex'], 3)} (t = {_f(t)}): {sig}{hlz}, {same}"
     vk = var.set_index("variant")
 
@@ -528,60 +530,67 @@ def summary_md(out: Path, base_run_id: str, run_id: str) -> str:
     a_ac = ad.loc["A_C"]
     absorbed = abs(a_ac["alpha"]) < abs(a_ac["raw_hl_same_months"]) / 3
     top = yr.loc[yr["hl_A_C_share_of_cum"].idxmax()]
-    L += ["## Интерпретация (по числам выше)",
-          f"Пороги: |t| > {tc} (5%) и t > {hz} (Harvey–Liu–Zhu, 2016).", "",
-          f"- Объёмная компонента в FM (зависимая — доходность, скорректированная на бету к EW-рынку, как в статье): "
-          f"`ln A_C` в модели (4) — {verdict('FM (4) lnA_C')}; `ln AT_C` — {verdict('FM (4) lnAT_C')}; "
-          f"модель (1) `ln A` — {verdict('FM (1) lnA')}.",
-          f"- Компонента price impact: `Res.lnA` в модели (4) — {verdict('FM (4) ResLnA')}; "
-          f"`Res.lnAT` — {verdict('FM (4) ResLnAT')}; "
-          + ("ни одна не значимо положительна — в этой части вывод статьи («price impact не прайсится») воспроизводится, "
-             "но и отрицательного знака статьи значимо нет." if not res_pos else
-             "есть значимо положительная оценка — вывод статьи в этой части не воспроизводится."),
-          f"- Сортировки (сырые доходности): H–L по `A` — {verdict('Quintile H-L on A, raw (%/mo)')}; по `A_C` — "
-          f"{verdict('Quintile H-L on A_C, raw (%/mo)')}; по `Res.A` — {verdict('Quintile H-L on ResA, raw (%/mo)')}.",
-          f"- Альфы H–L на MKT+SMB+MOM: `A` — {verdict('Quintile H-L on A, alpha (paper: FF3+UMD; MOEX: MKT+SMB+MOM) (%/mo)')}; "
-          f"`A_C` — {verdict('Quintile H-L on A_C, alpha (paper: FF3+UMD; MOEX: MKT+SMB+MOM) (%/mo)')}. "
-          f"Альфа считается на {int(a_ac['n_months_alpha'])} мес. (нужны все три фактора), сырой H–L — на "
-          f"{int(a_ac['n_months_raw'])}; на тех же {int(a_ac['n_months_alpha'])} мес. сырой H–L по `A_C` — "
-          f"{_f(a_ac['raw_hl_same_months'], 3)} (t = {_f(a_ac['raw_hl_same_months_t'])}), по `A` — "
+    sig_word = lambda b: "significant" if b else "not significant"
+    L += ["## Interpretation (of the numbers above)",
+          f"Thresholds: |t| > {tc} (5%) and t > {hz} (Harvey–Liu–Zhu, 2016).", "",
+          f"- Volume component in FM (dependent variable: the return adjusted for its beta to the EW TQBR market; "
+          f"the paper uses FF3-adjusted returns): "
+          f"`ln A_C` in model (4): {verdict('FM (4) lnA_C')}; `ln AT_C`: {verdict('FM (4) lnAT_C')}; "
+          f"model (1) `ln A`: {verdict('FM (1) lnA')}.",
+          f"- Price-impact component: `Res.lnA` in model (4): {verdict('FM (4) ResLnA')}; "
+          f"`Res.lnAT`: {verdict('FM (4) ResLnAT')}; "
+          + (("none is significantly positive, so this part of the paper's conclusion ('price impact is not priced') is "
+              "reproduced only in its weak form (no positive price-impact premium); the paper's "
+              + ("significantly " if abs(g('FM (4) ResLnA')['paper_t']) > tc else "") + "negative `Res.lnA` "
+              f"({_f(g('FM (4) ResLnA')['paper'], 3)}, t = {_f(g('FM (4) ResLnA')['paper_t'])}) is "
+              + ("reproduced" if (g('FM (4) ResLnA')['moex'] < 0 and abs(g('FM (4) ResLnA')['moex_t']) > tc) else "not reproduced")
+              + f" ({_f(g('FM (4) ResLnA')['moex'], 3)}, t = {_f(g('FM (4) ResLnA')['moex_t'])}).") if not res_pos else
+             "there is a significantly positive estimate, so this part of the paper's conclusion is not reproduced."),
+          f"- Sorts (raw returns): H–L on `A`: {verdict('Quintile H-L on A, raw (%/mo)')}; on `A_C`: "
+          f"{verdict('Quintile H-L on A_C, raw (%/mo)')}; on `Res.A`: {verdict('Quintile H-L on ResA, raw (%/mo)')}.",
+          f"- H–L alphas on MKT+SMB+MOM: `A`: {verdict('Quintile H-L on A, alpha (paper: FF3+UMD; MOEX: MKT+SMB+MOM) (%/mo)')}; "
+          f"`A_C`: {verdict('Quintile H-L on A_C, alpha (paper: FF3+UMD; MOEX: MKT+SMB+MOM) (%/mo)')}. "
+          f"The alpha uses {int(a_ac['n_months_alpha'])} months (all three factors are needed), the raw H–L uses "
+          f"{int(a_ac['n_months_raw'])}; over the same {int(a_ac['n_months_alpha'])} months the raw H–L on `A_C` is "
+          f"{_f(a_ac['raw_hl_same_months'], 3)} (t = {_f(a_ac['raw_hl_same_months_t'])}) and on `A` "
           f"{_f(ad.loc['A', 'raw_hl_same_months'], 3)} (t = {_f(ad.loc['A', 'raw_hl_same_months_t'])}). "
-          f"Нагрузки H–L по `A_C` (`T3_alpha_detail.csv`): SMB {_f(a_ac['load_CSMB'])} (t = {_f(a_ac['load_CSMB_t'])}), "
+          f"Loadings of the `A_C` H–L (`T3_alpha_detail.csv`): SMB {_f(a_ac['load_CSMB'])} (t = {_f(a_ac['load_CSMB_t'])}), "
           f"MOM {_f(a_ac['load_CMOM'])} (t = {_f(a_ac['load_CMOM_t'])}), MKT {_f(a_ac['load_CMKT'])} "
-          f"(t = {_f(a_ac['load_CMKT_t'])}); средний ln ME нижнего/верхнего квинтиля — {_f(a_ac['lnME_bottom_q'])} / "
+          f"(t = {_f(a_ac['load_CMKT_t'])}); mean ln ME of the bottom/top quintile: {_f(a_ac['lnME_bottom_q'])} / "
           f"{_f(a_ac['lnME_top_q'])}. "
-          + ("Сырой спред (на тех же месяцах) почти целиком поглощается факторами: альфа меньше трети сырого H–L, "
-             "основная нагрузка — на SMB (неликвидный квинтиль состоит из мелких бумаг)." if absorbed
-             else "Альфа сохраняет заметную часть сырого спреда."),
-          f"- Чувствительность к поправке на риск: FM (4) `ln A_C` на сырых доходностях — {vt(raw_v, 'FM4_lnA_C')}, "
-          f"`ln A` в модели (1) — {vt(raw_v, 'FM1_lnA')}; на сырых доходностях за те же месяцы, что основной FM "
-          f"(пост-хок диагностика) — {vt(diag_v, 'FM4_lnA_C')} и {vt(diag_v, 'FM1_lnA')}.",
-          f"- Концентрация по годам (пост-хок, `diag_by_year.csv`, каждый год исключается по очереди): наибольший вклад "
-          f"в накопленный H–L по `A_C` даёт {int(top['year'])} год — {100 * top['hl_A_C_share_of_cum']:.0f}% "
-          f"(в среднем {_f(top['hl_A_C_mean'])}%/мес. за {int(top['n_months_hl'])} мес.); без него H–L = "
-          f"{_f(top['hl_A_C_excl_year'], 3)} (t = {_f(top['hl_A_C_excl_year_t'])}), а FM (4) `ln A_C` = "
-          f"{_f(top['fm4_lnA_C_excl_year'], 3)} (t = {_f(top['fm4_lnA_C_excl_year_t'])}); минимальный t FM (4) `ln A_C` "
-          f"при исключении любого года — {_f(yr['fm4_lnA_C_excl_year_t'].min())}.",
-          "- Итог: "
-          + (("объёмная компонента значима в основном FM во всех моделях обеих семей (|t| > {})".format(tc)
-              if all(g(i)["moex_t"] > tc for i in vol_items) else "объёмная компонента значима в основном FM в модели (4) "
-              "обеих семей (не во всех моделях, см. `paper_vs_moex.csv`)") if vol_fm else
-             "объёмная компонента в модели (4) основного FM не значима")
-          + (f"; порог HLZ t > {hz} проходят только: " + ", ".join(f"{i} (t = {_f(g(i)['moex_t'])})" for i in hlz_pass)
-             + (" — в модели (4) нет" if not vol_fm_hlz else "") if hlz_pass else f"; порог HLZ t > {hz} не проходит ни одна оценка")
-          + ("; на сырых доходностях она " + ("тоже значима" if sig(raw_v, "FM4_lnA_C") else "не значима")
-             + ", в сортировках по `A_C` " + ("значима" if g('Quintile H-L on A_C, raw (%/mo)')['moex_t'] > tc else "не значима")
-             + ", в альфах портфелей " + ("значима" if g('Quintile H-L on A_C, alpha (paper: FF3+UMD; MOEX: MKT+SMB+MOM) (%/mo)')['moex_t'] > tc else "не значима"))
-          + ". Направление (объём, а не price impact) совпадает со статьёй, но доказательность на MOEX слабее и "
-          "зависит от спецификации; см. все варианты ниже.", ""]
+          + ("The raw spread (over the same months) is almost entirely absorbed by the factors: the alpha is less than a third "
+             "of the raw H–L, and the main loading is on SMB (the illiquid quintile consists of small stocks)." if absorbed
+             else "The alpha keeps a noticeable part of the raw spread."),
+          f"- Sensitivity to the risk adjustment: FM (4) `ln A_C` on raw returns: {vt(raw_v, 'FM4_lnA_C')}, "
+          f"`ln A` in model (1): {vt(raw_v, 'FM1_lnA')}; on raw returns over the same months as the main FM "
+          f"(post hoc diagnostic): {vt(diag_v, 'FM4_lnA_C')} and {vt(diag_v, 'FM1_lnA')}.",
+          f"- Concentration by year (post hoc, `diag_by_year.csv`, each year dropped in turn): the largest contribution "
+          f"to the cumulative H–L on `A_C` comes from {int(top['year'])}, {100 * top['hl_A_C_share_of_cum']:.0f}% "
+          f"(on average {_f(top['hl_A_C_mean'])}%/month over {int(top['n_months_hl'])} months); without it H–L = "
+          f"{_f(top['hl_A_C_excl_year'], 3)} (t = {_f(top['hl_A_C_excl_year_t'])}), and FM (4) `ln A_C` = "
+          f"{_f(top['fm4_lnA_C_excl_year'], 3)} (t = {_f(top['fm4_lnA_C_excl_year_t'])}); the minimum t of FM (4) `ln A_C` "
+          f"when any one year is dropped: {_f(yr['fm4_lnA_C_excl_year_t'].min())}.",
+          "- Summary: "
+          + (("the volume component is significant in the main FM in all models of both families (|t| > {})".format(tc)
+              if all(g(i)["moex_t"] > tc for i in vol_items) else "the volume component is significant in the main FM in model (4) "
+              "of both families (not in all models, see `paper_vs_moex.csv`)") if vol_fm else
+             "the volume component in model (4) of the main FM is not significant")
+          + (f"; only these clear the HLZ bar t > {hz}: " + ", ".join(f"{i} (t = {_f(g(i)['moex_t'])})" for i in hlz_pass)
+             + (" (none in model (4))" if not vol_fm_hlz else "") if hlz_pass else f"; no estimate clears the HLZ bar t > {hz}")
+          + ("; on raw returns it is " + ("also significant" if sig(raw_v, "FM4_lnA_C") else "not significant")
+             + ", in the `A_C` sorts it is " + sig_word(g('Quintile H-L on A_C, raw (%/mo)')['moex_t'] > tc)
+             + ", in the portfolio alphas it is " + sig_word(g('Quintile H-L on A_C, alpha (paper: FF3+UMD; MOEX: MKT+SMB+MOM) (%/mo)')['moex_t'] > tc))
+          + ". The direction (volume, not price impact) matches the paper, but the evidence on MOEX is weaker and "
+          "depends on the specification; see all variants below.", ""]
 
-    L += ["## Все варианты (ничего не отбирали)", "",
-          "Варианты, заданные в `MOEX_SPEC` до первого расчёта: main, filter 1M RUB, no dividends, raw returns, terciles "
-          "(файлы MOEX не были закоммичены до расчёта, поэтому порядок подтверждается записями сессии, а не git). "
-          "Добавлены после первого прогона и помечены: `main without M9 corrections` (эффект двух проверенных "
-          "исправлений данных), `diagnostic: raw returns, months of ret_adj FM`, `T3_alpha_detail.csv` и "
-          "`diag_by_year.csv` (на этапе проверки).", "",
-          "| Вариант | H–L A_C raw (t) | H–L A_C alpha (t) | H–L Res.A raw (t) | FM(1) lnA (t) | FM(4) lnA_C (t) | FM(4) ResLnA (t) | FM(4) lnAT_C (t) | FM(4) ResLnAT (t) |",
+    L += ["## All variants (nothing was selected)", "",
+          "Variants set in `MOEX_SPEC` before the first computation: main, filter 1M RUB, no dividends, raw returns, terciles "
+          "(the MOEX files were not committed before the computation, so git cannot confirm this order; it rests on the "
+          "session log, which is not in the repository). "
+          "Added after the first run and labelled as such: `main without M9 corrections` (the effect of the two manual "
+          "data corrections), `diagnostic: raw returns, months of ret_adj FM`, `T3_alpha_detail.csv` and "
+          "`diag_by_year.csv` (at the verification stage).", "",
+          "| Variant | H–L A_C raw (t) | H–L A_C alpha (t) | H–L Res.A raw (t) | FM(1) lnA (t) | FM(4) lnA_C (t) | FM(4) ResLnA (t) | FM(4) lnAT_C (t) | FM(4) ResLnAT (t) |",
           "|---|---|---|---|---|---|---|---|---|"]
 
     def c(r, col, nd=2):
@@ -596,36 +605,37 @@ def summary_md(out: Path, base_run_id: str, run_id: str) -> str:
     um = um["eligible_main"].dropna()
     nq = int(spec["tests"]["quantiles"])
     big = flags[flags["kind"] == "verified_large_dividend"].set_index("secid")["value"]
-    m9 = "; ".join([f"сплит {v['secid']} {v['before']}:{v['after']} {v['date']} (нет в истории сплитов ISS)"
+    m9 = "; ".join([f"split {v['secid']} {v['before']}:{v['after']} {v['date']} (not in the ISS split history)"
                     for v in ds.get("verified_splits", [])]
-                   + [f"дивиденд {v['secid']} (реестр {v['registry_date']}, доходность {100 * float(big.loc[v['secid']]):.0f}% "
-                      f"выше защитного порога {100 * float(ds['max_div_yield']):.0f}%)"
+                   + [f"dividend {v['secid']} (registry {v['registry_date']}, yield {100 * float(big.loc[v['secid']]):.0f}%, "
+                      f"above the {100 * float(ds['max_div_yield']):.0f}% error guard)"
                       for v in ds.get("verified_large_dividends", []) if v["secid"] in big.index])
-    L += ["", "## Оговорки",
-          "- `ISSUESIZE` — только текущий (ISS не отдаёт историю): turnover и `ME` в прошлом считаются по "
-          "сегодняшнему числу акций (объём пересчитан в текущие единицы с учётом сплитов).",
-          f"- Дивиденды: эндпоинт ISS `/securities/<SECID>/dividends` выведен из эксплуатации, поэтому взяты с "
-          f"dohod.ru (запасной источник smart-lab.ru): страницы есть у {int(cov['secids_with_page'])} из "
-          f"{int(cov['secids'])} бумаг, {int(cov['events'])} выплат. Проверка дат отсечки: падение цены в "
-          f"экс-дату к дивидендной доходности — наклон {_f(ex.loc['ex-date', 'slope_price_return_on_minus_yield'])} "
-          f"(накануне — {_f(ex.loc['day before ex-date', 'slope_price_return_on_minus_yield'])}); "
-          f"сверка источников: из {int(xc['events_matched'])} выплат, найденных и на dohod.ru, и на smart-lab.ru, "
-          f"экс-даты совпали в {100 * xc['share_ex_date_equal']:.0f}% случаев "
-          f"(±1 торговый день — {100 * xc['share_ex_date_within_1_trading_day']:.0f}%); "
-          f"{int(xc['events_dohod_unmatched'])} из {int(xc['events_dohod'])} выплат dohod.ru не найдены на smart-lab.ru "
-          "с той же суммой (±2%) и датой (±5 дней) — у smart-lab короче история и иначе пересчитаны суммы после сплитов.",
-          f"- Остановка торгов {ds['halt'][0]}..{ds['halt'][1]}: дневная доходность через разрыв не считается; месячная "
-          "доходность февраль→март 2022 сохранена (это реальная доходность держателя).",
-          f"- Нет B/M; поправка на риск — EW-рынок TQBR (беты {spec['factors']['beta_window']} мес., минимум "
-          f"{spec['factors']['beta_min_obs']}), альфа — MKT+SMB+MOM, r_f = 0.",
-          f"- {int(um.min())}–{int(um.max())} акций в месяц (месяцы оценки мер): мощность ниже, чем у статьи "
-          f"({paper_sample['months']} мес., в среднем {paper_sample['avg_obs']:,} акций); квинтили по "
-          f"{int(um.min()) // nq}–{int(um.max()) // nq} бумаг, поэтому терцили приведены как робастность.",
-          "- Тикеры, сменившие SECID (например, TCSG→T), — разные бумаги; доходность на стыке не склеивается.",
-          f"- Исправления данных после первого прогона (M9, проверены по публичным источникам): {m9}. "
-          "Флаги — `data_flags.csv`; вариант без исправлений — в таблице выше.",
-          "- Шкала `ivol` (у нас — ст. откл. дневных остатков в долях) может отличаться от статьи: для `ivol` сравниваем знак и t, не величину.",
-          f"- Полный список отступлений — `deviations.csv` ({devs['id'].iloc[0]}–{devs['id'].iloc[-1]}).", ""]
+    L += ["", "## Caveats",
+          "- `ISSUESIZE` is current only (ISS does not provide its history): past turnover and `ME` use "
+          "today's share count (volume is converted to today's units using splits).",
+          f"- Dividends: the ISS endpoint `/securities/<SECID>/dividends` is retired, so dividends come from "
+          f"dohod.ru (fallback smart-lab.ru): pages exist for {int(cov['secids_with_page'])} of "
+          f"{int(cov['secids'])} stocks, {int(cov['events'])} payments. Check of record dates: slope of the ex-date price drop "
+          f"on the dividend yield {_f(ex.loc['ex-date', 'slope_price_return_on_minus_yield'])} "
+          f"(day before: {_f(ex.loc['day before ex-date', 'slope_price_return_on_minus_yield'])}); "
+          f"source cross-check: of {int(xc['events_matched'])} payments found on both dohod.ru and smart-lab.ru, "
+          f"the ex-dates agree in {100 * xc['share_ex_date_equal']:.0f}% of cases "
+          f"(within ±1 trading day: {100 * xc['share_ex_date_within_1_trading_day']:.0f}%); "
+          f"{int(xc['events_dohod_unmatched'])} of {int(xc['events_dohod'])} dohod.ru payments are not found on smart-lab.ru "
+          "with the same amount (±2%) and date (±5 days): smart-lab has a shorter history and rescales amounts differently after splits.",
+          f"- Trading halt {ds['halt'][0]}..{ds['halt'][1]}: no daily return is computed across the gap; the "
+          "February→March 2022 monthly return is kept (it is the holder's real return).",
+          f"- No B/M; the risk adjustment is the EW TQBR market (betas over {spec['factors']['beta_window']} months, minimum "
+          f"{spec['factors']['beta_min_obs']}), alphas on MKT+SMB+MOM, r_f = 0.",
+          f"- {int(um.min())}–{int(um.max())} stocks per month (measure months): power is lower than in the paper "
+          f"({paper_sample['months']} months, {paper_sample['avg_obs']:,} stocks on average); quintiles hold "
+          f"{int(um.min()) // nq}–{int(um.max()) // nq} stocks, so terciles are reported as robustness.",
+          "- Tickers that changed SECID (e.g. TCSG→T) are treated as different stocks; returns are not spliced at the switch.",
+          f"- Data corrections after the first run (M9; checked manually against public sources, which are described in "
+          f"`MOEX_SPEC` and the run manifest, `spec.data`; no links or copies of the sources are stored in the repository): {m9}. "
+          "Flags are in `data_flags.csv`; the variant without the corrections is in the table above.",
+          "- The scale of `ivol` (ours: s.d. of daily residuals, in fractions) may differ from the paper's, so for `ivol` we compare sign and t, not magnitude.",
+          f"- Full list of deviations: `deviations.csv` ({devs['id'].iloc[0]}–{devs['id'].iloc[-1]}).", ""]
     return "\n".join(L)
 
 
@@ -774,11 +784,11 @@ def main(argv: list[str] | None = None) -> str:
         "base_run_id": base_run_id,
         "base_run_note": "MOEX data and tests are independent of the Binance base run; its id is recorded for provenance.",
         "git": git_info(),
-        "config_path": str(cfg_path.resolve()), "config_sha256": sha256_file(cfg_path),
+        "config_path": rel_path(cfg_path), "config_sha256": sha256_file(cfg_path),
         "spec": spec, "spec_sha256": spec_hash,
         "code_sha256": {f: sha256_file(SRC / f) for f in CODE_FILES},
         "data_sha256": {p.name: sha256_file(p) for p in data_files if p.name != "moex_panel.parquet"},
-        "raw_cache": str((ROOT / "data" / "raw" / "moex").resolve()),
+        "raw_cache": rel_path(ROOT / "data" / "raw" / "moex"),
         "seed": seed,
         "timings_sec": timings | {"total": round(sum(timings.values()), 3)},
         "rows": {"daily_rows": int(len(daily)), "daily_symbols": int(daily["symbol"].nunique()),
