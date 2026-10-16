@@ -11,9 +11,9 @@
     "robustness": "robustness_20261016T222244Z",
     "sentiment": "sentiment_20261016T222253Z"
   },
-  "created_utc": "20261016T222441Z",
+  "created_utc": "20261016T222448Z",
   "git": {
-    "sha": "dd4b5184376170b3bb3be61587fcfffb53067479",
+    "sha": "ab98c901287bf13be3b41d0d4bd635bbeb2e356c",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -105,15 +105,15 @@
     "slides/deck.tex": "32a15df1821d8e2c55a1a6ffffdb6862543673cf3b7c7ae3275e310d08df29d5"
   },
   "outputs_sha256": {
-    "README.md": "22759d4d8423eaec8bb2b2c1c0df47fd79ca4d8024388c1e40bd483e8465e7e5",
-    "slides/PLAN.md": "a46ea4c9e2dc179d16606256c5d245cc61057407b3d197e0ac6e2083ee024e02",
-    "slides/gen/values.tex": "1b86f3aa2ad432a3a9fdd215c38b51a28adddcfea91fdead1eed33dac6fbd4b0",
+    "README.md": "b005eadb42cb2a1d8ae84714fa04ffd9396bbf9afb4f85f4569032949e509c6f",
+    "slides/PLAN.md": "d852c6ed500e64c87e0b868fe5224737e0d6aae97853279dbc134fae0426f83b",
+    "slides/gen/values.tex": "600648464c089618ab0dca55a86124c5a4b0145b1f0857c1cb5fdea21547c520",
     "slides/gen/sims.tex": "3779321e1a67b534625a00085b637fec23a19fd6525eebf5192ef7ffab68eaf0",
     "slides/gen/slide8.tex": "b9b402c9517cfe3eff1723c3642bdc74c543fbaaa11b9535b24328ffa9ab3684",
     "slides/gen/slide9.tex": "0dc8955cea854de91b6082bea3f8c36239453827320aba90a5ce3b8544ef17b6",
     "slides/gen/slide10.tex": "74be83208af1e7af0703044d1872cc981ab5d6d06318602ddbc9b54b760b1a24"
   },
   "timings_sec": {
-    "total": 2.362
+    "total": 2.318
   }
 }
