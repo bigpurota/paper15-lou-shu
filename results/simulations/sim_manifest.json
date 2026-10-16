@@ -1,26 +1,26 @@
 {
-  "run_id": "sim_20261016T181946Z",
-  "created_utc": "20261016T181946Z",
+  "run_id": "sim_20261016T211734Z",
+  "created_utc": "20261016T211734Z",
   "git": {
-    "sha": "06ee202291783f3b31f4e935ae5a0443249339c7",
+    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
     "dirty": false
   },
   "code_sha256": {
-    "src/*.py (concatenated, sorted)": "4443be02b15c1fb0969143459a015139d0e4ef8b26fca254710536f031327fe3"
+    "src/*.py (concatenated, sorted)": "5cdca397f5952797e68d4f8f303bed0abdbebf7e0ae37fd02313bcdceba5aa6c"
   },
   "data_sha256": "synthetic: no external data (simulated from config 'simulation' section; see config_sha256)",
   "timings_sec": {
-    "V": 21.2,
-    "P": 19.7,
-    "0": 74.6,
-    "power_V": 33.2,
-    "total": 148.9
+    "V": 22.2,
+    "P": 19.8,
+    "0": 73.8,
+    "power_V": 29.9,
+    "total": 145.8
   },
   "seed": 20261017,
   "seed_scheme": "SeedSequence([seed, world_code, rep, round(premium*1e6)+1e6 or 999999])",
-  "git_sha": "06ee202291783f3b31f4e935ae5a0443249339c7",
+  "git_sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
-  "code_sha256_src": "4443be02b15c1fb0969143459a015139d0e4ef8b26fca254710536f031327fe3",
+  "code_sha256_src": "5cdca397f5952797e68d4f8f303bed0abdbebf7e0ae37fd02313bcdceba5aa6c",
   "git_dirty": false,
   "n_reps": {
     "V": 50,
@@ -42,12 +42,12 @@
     0.01
   ],
   "runtime_sec": {
-    "V": 21.2,
-    "P": 19.7,
-    "0": 74.6,
-    "power_V": 33.2
+    "V": 22.2,
+    "P": 19.8,
+    "0": 73.8,
+    "power_V": 29.9
   },
-  "wall_sec": 148.9,
+  "wall_sec": 145.8,
   "workers": 9,
   "n_assets": 300,
   "n_months": 90,

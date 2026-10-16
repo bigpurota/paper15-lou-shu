@@ -1,11 +1,11 @@
 {
-  "run_id": "moex_20261016T182325Z_b4264d55",
-  "created_utc": "20261016T182325Z",
+  "run_id": "moex_20261016T212115Z_b4264d55",
+  "created_utc": "20261016T212115Z",
   "upgrade": "moex",
-  "base_run_id": "20261016T181948Z_3e8eb87e",
+  "base_run_id": "20261016T211736Z_3e8eb87e",
   "base_run_note": "MOEX data and tests are independent of the Binance base run; its id is recorded for provenance.",
   "git": {
-    "sha": "06ee202291783f3b31f4e935ae5a0443249339c7",
+    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -108,15 +108,15 @@
     "moex_splits.parquet": "2a51554f987517afb7e6a1b0e88e0367c49a91bd66c902f9da15ac8e3328a0d2",
     "moex_universe.parquet": "20d68ee38723f330bd7b12ce97f73438521a6f26ccf9bf4e0b080392f85f359e"
   },
-  "raw_cache": "../../../../../../../Users/purota/rs3-paper15/impl/data/raw/moex",
+  "raw_cache": "data/raw/moex",
   "seed": 20261017,
   "timings_sec": {
-    "data": 0.136,
-    "monthly": 2.435,
-    "main": 10.172,
-    "variants": 16.632,
-    "report": 2.273,
-    "total": 31.648
+    "data": 0.141,
+    "monthly": 2.41,
+    "main": 10.032,
+    "variants": 16.571,
+    "report": 2.259,
+    "total": 31.413
   },
   "rows": {
     "daily_rows": 571303,

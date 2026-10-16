@@ -1,11 +1,11 @@
 {
-  "run_id": "20261016T182104Z_3e8eb87e_edge_spread",
+  "run_id": "20261016T211852Z_3e8eb87e_edge_spread",
   "upgrade": "edge_spread",
-  "created_utc": "20261016T182104Z",
-  "base_run_id": "20261016T181948Z_3e8eb87e",
+  "created_utc": "20261016T211852Z",
+  "base_run_id": "20261016T211736Z_3e8eb87e",
   "base_config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "git": {
-    "sha": "06ee202291783f3b31f4e935ae5a0443249339c7",
+    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -27,10 +27,10 @@
     "edge_monthly": "97455cbcd783c4c8cc85cd8d0d63d20e82ebcbd0281b783de2287f519503b9b5"
   },
   "data_paths": {
-    "panel": "../../../../../../../Users/purota/rs3-paper15/impl/data/cache/panel_20261016T181948Z_3e8eb87e.parquet",
-    "daily": "../../../../../../../Users/purota/rs3-paper15/impl/data/cache/daily.parquet",
-    "ohlc_daily": "../../../../../../../Users/purota/rs3-paper15/impl/data/cache/ohlc_daily.parquet",
-    "edge_monthly": "../../../../../../../Users/purota/rs3-paper15/impl/data/cache/edge_monthly.parquet"
+    "panel": "data/cache/panel_20261016T211736Z_3e8eb87e.parquet",
+    "daily": "data/cache/daily.parquet",
+    "ohlc_daily": "data/cache/ohlc_daily.parquet",
+    "edge_monthly": "data/cache/edge_monthly.parquet"
   },
   "alignment": {
     "ohlc_rows_raw": 788692,
@@ -113,13 +113,13 @@
     "dep_var": "ret_adj"
   },
   "timings_sec": {
-    "ohlc": 0.474,
-    "align": 7.507,
-    "edge": 22.556,
-    "bidask_check": 0.385,
-    "tests": 8.753,
-    "write": 0.033,
-    "total": 39.708
+    "ohlc": 0.917,
+    "align": 7.285,
+    "edge": 22.302,
+    "bidask_check": 0.386,
+    "tests": 8.669,
+    "write": 0.032,
+    "total": 39.591
   },
   "tables": [
     "T10_fm.csv",

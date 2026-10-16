@@ -1,10 +1,10 @@
 {
-  "run_id": "20261016T182121Z_amihud_noh",
+  "run_id": "20261016T211909Z_amihud_noh",
   "upgrade": "amihud_noh",
-  "base_run_id": "20261016T181948Z_3e8eb87e",
-  "created_utc": "20261016T182121Z",
+  "base_run_id": "20261016T211736Z_3e8eb87e",
+  "created_utc": "20261016T211909Z",
   "git": {
-    "sha": "06ee202291783f3b31f4e935ae5a0443249339c7",
+    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -14,22 +14,22 @@
     "amihud_noh.py": "264ea59e516f3d2be26997405241a81064c10fb7120945042b2b0edfa673aca3",
     "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
-    "run.py": "49364908decde4b938ef003ee7c0aafb4389b61a1450d5043e901846a9753d49",
+    "run.py": "06b516de8c499e834aa316d796aa7b1b7586a9d9acd2131e26d7244f2ccb90a9",
     "data_audit.py": "e01e63fd3ccb2f924e800be1b7dc0de21fee657f47985a9dd020986aba4c5a69",
     "paper_numbers.yaml": "ddd3b031e9d03d702192094f236f56b3bba6c6c21f5d27aaf421d35c70863325"
   },
   "inputs": {
     "daily": {
-      "path": "../../../../../../../Users/purota/rs3-paper15/impl/data/cache/daily.parquet",
+      "path": "data/cache/daily.parquet",
       "sha256": "47d0542600dbce8339e3bfff34a7648f3a37107b1cc86af8c45de1c75f1dca1d"
     },
     "base_panel": {
-      "path": "../../../../../../../Users/purota/rs3-paper15/impl/data/cache/panel_20261016T181948Z_3e8eb87e.parquet",
+      "path": "data/cache/panel_20261016T211736Z_3e8eb87e.parquet",
       "sha256": "3a1397327cc45f1fbf200d262c58df7d55a7c90ccc05b11b5676968255699cd9"
     },
     "base_manifest": {
-      "path": "results/20261016T181948Z_3e8eb87e/run_manifest.json",
-      "sha256": "1c5e347e0005d9bf726bb3188c73872804cb98b8a1baa7fb694cf9f63201b6ec"
+      "path": "results/20261016T211736Z_3e8eb87e/run_manifest.json",
+      "sha256": "5ecb4772d9ff2b8f756ee2d1a35e58bf4ced9d80c6e3f8e900cd1ad69960a924"
     }
   },
   "data_matches_base": true,
@@ -106,13 +106,13 @@
     "SUMMARY.md"
   ],
   "timings_sec": {
-    "load": 6.8,
-    "monthly": 1.655,
-    "an12_measures": 0.924,
-    "an12_fm": 2.183,
-    "ivol_channel": 0.7,
-    "write": 0.133,
-    "total": 15.558
+    "load": 6.808,
+    "monthly": 1.601,
+    "an12_measures": 0.971,
+    "an12_fm": 2.179,
+    "ivol_channel": 0.754,
+    "write": 0.144,
+    "total": 15.635
   },
-  "peak_rss_mb": 844.2
+  "peak_rss_mb": 845.9
 }
