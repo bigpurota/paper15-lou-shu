@@ -3,8 +3,8 @@
   "clone_dir": "<scratch>/fresh",
   "clone_commit": "c631dba60163f0e975e8a34592529a080cf8b0e4",
   "clone_data_dir": "empty at start; every download redone by the clone",
-  "code_note": "the clone ran the code of commit c631dba; it is compared with this repository's canonical outputs, which were produced by commit 06cc8d8 (base run 20261016T221825Z_3e8eb87e)",
-  "repo_base_run": "20261016T221825Z_3e8eb87e",
+  "code_note": "the clone ran the code of commit c631dba; it is compared with this repository's canonical outputs, which were produced by commit 9730436 (base run 20261016T231216Z_3e8eb87e)",
+  "repo_base_run": "20261016T231216Z_3e8eb87e",
   "clone_base_run": "20261016T171236Z_3e8eb87e",
   "steps": [
     {

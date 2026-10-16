@@ -1,14 +1,14 @@
-Checked 32 packages in 65ms
+Checked 32 packages in 49ms
 .venv/bin/python -I -m pytest -q --ignore=tests/test_manifests.py
-........................................................................ [ 42%]
-........................................................................ [ 84%]
-...........................                                              [100%]
-171 passed in 133.40s (0:02:13)
+........................................................................ [ 41%]
+........................................................................ [ 83%]
+............................                                             [100%]
+172 passed in 138.43s (0:02:18)
 .venv/bin/python -I src/simulate.py config.yaml --out results/simulations
-[V] 50 reps, 22.4 s, errors: 0
-[P] 50 reps, 20.5 s, errors: 0
-[0] 200 reps, 75.0 s, errors: 0
-[power_V] 80 reps, 30.9 s, errors: 0
+[V] 50 reps, 22.5 s, errors: 0
+[P] 50 reps, 19.3 s, errors: 0
+[0] 200 reps, 72.6 s, errors: 0
+[power_V] 80 reps, 28.9 s, errors: 0
 world           stat  n_reps  mean_coef  mean_t  share_abs_t_gt_1.96  ci95_lo  ci95_hi  share_t_gt_1.96  share_abs_t_gt_3
     V      fm2_lnA_C      50      0.412   7.244                1.000    0.929    1.000            1.000             1.000
     V     fm3_ResLnA      50      0.028   0.065                0.040    0.005    0.137            0.020             0.000
@@ -68,22 +68,22 @@ world                                                        criterion  value   
     0       false-positive rate |t(hl_A)| > 1.96 [95% CI 0.035, 0.109]  0.065 CI contains 0.05  True
     0     false-positive rate |t(hl_A_C)| > 1.96 [95% CI 0.035, 0.109]  0.065 CI contains 0.05  True
     0    false-positive rate |t(hl_ResA)| > 1.96 [95% CI 0.039, 0.115]  0.070 CI contains 0.05  True
-wall 148.8 s; notes: []
+wall 143.3 s; notes: []
 .venv/bin/python -I src/run.py config.yaml --daily data/cache/daily.parquet
-2026-10-17 01:18:25,070 INFO stage load ...
-2026-10-17 01:18:25,283 INFO stage load done in 0.2s
-2026-10-17 01:18:25,284 INFO stage audit ...
-2026-10-17 01:18:31,591 INFO stage audit done in 6.3s
-2026-10-17 01:18:31,591 INFO stage build_panel ...
-2026-10-17 01:18:33,596 INFO stage build_panel done in 2.0s
-2026-10-17 01:18:33,596 INFO stage run_tests ...
-2026-10-17 01:18:38,351 INFO stage run_tests done in 4.8s
-2026-10-17 01:18:38,351 INFO stage placebo ...
-2026-10-17 01:18:50,886 INFO stage placebo done in 12.5s
-2026-10-17 01:18:50,887 INFO stage write ...
-2026-10-17 01:18:50,946 INFO stage write done in 0.1s
-2026-10-17 01:18:51,028 INFO run 20261016T221825Z_3e8eb87e written to <scratch>/finalD/results/20261016T221825Z_3e8eb87e
-20261016T221825Z_3e8eb87e
+2026-10-17 02:12:16,359 INFO stage load ...
+2026-10-17 02:12:16,569 INFO stage load done in 0.2s
+2026-10-17 02:12:16,569 INFO stage audit ...
+2026-10-17 02:12:22,736 INFO stage audit done in 6.2s
+2026-10-17 02:12:22,736 INFO stage build_panel ...
+2026-10-17 02:12:24,696 INFO stage build_panel done in 2.0s
+2026-10-17 02:12:24,696 INFO stage run_tests ...
+2026-10-17 02:12:29,464 INFO stage run_tests done in 4.8s
+2026-10-17 02:12:29,464 INFO stage placebo ...
+2026-10-17 02:12:41,972 INFO stage placebo done in 12.5s
+2026-10-17 02:12:41,972 INFO stage write ...
+2026-10-17 02:12:42,030 INFO stage write done in 0.1s
+2026-10-17 02:12:42,113 INFO run 20261016T231216Z_3e8eb87e written to <scratch>/finalE/results/20261016T231216Z_3e8eb87e
+20261016T231216Z_3e8eb87e
 .venv/bin/python -I src/report.py
                                         metric      paper          us      us_t     match
                                   corr(A, A_C)   0.899000    0.955787       NaN       yes
@@ -122,78 +122,78 @@ wall 148.8 s; notes: []
 A&N (2021) col. 4: RlnILLIQ with ln A_C + IVOL   0.736000   -6.329644 -1.981667        no
   A&N (2021) col. 3: DIF with ln A_C + ln|Ret|   0.996000   -1.638115 -0.435959        no
 .venv/bin/python -I src/figures.py
-figures written to <scratch>/finalD/results/20261016T221825Z_3e8eb87e: fig_quintiles, fig_quintiles_demeaned, fig_hl_ci, fig_tstats, fig_hl_cumulative, fig_an_dif
+figures written to <scratch>/finalE/results/20261016T231216Z_3e8eb87e: fig_quintiles, fig_quintiles_demeaned, fig_hl_ci, fig_tstats, fig_hl_cumulative, fig_an_dif
 .venv/bin/python -I src/spread_edge.py config.yaml
-[edge_spread] ohlc: 0.9s
-[edge_spread] align: 7.2s
-[edge_spread] edge: 22.1s
+[edge_spread] ohlc: 0.8s
+[edge_spread] align: 7.4s
+[edge_spread] edge: 22.3s
 [edge_spread] bidask_check: 0.4s
 [edge_spread] tests: 8.7s
 [edge_spread] write: 0.0s
-[edge_spread] wrote <scratch>/finalD/results/upgrades/edge_spread
+[edge_spread] wrote <scratch>/finalE/results/upgrades/edge_spread
 .venv/bin/python -I src/amihud_noh.py config.yaml
-2026-10-17 01:19:57,143 INFO amihud_noh written to <scratch>/finalD/results/upgrades/amihud_noh (base run 20261016T221825Z_3e8eb87e)
+2026-10-17 02:13:48,583 INFO amihud_noh written to <scratch>/finalE/results/upgrades/amihud_noh (base run 20261016T231216Z_3e8eb87e)
 .venv/bin/python -I src/hf_lambda.py config.yaml 
-2026-10-17 01:19:58,960 INFO base run 20261016T221825Z_3e8eb87e: 24628 rows
-2026-10-17 01:19:59,125 INFO   download 0/13709
-2026-10-17 01:19:59,145 INFO   download 500/13709
-2026-10-17 01:19:59,165 INFO   download 1000/13709
-2026-10-17 01:19:59,185 INFO   download 1500/13709
-2026-10-17 01:19:59,209 INFO   download 2000/13709
-2026-10-17 01:19:59,227 INFO   download 2500/13709
-2026-10-17 01:19:59,245 INFO   download 3000/13709
-2026-10-17 01:19:59,262 INFO   download 3500/13709
-2026-10-17 01:19:59,281 INFO   download 4000/13709
-2026-10-17 01:19:59,299 INFO   download 4500/13709
-2026-10-17 01:19:59,317 INFO   download 5000/13709
-2026-10-17 01:19:59,334 INFO   download 5500/13709
-2026-10-17 01:19:59,352 INFO   download 6000/13709
-2026-10-17 01:19:59,368 INFO   download 6500/13709
-2026-10-17 01:19:59,386 INFO   download 7000/13709
-2026-10-17 01:19:59,403 INFO   download 7500/13709
-2026-10-17 01:19:59,421 INFO   download 8000/13709
-2026-10-17 01:19:59,437 INFO   download 8500/13709
-2026-10-17 01:19:59,456 INFO   download 9000/13709
-2026-10-17 01:19:59,477 INFO   download 9500/13709
-2026-10-17 01:19:59,496 INFO   download 10000/13709
-2026-10-17 01:19:59,512 INFO   download 10500/13709
-2026-10-17 01:19:59,530 INFO   download 11000/13709
-2026-10-17 01:19:59,551 INFO   download 11500/13709
-2026-10-17 01:19:59,571 INFO   download 12000/13709
-2026-10-17 01:19:59,590 INFO   download 12500/13709
-2026-10-17 01:19:59,607 INFO   download 13000/13709
-2026-10-17 01:19:59,625 INFO   download 13500/13709
-2026-10-17 01:19:59,639 INFO   download 0/70
-2026-10-17 01:19:59,644 INFO downloads: {('aggTrades', 'cached'): 70, ('klines5m', 'cached'): 13709}
-2026-10-17 01:22:01,184 INFO written to <scratch>/finalD/results/upgrades/hf_lambda (122s)
+2026-10-17 02:13:50,377 INFO base run 20261016T231216Z_3e8eb87e: 24628 rows
+2026-10-17 02:13:50,545 INFO   download 0/13709
+2026-10-17 02:13:50,563 INFO   download 500/13709
+2026-10-17 02:13:50,583 INFO   download 1000/13709
+2026-10-17 02:13:50,601 INFO   download 1500/13709
+2026-10-17 02:13:50,620 INFO   download 2000/13709
+2026-10-17 02:13:50,638 INFO   download 2500/13709
+2026-10-17 02:13:50,655 INFO   download 3000/13709
+2026-10-17 02:13:50,672 INFO   download 3500/13709
+2026-10-17 02:13:50,689 INFO   download 4000/13709
+2026-10-17 02:13:50,708 INFO   download 4500/13709
+2026-10-17 02:13:50,725 INFO   download 5000/13709
+2026-10-17 02:13:50,743 INFO   download 5500/13709
+2026-10-17 02:13:50,759 INFO   download 6000/13709
+2026-10-17 02:13:50,776 INFO   download 6500/13709
+2026-10-17 02:13:50,793 INFO   download 7000/13709
+2026-10-17 02:13:50,811 INFO   download 7500/13709
+2026-10-17 02:13:50,827 INFO   download 8000/13709
+2026-10-17 02:13:50,846 INFO   download 8500/13709
+2026-10-17 02:13:50,863 INFO   download 9000/13709
+2026-10-17 02:13:50,879 INFO   download 9500/13709
+2026-10-17 02:13:50,897 INFO   download 10000/13709
+2026-10-17 02:13:50,915 INFO   download 10500/13709
+2026-10-17 02:13:50,933 INFO   download 11000/13709
+2026-10-17 02:13:50,948 INFO   download 11500/13709
+2026-10-17 02:13:50,966 INFO   download 12000/13709
+2026-10-17 02:13:50,984 INFO   download 12500/13709
+2026-10-17 02:13:51,002 INFO   download 13000/13709
+2026-10-17 02:13:51,021 INFO   download 13500/13709
+2026-10-17 02:13:51,036 INFO   download 0/70
+2026-10-17 02:13:51,041 INFO downloads: {('aggTrades', 'cached'): 70, ('klines5m', 'cached'): 13709}
+2026-10-17 02:15:50,581 INFO written to <scratch>/finalE/results/upgrades/hf_lambda (120s)
 .venv/bin/python -I src/run_moex.py config.yaml
-2026-10-17 01:22:03,081 INFO stage data ...
-2026-10-17 01:22:03,228 INFO stage monthly ...
-2026-10-17 01:22:05,659 INFO stage main ...
-2026-10-17 01:22:15,775 INFO stage variants ...
-2026-10-17 01:22:32,428 INFO stage report ...
-2026-10-17 01:22:34,759 INFO moex upgrade moex_20261016T222203Z_b4264d55 written to <scratch>/finalD/results/upgrades/moex
-moex_20261016T222203Z_b4264d55
+2026-10-17 02:15:52,563 INFO stage data ...
+2026-10-17 02:15:52,707 INFO stage monthly ...
+2026-10-17 02:15:55,087 INFO stage main ...
+2026-10-17 02:16:05,136 INFO stage variants ...
+2026-10-17 02:16:21,659 INFO stage report ...
+2026-10-17 02:16:24,003 INFO moex upgrade moex_20261016T231552Z_b4264d55 written to <scratch>/finalE/results/upgrades/moex
+moex_20261016T231552Z_b4264d55
 .venv/bin/python -I src/openap_us.py config.yaml
-2026-10-17 01:22:36,605 INFO openap_us written to <scratch>/finalD/results/upgrades/openap_us
+2026-10-17 02:16:25,807 INFO openap_us written to <scratch>/finalE/results/upgrades/openap_us
 .venv/bin/python -I src/robustness_extra.py config.yaml
-2026-10-17 01:22:38,381 INFO stage load_panel done in 0.2s
-2026-10-17 01:22:39,126 INFO stage monthly_series done in 0.7s
-2026-10-17 01:22:42,788 INFO stage bootstrap done in 3.7s
-2026-10-17 01:22:42,832 INFO stage stability done in 0.0s
-2026-10-17 01:22:42,860 INFO stage mde done in 0.0s
-2026-10-17 01:22:44,075 INFO stage ledger done in 1.2s
-2026-10-17 01:22:44,143 INFO stage summary done in 0.1s
-2026-10-17 01:22:44,194 INFO robustness upgrade written to <scratch>/finalD/results/upgrades/robustness
+2026-10-17 02:16:27,553 INFO stage load_panel done in 0.2s
+2026-10-17 02:16:28,301 INFO stage monthly_series done in 0.7s
+2026-10-17 02:16:31,917 INFO stage bootstrap done in 3.6s
+2026-10-17 02:16:31,962 INFO stage stability done in 0.0s
+2026-10-17 02:16:31,989 INFO stage mde done in 0.0s
+2026-10-17 02:16:33,212 INFO stage ledger done in 1.2s
+2026-10-17 02:16:33,278 INFO stage summary done in 0.1s
+2026-10-17 02:16:33,324 INFO robustness upgrade written to <scratch>/finalE/results/upgrades/robustness
 .venv/bin/python -I src/sentiment.py config.yaml
-2026-10-17 01:22:45,807 INFO base run 20261016T221825Z_3e8eb87e
-2026-10-17 01:22:53,370 INFO written to <scratch>/finalD/results/upgrades/sentiment
+2026-10-17 02:16:34,910 INFO base run 20261016T231216Z_3e8eb87e
+2026-10-17 02:16:42,240 INFO written to <scratch>/finalE/results/upgrades/sentiment
 .venv/bin/python -I src/robustness_extra.py config.yaml --ledger-only
-2026-10-17 01:22:56,237 INFO ledger rebuilt: {'source': 'BASE', 'role': 'test (family)', 'n_rows': 85, 'n_unique': 73, 'n_abs_t_gt_1.96': 16, 'n_abs_t_gt_3': 0, 'expected_false_1.96_if_all_null': 3.6500000000000004, 'n_bonferroni_sig': 0.0, 'n_bh_sig': 0.0, 'bonferroni_crit_t': 3.395540856184292}
+2026-10-17 02:16:45,067 INFO ledger rebuilt: {'source': 'BASE', 'role': 'test (family)', 'n_rows': 85, 'n_unique': 73, 'n_abs_t_gt_1.96': 16, 'n_abs_t_gt_3': 0, 'expected_false_1.96_if_all_null': 3.6500000000000004, 'n_bonferroni_sig': 0.0, 'n_bh_sig': 0.0, 'bonferroni_crit_t': 3.395540856184292}
 .venv/bin/python -I src/build_docs.py
 wrote README.md
 wrote slides/PLAN.md
 wrote slides/gen/values.tex
 .venv/bin/python -I -m pytest -q tests/test_manifests.py
-.xxx...........                                                          [100%]
-12 passed, 3 xfailed in 0.04s
+.xxx............                                                         [100%]
+13 passed, 3 xfailed in 0.04s
