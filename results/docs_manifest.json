@@ -11,9 +11,9 @@
     "robustness": "robustness_20261016T231633Z",
     "sentiment": "sentiment_20261016T231642Z"
   },
-  "created_utc": "20261016T231827Z",
+  "created_utc": "20261016T231836Z",
   "git": {
-    "sha": "9cfe86554ba6c2f30be11797461857ed3c5fc488",
+    "sha": "b784c9cd98339ab337f8e56124d439c4e283f256",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -121,6 +121,6 @@
     "slides/gen/slide10.tex": "74be83208af1e7af0703044d1872cc981ab5d6d06318602ddbc9b54b760b1a24"
   },
   "timings_sec": {
-    "total": 2.068
+    "total": 1.996
   }
 }
