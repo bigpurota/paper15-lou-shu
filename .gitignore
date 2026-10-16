@@ -3,3 +3,11 @@ data/cache/
 __pycache__/
 .venv/
 *.zip
+.pytest_cache/
+slides/build/
+*.aux
+*.log
+*.nav
+*.snm
+*.toc
+*.out
