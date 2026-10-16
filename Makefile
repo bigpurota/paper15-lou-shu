@@ -28,8 +28,10 @@ data: $(DAILY)
 $(DAILY): | $(STAMP)
 	$(PYI) src/data_binance.py $(CONFIG)
 
+# code tests; the output contract (tests/test_manifests.py) checks files a run writes, so it runs in
+# check-outputs at the END of make all (here it would only see the previous run's outputs)
 tests: | $(STAMP)
-	$(PYI) -m pytest -q
+	$(PYI) -m pytest -q --ignore=tests/test_manifests.py
 
 sims: | $(STAMP)
 	$(PYI) src/simulate.py $(CONFIG) --out results/simulations
