@@ -11,9 +11,9 @@
     "robustness": "robustness_20261016T212156Z",
     "sentiment": "sentiment_20261016T212204Z"
   },
-  "created_utc": "20261016T212211Z",
+  "created_utc": "20261016T212531Z",
   "git": {
-    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
+    "sha": "d0b87739d424530d0f090a321c252b2da19b0246",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -92,8 +92,8 @@
     "results/repro/repro_check.csv": "a5b31a2e18f5509ab33b0028bb8e9550603937f92a500fcbe5bca13f5c105983",
     "results/20261016T181948Z_3e8eb87e/run_manifest.json": "1c5e347e0005d9bf726bb3188c73872804cb98b8a1baa7fb694cf9f63201b6ec",
     "results/repro/clone_logs/make_tests.txt": "0c418b3f8e0f88d086952a532ad1845c73b005501d43962a405eb7d02ef3d5d6",
-    "results/repro/final_clone/summary.json": "bd47a2708bc1c880282f9416cfb591008237a82021f9c2058efe9f771053157b",
-    "results/repro/final_clone/manifests.csv": "5369b7a983550de91a72e1f5531909bc55ec89b233d8b18844dfe1ae9d125079",
+    "results/repro/final_clone/summary.json": "49c1645e1369b7d6b7260104fb5e604625dd564a9adcaf8227ba23eab516bdbe",
+    "results/repro/final_clone/manifests.csv": "84b056455a6206b8454dc3e990be5a1ddf27c6011624e9395f52b3f6b66de6ef",
     "results/tests_log/pytest_worktree_20261016T210712.txt": "fde5b854242da1b4cbabf8785dcab136e587afdc0165eaf0e929def98a323cb4",
     "slides/meta.yaml": "9b2d0ffcde8bba7b22ff440906c4129ff79f2754ce6a0c0e6c3ee5e1a4ed3487",
     "results/20261016T211736Z_3e8eb87e/paper_vs_us.md": "e2fb4675a78b48241a21eff833cff7ce46b3cc3a252d86aa737e10de1a6feba3",
@@ -101,15 +101,15 @@
     "slides/deck.tex": "68f3c3e0c3959ecc172a016445ba459b16ffca0023f1b360538d2a78af9909a4"
   },
   "outputs_sha256": {
-    "README.md": "6bb478e35870181b7323f6d5ca2188d07a191bb1f2a0064464cddb576e87555c",
-    "slides/PLAN.md": "9ec1316faf985692ec4f4933f26b3d55c029e5dfe723c1539f056f22ca9189f2",
-    "slides/gen/values.tex": "168f95843fddaa36ee8e7317e9b06e41e083e047bc5ee12f03e29a76f0efcc39",
+    "README.md": "720b7ed6ef543f83a0604735579ebbeef41416ac7755d2da21bde8c312fb0dc9",
+    "slides/PLAN.md": "ae6c051762817679adf0f8ac8639c8f63eea598e3eff5078371451a1f797d9c9",
+    "slides/gen/values.tex": "77ddefca22c808096f94fcf2c9f2a398c301ca86874eecd5bff949058afecce9",
     "slides/gen/sims.tex": "3779321e1a67b534625a00085b637fec23a19fd6525eebf5192ef7ffab68eaf0",
     "slides/gen/slide8.tex": "38992a239031f32ed52357ac0cc6136dbb41677e60dbb10172448ed31510af15",
     "slides/gen/slide9.tex": "0dc8955cea854de91b6082bea3f8c36239453827320aba90a5ce3b8544ef17b6",
     "slides/gen/slide10.tex": "74be83208af1e7af0703044d1872cc981ab5d6d06318602ddbc9b54b760b1a24"
   },
   "timings_sec": {
-    "total": 3.115
+    "total": 3.063
   }
 }
