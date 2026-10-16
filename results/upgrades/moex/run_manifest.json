@@ -1,11 +1,11 @@
 {
-  "run_id": "moex_20261016T222203Z_b4264d55",
-  "created_utc": "20261016T222203Z",
+  "run_id": "moex_20261016T231552Z_b4264d55",
+  "created_utc": "20261016T231552Z",
   "upgrade": "moex",
-  "base_run_id": "20261016T221825Z_3e8eb87e",
+  "base_run_id": "20261016T231216Z_3e8eb87e",
   "base_run_note": "MOEX data and tests are independent of the Binance base run; its id is recorded for provenance.",
   "git": {
-    "sha": "06cc8d82855ddee0c3f95fa848af49836a7e0d2d",
+    "sha": "97304363a0aea57b8b34756c8b849310229a2e53",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -91,7 +91,7 @@
   "spec_sha256": "b4264d55708e84c0c6c39e4e900ddcceb10f9c4cfc9f3e050c9edeb418635af0",
   "code_sha256": {
     "data_moex.py": "8ccb3b190523f20a4dacad6d9ec014dbf2c6a1378a56dd239e45e80ad11ab810",
-    "run_moex.py": "285609a00f1fb676a5fdc6520101888eb606bc7c6a18f0000a28596ec480a79c",
+    "run_moex.py": "94452babdfe55535b4a66aa6b4030718d00b8cfe16d7a37a086ba46855475491",
     "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64",
     "factors.py": "ee81e16f6a9e5bf439e0f884f3d4c3ae379276f14e2b8020ee683a02a09dcf9c",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
@@ -111,12 +111,12 @@
   "raw_cache": "data/raw/moex",
   "seed": 20261017,
   "timings_sec": {
-    "data": 0.147,
-    "monthly": 2.431,
-    "main": 10.116,
-    "variants": 16.653,
-    "report": 2.229,
-    "total": 31.576
+    "data": 0.143,
+    "monthly": 2.381,
+    "main": 10.048,
+    "variants": 16.523,
+    "report": 2.246,
+    "total": 31.341
   },
   "rows": {
     "daily_rows": 571303,

@@ -1,18 +1,18 @@
 {
-  "run_id": "20261016T221940Z_3e8eb87e_edge_spread",
+  "run_id": "20261016T231331Z_3e8eb87e_edge_spread",
   "upgrade": "edge_spread",
-  "created_utc": "20261016T221940Z",
-  "base_run_id": "20261016T221825Z_3e8eb87e",
+  "created_utc": "20261016T231331Z",
+  "base_run_id": "20261016T231216Z_3e8eb87e",
   "base_config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "git": {
-    "sha": "06cc8d82855ddee0c3f95fa848af49836a7e0d2d",
+    "sha": "97304363a0aea57b8b34756c8b849310229a2e53",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
   "config_path": "config.yaml",
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "code_sha256": {
-    "spread_edge.py": "0fc102adb1deb73d245d547239dff5abf4b3184c7a209ddc745c5259d8c854bb",
+    "spread_edge.py": "0a4366d7ff4f865c860f79f37f584578ecaf5e90dab86069b512df4c0188c3fa",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
     "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64",
     "sorts.py": "43c75b1a7b5a458f007652fd3ceff3291fe2cee3d53c829a465325c0fe291848",
@@ -27,7 +27,7 @@
     "edge_monthly": "97455cbcd783c4c8cc85cd8d0d63d20e82ebcbd0281b783de2287f519503b9b5"
   },
   "data_paths": {
-    "panel": "data/cache/panel_20261016T221825Z_3e8eb87e.parquet",
+    "panel": "data/cache/panel_20261016T231216Z_3e8eb87e.parquet",
     "daily": "data/cache/daily.parquet",
     "ohlc_daily": "data/cache/ohlc_daily.parquet",
     "edge_monthly": "data/cache/edge_monthly.parquet"
@@ -113,13 +113,13 @@
     "dep_var": "ret_adj"
   },
   "timings_sec": {
-    "ohlc": 0.912,
-    "align": 7.212,
-    "edge": 22.123,
-    "bidask_check": 0.38,
-    "tests": 8.68,
-    "write": 0.034,
-    "total": 39.341
+    "ohlc": 0.807,
+    "align": 7.378,
+    "edge": 22.257,
+    "bidask_check": 0.383,
+    "tests": 8.671,
+    "write": 0.033,
+    "total": 39.529
   },
   "tables": [
     "T10_fm.csv",

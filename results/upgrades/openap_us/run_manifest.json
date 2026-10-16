@@ -1,11 +1,11 @@
 {
   "upgrade": "openap_us",
-  "run_id": "20261016T222236Z_openap_us",
-  "created_utc": "20261016T222236Z",
-  "base_run_id": "20261016T221825Z_3e8eb87e",
+  "run_id": "20261016T231625Z_openap_us",
+  "created_utc": "20261016T231625Z",
+  "base_run_id": "20261016T231216Z_3e8eb87e",
   "base_run_used_for": "provenance only (US data do not depend on the crypto panel)",
   "git": {
-    "sha": "06cc8d82855ddee0c3f95fa848af49836a7e0d2d",
+    "sha": "97304363a0aea57b8b34756c8b849310229a2e53",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -73,10 +73,10 @@
   "seed": 20261017,
   "seed_used": false,
   "timings_sec": {
-    "download": 0.007,
-    "load": 0.047,
+    "download": 0.008,
+    "load": 0.05,
     "tests": 0.077,
-    "total": 0.164
+    "total": 0.17
   },
   "tables": [
     "correlation.csv",
