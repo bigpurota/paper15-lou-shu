@@ -1,15 +1,16 @@
 {
-  "run_id": "hf_lambda_20261016T154107Z_3e8eb87e",
-  "created_utc": "20261016T154107Z",
-  "base_run_id": "20261016T135240Z_3e8eb87e",
-  "base_panel": "/Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135240Z_3e8eb87e.parquet",
+  "run_id": "hf_lambda_20261016T182323Z_3e8eb87e",
+  "created_utc": "20261016T182323Z",
+  "base_run_id": "20261016T181948Z_3e8eb87e",
+  "base_panel": "../../../../../../../Users/purota/rs3-paper15/impl/data/cache/panel_20261016T181948Z_3e8eb87e.parquet",
   "git": {
-    "sha": "aa8f4aa517b75d38b4ac066b252585257c031053",
-    "dirty": true
+    "sha": "06ee202291783f3b31f4e935ae5a0443249339c7",
+    "dirty": false,
+    "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "code_sha256": {
-    "hf_lambda.py": "0ac2e511a9e6e5342e53d248a5de37a6fd42330fe82fcb8f3e41601b82a2867b",
+    "hf_lambda.py": "b1974de3b9b90ea444cf19ed8dc2ae5ecb61233b87ef1ff5bd5f8813944cb9be",
     "analysis.py": "91476d46a8e44cd573b3ebad8d7e7d389018f1589b45a279487d45a08909a6da",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
     "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64"
@@ -93,14 +94,15 @@
     "sample": "NYSE/AMEX, 1983-2012 (Table 9: 358 months, ~1725 stocks); Table 10: 1964-2012"
   },
   "edge_status": "used column 'edge' of edge_monthly.parquet (26347 coin-months); main rule 'floor' as in edge_spread, floored share 0.510",
+  "edge_variant_run": true,
   "timings_sec": {
-    "load_panel": 0.14,
-    "download": 0.63,
-    "lambda_klines": 66.71,
-    "lambda_aggtrades": 38.45,
-    "tests": 3.62,
-    "hash": 8.82,
-    "total": 118.37
+    "load_panel": 0.17,
+    "download": 0.79,
+    "lambda_klines": 68.05,
+    "lambda_aggtrades": 40.36,
+    "tests": 2.17,
+    "hash": 9.14,
+    "total": 120.68
   },
   "versions": {
     "python": "3.12.13",

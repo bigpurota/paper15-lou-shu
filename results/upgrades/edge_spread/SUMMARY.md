@@ -1,6 +1,6 @@
 # Upgrade 3: the EDGE spread and the economic significance of the premium
 
-Base run: `20261016T135240Z_3e8eb87e`; upgrade run: `20261016T165239Z_3e8eb87e_edge_spread`. Every number below comes from the CSVs in this folder.
+Base run: `20261016T181948Z_3e8eb87e`; upgrade run: `20261016T182104Z_3e8eb87e_edge_spread`. Every number below comes from the CSVs in this folder.
 
 ## What we tested
 - EDGE (Ardia, Guidotti, Kroencke 2024): our own implementation on daily OHLC within the month (≥10 pairs of adjacent days). Cross-check against the `bidask` package 2.1.0: 300 coin-months (random draw stratified so that up to a third are months with missing days; 6 of them have gaps; `edge_bidask_check.csv`), max |difference| = 0.0e+00.

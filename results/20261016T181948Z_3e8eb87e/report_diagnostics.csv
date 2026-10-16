@@ -1,0 +1,154 @@
+id,value,label,description,source
+hlz,3.0,3.0,"Harvey-Liu-Zhu (2016) t bar, config tests.hlz_threshold",config.yaml
+paperMonths,588.0,588,Lou & Shu months,paper_numbers.yaml
+paperAvgObs,1775.0,1775,Lou & Shu avg firms per FM month,paper_numbers.yaml
+paperAbsretMed,1.6,1.6,"paper median daily |Ret|, %",paper_numbers.yaml
+nMonths,93.0,93,return months in sorts,sample.csv
+nCoins,626.0,626,distinct coins,sample.csv
+avgCoins,264.81720430107526,265,avg coins per month (sorts),sample.csv
+fmMonths,87.0,87,FM months (T4),T4_fm.csv
+fmAvgObs,214.1034482758621,214,avg coins per FM month (T4),T4_fm.csv
+fmFourRes,-8.103391757569401,-8.10,"Res.lnA slope, model (4)",T4_fm.csv
+retSd,43.94625237953176,43.9,"s.d. of monthly coin returns, %",ret_distribution.csv
+retP1,-54.22238789736426,-54.2,"p1 of monthly coin returns, %",ret_distribution.csv
+retP99,158.3844983285934,158.4,"p99 of monthly coin returns, %",ret_distribution.csv
+retMax,1149.6674057649666,1149.7,"max monthly coin return, %",ret_distribution.csv
+retAdjMin,-485.85190479387086,-485.9,"min CMKT-adjusted return, %",ret_distribution.csv
+retAdjMax,1165.6816259494792,1165.7,"max CMKT-adjusted return, %",ret_distribution.csv
+cmktMax,139.43922543776617,139.4,"max monthly CMKT, %",factors.csv
+cmktMaxMonth,,2021-03,month of max CMKT,factors.csv
+cmktMean,4.227758200301537,4.23,"mean CMKT, %/mo",factors.csv
+medDvolM,3.4239839402885646,3.4,"median avg daily DVol, $M",T1_describe.csv
+absretMean,4.1308013987956995,4.13,"mean of monthly avg daily |Ret|, %",T1_describe.csv
+absretMed,3.75820484384884,3.76,"median of monthly avg daily |Ret|, %",T1_describe.csv
+qratioAC,9.395635525689139,9.4,Q75/Q25 A_C,T1_describe.csv
+qratioAbs,1.7455253696970834,1.75,Q75/Q25 |Ret|,T1_describe.csv
+corrResAAbs,0.3690060752853052,0.37,"mean cs corr(Res.A, |Ret|)",T1_corr.csv
+shareCovNeg,98.8305993178496,98.8,"share of coin-months with COV<0, %",U1_an_describe.csv
+difHL,1.2123104545444892,1.21,"H-L on DIF, raw %/mo",U1_an_sorts.csv
+difHLT,1.516117341865335,1.52,t of H-L on DIF,U1_an_sorts.csv
+rawHLA,1.543152962525132,1.54,raw H-L on A,T3_sorts.csv
+rawHLAC,1.7010618789191536,1.70,raw H-L on A_C,T3_sorts.csv
+winIvolT,-3.149330344061411,-3.15,"t of IVOL, model (5), winsorized returns",R_winsor_returns.csv
+qResA,,5.15 / 4.49 / 4.19 / 3.72 / 4.64,"raw EW quintile returns, Res.A sort, %/mo",T3_sorts.csv
+liqResAalpha,-3.4748312799787624,-3.47,"Res.A H-L alpha, EW, liquid half",R_weighting.csv
+liqResAalphaT,-2.819197777162551,-2.82,t of the same,R_weighting.csv
+liqResAraw,-2.8200781181335968,-2.82,"Res.A H-L raw, EW, liquid half",R_weighting.csv
+liqResArawT,-1.7062822473839194,-1.71,t of the same,R_weighting.csv
+vwResAalpha,-3.292962620079418,-3.29,"Res.A H-L alpha, DVol-weighted, all",R_weighting.csv
+vwResAalphaT,-2.375391844134307,-2.38,t of the same,R_weighting.csv
+vwResAraw,-2.795907553405524,-2.80,"Res.A H-L raw, DVol-weighted, all",R_weighting.csv
+vwResArawT,-1.8201626196752911,-1.82,t of the same,R_weighting.csv
+topMonthA,,2021-03,most influential month for raw H-L A,T3_portfolios.csv
+topValA,144.96170275963817,145.0,"raw H-L A in that month, %",T3_portfolios.csv
+exMeanA,-0.01574431787827063,-0.02,"raw H-L A without that month, %/mo",T3_portfolios.csv
+exTA,-0.01484297918766325,-0.01,NW t of raw H-L A without that month,T3_portfolios.csv
+medianA,-0.4774873721524209,-0.48,median monthly raw H-L A,T3_portfolios.csv
+sharePosA,47.31182795698925,47,% of months with raw H-L A > 0,T3_portfolios.csv
+cmktTopA,139.43922543776617,139.4,"CMKT in the most influential month (A), %",factors.csv
+meanRetTopA,140.09266576059477,140.1,"cross-sectional mean coin return in that month (A), %",panel_summary.csv
+topMonthAC,,2021-03,most influential month for raw H-L A_C,T3_portfolios.csv
+topValAC,150.32053797540166,150.3,"raw H-L A_C in that month, %",T3_portfolios.csv
+exMeanAC,0.0856327909139094,0.09,"raw H-L A_C without that month, %/mo",T3_portfolios.csv
+exTAC,0.07956257459729012,0.08,NW t of raw H-L A_C without that month,T3_portfolios.csv
+medianAC,-0.2579225692065776,-0.26,median monthly raw H-L A_C,T3_portfolios.csv
+sharePosAC,49.46236559139785,49,% of months with raw H-L A_C > 0,T3_portfolios.csv
+cmktTopAC,139.43922543776617,139.4,"CMKT in the most influential month (A_C), %",factors.csv
+meanRetTopAC,140.09266576059477,140.1,"cross-sectional mean coin return in that month (A_C), %",panel_summary.csv
+topMonthResA,,2019-03,most influential month for raw H-L ResA,T3_portfolios.csv
+topValResA,33.44815369651071,33.4,"raw H-L ResA in that month, %",T3_portfolios.csv
+exMeanResA,-0.8788645716337353,-0.88,"raw H-L ResA without that month, %/mo",T3_portfolios.csv
+exTResA,-0.868990206465048,-0.87,NW t of raw H-L ResA without that month,T3_portfolios.csv
+medianResA,-1.4261925329689031,-1.43,median monthly raw H-L ResA,T3_portfolios.csv
+sharePosResA,36.55913978494624,37,% of months with raw H-L ResA > 0,T3_portfolios.csv
+cmktTopResA,23.31388216369398,23.3,"CMKT in the most influential month (ResA), %",factors.csv
+meanRetTopResA,26.414245051682524,26.4,"cross-sectional mean coin return in that month (ResA), %",panel_summary.csv
+subARange,,2019-01..2022-10,first half (sort months),T3_portfolios.csv
+subBRange,,2022-11..2026-09,second half (sort months),T3_portfolios.csv
+subAHLAC,3.3871276532258547,3.39,"raw H-L A_C, first half",R_subperiods.csv
+subAHLACt,1.2131446726342612,1.21,"t, raw H-L A_C, first half",R_subperiods.csv
+subAFm,1.9821637452387495,1.98,"FM (2) ln A_C slope, first half",R_subperiods.csv
+subAFmT,2.5885924778227194,2.59,"t, FM (2) ln A_C, first half",R_subperiods.csv
+subAObs,102.025,102,"avg coins per FM month, first half",R_subperiods.csv
+subBHLAC,0.0508698444913197,0.05,"raw H-L A_C, second half",R_subperiods.csv
+subBHLACt,0.0548250158828092,0.05,"t, raw H-L A_C, second half",R_subperiods.csv
+subBFm,-0.2795403279719895,-0.28,"FM (2) ln A_C slope, second half",R_subperiods.csv
+subBFmT,-1.0935436775574017,-1.09,"t, FM (2) ln A_C, second half",R_subperiods.csv
+subBObs,309.48936170212767,309,"avg coins per FM month, second half",R_subperiods.csv
+paperSubCFour,0.04,0.040,paper A.3 Panel C model (4) ln A_C,paper_numbers.yaml
+paperSubCFourT,0.9,0.90,t of the same,paper_numbers.yaml
+corrVolAbs,0.2590796718791841,0.26,"mean cs corr(ln DVol, ln|Ret|)",panel cache (run_manifest.json: panel_cache)
+corrLnAAbs,0.0036125524119838223,0.00,"mean cs corr(ln A, ln|Ret|)",panel cache (run_manifest.json: panel_cache)
+corrLnACAbs,-0.14881258255476582,-0.15,"mean cs corr(ln A_C, ln|Ret|)",panel cache (run_manifest.json: panel_cache)
+corrLnACVol,-0.968612421695116,-0.97,"mean cs corr(ln A_C, ln DVol)",panel cache (run_manifest.json: panel_cache)
+elasMean,1.1159907278152568,1.12,mean monthly cs slope of ln DVol on ln|Ret|,panel cache (run_manifest.json: panel_cache)
+elasMed,1.513230061809158,1.51,median monthly cs slope of ln DVol on ln|Ret|,panel cache (run_manifest.json: panel_cache)
+sdLnAC,1.5441680766271775,1.54,"mean monthly cs s.d. of ln A_C, FM (2) sample",panel cache (run_manifest.json: panel_cache)
+psUs,1.1740674522340058,1.17,"FM (2) ln A_C slope per 1 cs s.d. (ours), %/mo",panel cache (run_manifest.json: panel_cache)
+mdePs,2.1511070453566807,2.15,"MDE80 of FM (2) ln A_C per 1 cs s.d. (ours), %/mo",panel cache (run_manifest.json: panel_cache)
+psPaperOurSd,0.2825827580227735,0.28,"paper FM (2) ln A_C slope x our cs s.d. of ln A_C, %/mo",paper_numbers.yaml + panel cache (run_manifest.json: panel_cache)
+fmTopMonthTwo,,2021-03,"most influential month, FM (2) lnA_C",panel cache (run_manifest.json: panel_cache)
+fmTopValTwo,37.565278800574355,37.57,FM (2) lnA_C: monthly slope in that month,panel cache (run_manifest.json: panel_cache)
+fmExTwo,0.33235901853828076,0.33,FM (2) lnA_C: slope without that month,panel cache (run_manifest.json: panel_cache)
+fmExTwoT,0.9728008918989607,0.97,FM (2) lnA_C: NW t without that month,panel cache (run_manifest.json: panel_cache)
+fmReproDiffTwo,0.0,0.000000,|FM (2) lnA_C from panel - T4_fm.csv| (should be ~0),panel cache (run_manifest.json: panel_cache)
+fmTopMonthThree,,2021-04,"most influential month, FM (3) ResLnA",panel cache (run_manifest.json: panel_cache)
+fmTopValThree,-51.451047784467235,-51.45,FM (3) ResLnA: monthly slope in that month,panel cache (run_manifest.json: panel_cache)
+fmExThree,-4.553287939899999,-4.55,FM (3) ResLnA: slope without that month,panel cache (run_manifest.json: panel_cache)
+fmExThreeT,-2.3549094242285755,-2.35,FM (3) ResLnA: NW t without that month,panel cache (run_manifest.json: panel_cache)
+fmReproDiffThree,0.0,0.000000,|FM (3) ResLnA from panel - T4_fm.csv| (should be ~0),panel cache (run_manifest.json: panel_cache)
+fmTopMonthFourAC,,2021-03,"most influential month, FM (4) lnA_C",panel cache (run_manifest.json: panel_cache)
+fmTopValFourAC,43.199996984653346,43.20,FM (4) lnA_C: monthly slope in that month,panel cache (run_manifest.json: panel_cache)
+fmExFourAC,0.5316238515341797,0.53,FM (4) lnA_C: slope without that month,panel cache (run_manifest.json: panel_cache)
+fmExFourACT,1.3741870951271191,1.37,FM (4) lnA_C: NW t without that month,panel cache (run_manifest.json: panel_cache)
+fmReproDiffFourAC,2.220446049250313e-16,0.000000,|FM (4) lnA_C from panel - T4_fm.csv| (should be ~0),panel cache (run_manifest.json: panel_cache)
+fmTopMonthFourRes,,2021-03,"most influential month, FM (4) ResLnA",panel cache (run_manifest.json: panel_cache)
+fmTopValFourRes,-133.3847288899827,-133.38,FM (4) ResLnA: monthly slope in that month,panel cache (run_manifest.json: panel_cache)
+fmExFourRes,-6.646632023471577,-6.65,FM (4) ResLnA: slope without that month,panel cache (run_manifest.json: panel_cache)
+fmExFourResT,-2.5363263289702433,-2.54,FM (4) ResLnA: NW t without that month,panel cache (run_manifest.json: panel_cache)
+fmReproDiffFourRes,0.0,0.000000,|FM (4) ResLnA from panel - T4_fm.csv| (should be ~0),panel cache (run_manifest.json: panel_cache)
+sdPaper,2.53,2.53,"paper s.d. of ln A_C (Lou & Shu 2017, pp. 13-14)",paper text pp. 13-14
+psPaper,0.46298999999999996,0.46,"paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper pp. 13-14)",paper_numbers.yaml
+fprFmTwo,8.0,8.0,"world 0: % of runs with |t|>1.96, fm2_lnA_C",sim_world_summary.csv
+fprFmTwoLo,4.64176083998225,4.6,95% CI low,sim_world_summary.csv
+fprFmTwoHi,12.66648560220817,12.7,95% CI high,sim_world_summary.csv
+fprThreeFmTwo,1.5,1.5,"world 0: % of runs with |t|>3, fm2_lnA_C",sim_world_summary.csv
+fprFmThree,9.5,9.5,"world 0: % of runs with |t|>1.96, fm3_ResLnA",sim_world_summary.csv
+fprFmThreeLo,5.816960972512019,5.8,95% CI low,sim_world_summary.csv
+fprFmThreeHi,14.43766399768524,14.4,95% CI high,sim_world_summary.csv
+fprThreeFmThree,1.5,1.5,"world 0: % of runs with |t|>3, fm3_ResLnA",sim_world_summary.csv
+fprHlAC,6.5,6.5,"world 0: % of runs with |t|>1.96, hl_A_C",sim_world_summary.csv
+fprHlACLo,3.5060708656979003,3.5,95% CI low,sim_world_summary.csv
+fprHlACHi,10.85872365038152,10.9,95% CI high,sim_world_summary.csv
+fprThreeHlAC,1.0,1.0,"world 0: % of runs with |t|>3, hl_A_C",sim_world_summary.csv
+fprFmThreeNWzero,5.0,5.0,"world 0: % of runs with |t|>1.96, fm3_ResLnA_nw0",sim_world_summary.csv
+fprFmThreeNWzeroLo,2.42341654721085,2.4,95% CI low,sim_world_summary.csv
+fprFmThreeNWzeroHi,9.00275377013513,9.0,95% CI high,sim_world_summary.csv
+fprThreeFmThreeNWzero,1.0,1.0,"world 0: % of runs with |t|>3, fm3_ResLnA_nw0",sim_world_summary.csv
+critFmTwo,2.2142865477437454,2.21,"world 0: empirical 5% critical |t|, fm2_lnA_C",sim_world0_reps.csv
+critFmThree,2.147924633769992,2.15,"world 0: empirical 5% critical |t|, fm3_ResLnA",sim_world0_reps.csv
+critHlAC,2.100020904092865,2.10,"world 0: empirical 5% critical |t|, hl_A_C",sim_world0_reps.csv
+critHlA,1.9958841894349777,2.00,"world 0: empirical 5% critical |t|, hl_A",sim_world0_reps.csv
+simSeHlAC,0.4510159245144733,0.45,"world 0: s.d. of H-L A_C across runs, %/mo",sim_world0_reps.csv
+realSeHlAC,1.524263102443936,1.52,"our NW s.e. of H-L A_C, %/mo",T3_sorts.csv
+seRatioHlAC,3.379621471425499,3.4,"real s.e. / simulated s.e., H-L A_C",T3_sorts.csv + sims
+simMonths,90.0,90,world 0: months per simulated sample,sim_world0_reps.csv
+simCoins,297.9525,298,world 0: avg coins per month,sim_world0_reps.csv
+simReps,200.0,200,world 0: number of runs,sim_world0_reps.csv
+simAbsret,3.4905027587218402,3.49,"world 0: mean daily |r|, %",sim_world0_reps.csv
+powReps,20.0,20,world V: runs per premium level (min),sim_power.csv
+powFmTwoQuarter,35.0,35,"world V power (t>1.96), fm2_lnA_C, premium 0.25%/mo per s.d.",sim_power.csv
+powFmTwoHalf,95.0,95,"world V power (t>1.96), fm2_lnA_C, premium 0.5%/mo per s.d.",sim_power.csv
+powFmTwoOne,100.0,100,"world V power (t>1.96), fm2_lnA_C, premium 1%/mo per s.d.",sim_power.csv
+powHlACQuarter,45.0,45,"world V power (t>1.96), hl_A_C, premium 0.25%/mo per s.d.",sim_power.csv
+powHlACHalf,85.0,85,"world V power (t>1.96), hl_A_C, premium 0.5%/mo per s.d.",sim_power.csv
+powHlACOne,100.0,100,"world V power (t>1.96), hl_A_C, premium 1%/mo per s.d.",sim_power.csv
+placeboShareMax,10.0,10,shuffle placebo: max % of |t|>1.96 across stats,placebo.csv
+placeboReps,20.0,20,shuffle placebo reps,placebo.csv
+leakTHLAC,-6.023507830303542,-6.02,"t with lag-0 (leaked) signal, H-L A_C",placebo.csv
+leakTFmTwo,-4.854030825051335,-4.85,"t with lag-0 (leaked) signal, FM(2) lnA_C",placebo.csv
+janCoef,0.698504771052333,0.70,"ln A_C slope, Januaries",T7_january.csv
+janT,0.3926551868587137,0.39,"t, Januaries",T7_january.csv
+auditRedenom,8.0,8,audit events: redenomination,audit_summary.csv
+auditReuse,2.0,2,audit events: ticker_reuse,audit_summary.csv
+auditGap,4.0,4,audit events: long_gap,audit_summary.csv

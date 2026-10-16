@@ -1,0 +1,18 @@
+symbol,date,type,factor,action,evidence
+BCCUSDT,2018-11-20,zero_volume,,drop_row,1 day(s) 2018-11-20..2018-11-20
+BNXUSDT,2023-02-22,redenomination,100.0,split_adjust,gap=6d; prev_close=175.5; reopen=1.755; reopen/prev_close=0.01; base_vol_ratio=355.4; dollar_vol_ratio=3.839
+BTCSTUSDT,2021-03-19,redenomination,10.0,split_adjust,gap=4d; prev_close=374.996; reopen=37.499; reopen/prev_close=0.0999984; base_vol_ratio=26.05; dollar_vol_ratio=3.019
+COCOSUSDT,2021-01-23,redenomination,0.001,split_adjust,gap=4d; prev_close=0.000695; reopen=0.695; reopen/prev_close=1000; base_vol_ratio=0.001095; dollar_vol_ratio=1.478
+CVCUSDT,2023-05-12,long_gap,0.9100204498977504,new_asset,gap=154d; prev_close=0.0978; reopen=0.089; reopen/prev_close=0.91002; base_vol_ratio=0.4213; dollar_vol_ratio=0.3872
+DREPUSDT,2021-04-02,redenomination,0.01,split_adjust,gap=4d; prev_close=0.026288; reopen=2.629; reopen/prev_close=100.008; base_vol_ratio=0.02531; dollar_vol_ratio=2.901
+FTTUSDT,2023-09-22,long_gap,0.6809104873621002,new_asset,gap=311d; prev_close=1.4322; reopen=0.9752; reopen/prev_close=0.68091; base_vol_ratio=0.08558; dollar_vol_ratio=0.04662
+KEYUSDT,2023-03-10,long_gap,1.840514324385292,new_asset,gap=28d; prev_close=0.004433; reopen=0.008159; reopen/prev_close=1.84051; base_vol_ratio=4.536; dollar_vol_ratio=11.62
+KLAYUSDT,2024-10-29,zero_volume,,drop_row,2 day(s) 2024-10-29..2024-10-30
+LUNAUSDT,2022-05-31,ticker_reuse,20000.000000000004,new_asset,gap=18d; prev_close=5e-05; reopen=1; reopen/prev_close=20000; base_vol_ratio=0.1356; dollar_vol_ratio=0.06568
+NBTUSDT,2022-10-01,long_gap,0.86489898989899,new_asset,gap=20d; prev_close=0.00792; reopen=0.00685; reopen/prev_close=0.864899; base_vol_ratio=0.7236; dollar_vol_ratio=0.6166
+QUICKUSDT,2023-07-21,redenomination,1000.0,split_adjust,gap=4d; prev_close=74.2; reopen=0.0742; reopen/prev_close=0.001; base_vol_ratio=1422; dollar_vol_ratio=0.8887
+SCRUSDT,2024-10-22,open_mismatch,0.572655690765927,none,gap=1d; prev_close=1.397; reopen=0.8; reopen/prev_close=0.572656; base_vol_ratio=10.56; dollar_vol_ratio=7.267
+STRAXUSDT,2024-03-28,redenomination,10.0,split_adjust,gap=8d; prev_close=1.423; reopen=0.1423; reopen/prev_close=0.1; base_vol_ratio=5.206; dollar_vol_ratio=0.4512
+SUNUSDT,2021-06-18,redenomination,1000.0,split_adjust,gap=4d; prev_close=27.572; reopen=0.02757; reopen/prev_close=0.000999927; base_vol_ratio=1084; dollar_vol_ratio=1.082
+VENUSDT,2018-10-19,ticker_reuse,5.458813253998585e-05,new_asset,gap=88d; prev_close=1.8319; reopen=0.0001; reopen/prev_close=5.45881e-05; base_vol_ratio=0.0002287; dollar_vol_ratio=1.269e-08
+VIDTUSDT,2022-11-09,redenomination,10.0,split_adjust,gap=9d; prev_close=0.4731; reopen=0.044; reopen/prev_close=0.0930036; base_vol_ratio=22.76; dollar_vol_ratio=1.24
