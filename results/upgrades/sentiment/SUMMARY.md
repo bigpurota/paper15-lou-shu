@@ -57,7 +57,7 @@ Panel A (median split), Long-Short High−Low: sent_mean: 3.64 (t 1.21); sent_eo
 - The paper's January test (Section 4.1, "Tests of the Liquidity Explanation") asks whether the volume premium shares the documented January seasonality of the liquidity premium; it is a test of the liquidity explanation, not of mispricing. With only 7 Januaries our version has very little power, so for us it is a placebo.
 
 ## Caveats
-- 15 pairs were tried (state variable × controls; 5 of them were added during verification: the CMKT(t−1) control), all in `panel_b.csv` / `panel_a.csv`; the main specification is the one marked in the code (`STATE_VARS`, `MAIN_CONTROLS`); git does not show that it predates the results (code and results were committed together).
+- 15 pairs were tried (state variable × controls; 5 of them were added during verification: the CMKT(t−1) control), all in `panel_b.csv` / `panel_a.csv`; the main specification is the one marked in the code (`STATE_VARS`, `MAIN_CONTROLS`); nothing shows that it predates the results (it was written together with them).
 - Fear & Greed: 104 months with data; the index is built from BTC price and volume (volatility, momentum, social media), so it is partly mechanically linked to the market, hence the CMKT control.
 - The AR(2) on EW `A` is estimated on 89 months of residuals (2019-05–2026-09; the series starts in the first month with ≥ 30 coins, and the first 2 months are used for the lags), φ1 = 0.65, φ2 = 0.15.
 - The AR(2) is estimated on the full sample (as in Pástor–Stambaugh; Section 5 of the paper does not say whether its AR(2) uses the full sample or a rolling window), so its coefficients contain look-ahead; Table 12 of the paper uses the level of the Pástor–Stambaugh measure, not our innovation in EW `A`.

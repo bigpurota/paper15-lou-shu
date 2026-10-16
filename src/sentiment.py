@@ -15,7 +15,7 @@ Portfolios: EW quintiles of A_C measured at t-2 (Long = Q5 = highest A_C = lowes
 raw returns in % (r_f = 0, D5). Also the FM slope series on ln A_C (base T4 model (2)), recomputed here.
 State variables are z-scored over the return months used, so b is in %/month per 1 s.d.
 (the Baker-Wurgler index used in the paper is also roughly unit-variance); b_raw = b / sd.
-All variants are listed in VARIANTS below and all are reported (git does not show that the list predates the results).
+All variants are listed in VARIANTS below and all are reported (nothing shows that the list predates the results).
 
 Usage:  python -I src/sentiment.py config.yaml [--results-dir results] [--out results/upgrades/sentiment]
 Reads:  results/LATEST (base run id), results/<base>/run_manifest.json, factors.csv, T3_portfolios.csv,
@@ -52,7 +52,7 @@ ILLIQ_MIN_COINS = 30          # AR(2) estimation starts at the first month with 
 PORTS = ["Short", "2", "3", "4", "Long", "Long-Short", "FM_lnA_C"]
 log = logging.getLogger("sentiment")
 
-# Variants not labelled post hoc (all reported; not pre-registered in git). Main rows are flagged main=True.
+# Variants not labelled post hoc (all reported; not pre-registered). Main rows are flagged main=True.
 STATE_VARS = {
     "sent_mean": ("Fear&Greed, mean of month t-1", True),
     "sent_eom": ("Fear&Greed, last day of month t-1", False),
@@ -373,7 +373,7 @@ def write_summary(out: Path, base_id: str, pvu: pd.DataFrame, pb: pd.DataFrame, 
     L += ["## Caveats",
           f"- {len(nvar)} pairs were tried (state variable × controls; {int(nvar['post_hoc'].sum())} of them "
           "were added during verification: the CMKT(t−1) control), all in `panel_b.csv` / `panel_a.csv`; "
-          "the main specification is the one marked in the code (`STATE_VARS`, `MAIN_CONTROLS`); git does not show that it predates the results (code and results were committed together).",
+          "the main specification is the one marked in the code (`STATE_VARS`, `MAIN_CONTROLS`); nothing shows that it predates the results (it was written together with them).",
           f"- Fear & Greed: {int(fng_m['sent_mean'].notna().sum())} months with data; the index is built from BTC price and volume "
           "(volatility, momentum, social media), so it is partly mechanically linked to the market, hence the CMKT control.",
           f"- The AR(2) on EW `A` is estimated on {int(ar2.iloc[0]['n'])} months of residuals ({ar2.iloc[0]['first']}–{ar2.iloc[0]['last']}; "

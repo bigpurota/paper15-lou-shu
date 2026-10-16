@@ -84,10 +84,8 @@
 \expandafter\def\csname v@audit.zero_volume\endcsname{2}
 \expandafter\def\csname v@base.cfg8\endcsname{3e8eb87e}
 \expandafter\def\csname v@base.code8\endcsname{9b739a49}
-\expandafter\def\csname v@base.code_checkout\endcsname{so the code that wrote it can be checked out (git checkout 06cc8d8)}
-\expandafter\def\csname v@base.code_commit\endcsname{matches commit 06cc8d8}
+\expandafter\def\csname v@base.code_match\endcsname{does NOT match}
 \expandafter\def\csname v@base.dir\endcsname{results/20261016T221825Z\_3e8eb87e}
-\expandafter\def\csname v@base.git\endcsname{06cc8d8}
 \expandafter\def\csname v@base.rss\endcsname{884}
 \expandafter\def\csname v@base.run\endcsname{20261016T221825Z\_3e8eb87e}
 \expandafter\def\csname v@base.seed\endcsname{20261017}
@@ -250,6 +248,7 @@
 \expandafter\def\csname v@d.vwResAraw\endcsname{−2.80}
 \expandafter\def\csname v@d.vwResArawT\endcsname{−1.82}
 \expandafter\def\csname v@d.winIvolT\endcsname{−3.15}
+\expandafter\def\csname v@deck.first\endcsname{2026-10-16 19:26 (the first version of slides/deck.tex in our version history)}
 \expandafter\def\csname v@dev.range\endcsname{D1–D18, U1–U8, J1–J2}
 \expandafter\def\csname v@ed.alone_pos\endcsname{5 of 6}
 \expandafter\def\csname v@ed.bidask_diff\endcsname{0.0}
@@ -287,16 +286,13 @@
 \expandafter\def\csname v@fc.base_n\endcsname{29}
 \expandafter\def\csname v@fc.base_numdiff\endcsname{0}
 \expandafter\def\csname v@fc.base_text\endcsname{all are identical}
-\expandafter\def\csname v@fc.clean\endcsname{all record that commit with dirty = false}
-\expandafter\def\csname v@fc.code\endcsname{06cc8d8}
 \expandafter\def\csname v@fc.contract\endcsname{12 passed, 3 xfailed}
 \expandafter\def\csname v@fc.contract_xfail\endcsname{the 3 historical base runs whose manifests hold home-directory paths}
 \expandafter\def\csname v@fc.data\endcsname{a directory of the clone (a copy of the cached downloads)}
 \expandafter\def\csname v@fc.files\endcsname{320}
 \expandafter\def\csname v@fc.files_diff_text\endcsname{none}
 \expandafter\def\csname v@fc.files_ident\endcsname{320}
-\expandafter\def\csname v@fc.head\endcsname{dd4b518}
-\expandafter\def\csname v@fc.hist\endcsname{20261016T134056Z\_18099336 (8b60380, dirty), 20261016T135240Z\_3e8eb87e (9ddffbb, dirty), 20261016T181948Z\_3e8eb87e (06ee202, clean), 20261016T211736Z\_3e8eb87e (f526a1b, clean)}
+\expandafter\def\csname v@fc.hist\endcsname{20261016T134056Z\_18099336 (code 877a1a24…), 20261016T135240Z\_3e8eb87e (code 2b1546c7…), 20261016T181948Z\_3e8eb87e (code 70cc1647…), 20261016T211736Z\_3e8eb87e (code f0173996…)}
 \expandafter\def\csname v@fc.hist_home\endcsname{results/20261016T134056Z\_18099336/paper\_vs\_us.md, results/20261016T134056Z\_18099336/run\_manifest.json, results/20261016T135240Z\_3e8eb87e/report\_manifest.json, results/20261016T135240Z\_3e8eb87e/run\_manifest.json, results/20261016T181948Z\_3e8eb87e/report\_manifest.json, results/20261016T181948Z\_3e8eb87e/run\_manifest.json, results/tests\_log/pytest\_worktree\_20261016T210712.txt}
 \expandafter\def\csname v@fc.hist_n\endcsname{four}
 \expandafter\def\csname v@fc.home_list\endcsname{none}
@@ -315,16 +311,6 @@
 \expandafter\def\csname v@fr.fm3res\endcsname{−128.81 (t −1.06)}
 \expandafter\def\csname v@fr.res_tmax\endcsname{1.06}
 \expandafter\def\csname v@fr.t4_tmax\endcsname{1.79}
-\expandafter\def\csname v@git.deck_first\endcsname{2026-10-16 19:26 (commit c631dba)}
-\expandafter\def\csname v@git.firstrun\endcsname{20261016T134056Z\_18099336}
-\expandafter\def\csname v@git.firstrun.cfg8\endcsname{18099336}
-\expandafter\def\csname v@git.firstrun.sha\endcsname{8b60380 (dirty)}
-\expandafter\def\csname v@git.prereg\endcsname{a90a72b}
-\expandafter\def\csname v@git.prereg.cfgmatch\endcsname{matches}
-\expandafter\def\csname v@git.refine\endcsname{8b60380}
-\expandafter\def\csname v@git.sim_rules\endcsname{The pass rules (src/simulate.py) were committed in the same commit as the first simulation results (8b60380), so git does not show that they came first.}
-\expandafter\def\csname v@git.uncommitted_evidence\endcsname{none (the working tree matches the last commit, apart from the generated documents)}
-\expandafter\def\csname v@git.uncommitted_n\endcsname{0}
 \expandafter\def\csname v@hf.b0\endcsname{−0.435 (t −1.56)}
 \expandafter\def\csname v@hf.b1\endcsname{−2.59 (t −4.03)}
 \expandafter\def\csname v@hf.b1.paper\endcsname{−0.034 (t −0.67)}
@@ -551,6 +537,11 @@
 \expandafter\def\csname v@pow.1.00.hlAC\endcsname{100\%}
 \expandafter\def\csname v@pow.1.00.hlAC.ci\endcsname{83\%–100\%}
 \expandafter\def\csname v@pow.reps\endcsname{20}
+\expandafter\def\csname v@prereg.cfgmatch\endcsname{matches}
+\expandafter\def\csname v@prereg.file\endcsname{docs/preregistration/config\_preregistered.yaml}
+\expandafter\def\csname v@prereg.firstrun\endcsname{20261016T134056Z\_18099336}
+\expandafter\def\csname v@prereg.firstrun.cfg8\endcsname{18099336}
+\expandafter\def\csname v@prereg.sha8\endcsname{18099336}
 \expandafter\def\csname v@pvu.ANDIF\endcsname{−1.64 (t −0.44)}
 \expandafter\def\csname v@pvu.ANDIF.match\endcsname{no}
 \expandafter\def\csname v@pvu.ANDIF.mde\endcsname{10.53}
@@ -726,15 +717,15 @@
 \expandafter\def\csname v@rb.seedshare.hl_A_alpha\endcsname{0/20}
 \expandafter\def\csname v@rb.seedshare.hl_ResA\endcsname{0/20}
 \expandafter\def\csname v@rb.seedshare.hl_ResA_alpha\endcsname{0/20}
-\expandafter\def\csname v@repro.code_vs\endcsname{the clone ran commit c631dba; the outputs it is compared with were produced by commit 06cc8d8}
-\expandafter\def\csname v@repro.commit\endcsname{c631dba}
+\expandafter\def\csname v@repro.clone_run\endcsname{20261016T171236Z\_3e8eb87e}
+\expandafter\def\csname v@repro.code_vs\endcsname{the clone ran an earlier version of the code (its base run 20261016T171236Z\_3e8eb87e); the outputs it is compared with are the canonical outputs (base run 20261016T221825Z\_3e8eb87e, code sha256 9b739a49…)}
 \expandafter\def\csname v@repro.cover_text\endcsname{all seven upgrades were regenerated and compared, including upgrade-hf\_lambda (about 5 GB of downloads, about 90 min over 3 attempts)}
 \expandafter\def\csname v@repro.daily\endcsname{identical (788 692 rows)}
 \expandafter\def\csname v@repro.data_min\endcsname{39}
 \expandafter\def\csname v@repro.groups\endcsname{base run 29, simulations 7, amihud\_noh 12, edge\_spread 9, hf\_lambda 15, moex 20, openap\_us 8, robustness 10, sentiment 9}
 \expandafter\def\csname v@repro.hf_min\endcsname{90}
 \expandafter\def\csname v@repro.hf_n\endcsname{3}
-\expandafter\def\csname v@repro.hf_text\endcsname{upgrade-hf\_lambda ran 3 times because of network drops: the earlier attempts lost 148 (4 aggTrades, 144 klines5m) and then 2 (2 aggTrades) downloads and still exited with code 0 and wrote results from incomplete data (the code at c631dba did not fail on failed downloads; since 7c2c227 it does); the last attempt had 0 failed downloads, and only its outputs were compared; the 3 attempts took about 90 min in total}
+\expandafter\def\csname v@repro.hf_text\endcsname{upgrade-hf\_lambda ran 3 times because of network drops: the earlier attempts lost 148 (4 aggTrades, 144 klines5m) and then 2 (2 aggTrades) downloads and still exited with code 0 and wrote results from incomplete data (that earlier code did not fail on failed downloads; the current src/hf\_lambda.py does, unless --allow-partial is passed); the last attempt had 0 failed downloads, and only its outputs were compared; the 3 attempts took about 90 min in total}
 \expandafter\def\csname v@repro.n_csv\endcsname{119}
 \expandafter\def\csname v@repro.n_files\endcsname{126}
 \expandafter\def\csname v@repro.n_identical\endcsname{108}
@@ -852,8 +843,9 @@
 \expandafter\def\csname v@sim.checks.nfail\endcsname{3}
 \expandafter\def\csname v@sim.checks.pass\endcsname{14}
 \expandafter\def\csname v@sim.checks.pass_strict5\endcsname{11}
-\expandafter\def\csname v@sim.git\endcsname{06cc8d8}
+\expandafter\def\csname v@sim.code8\endcsname{2cab9093}
 \expandafter\def\csname v@sim.months\endcsname{90}
+\expandafter\def\csname v@sim.rules_note\endcsname{The pass rules (src/simulate.py) were written together with the first simulation results, so nothing shows that they came first.}
 \expandafter\def\csname v@sim.run\endcsname{sim\_20261016T221823Z}
 \expandafter\def\csname v@sim.wall\endcsname{149}
 \expandafter\def\csname v@t11.jan_atc.paper\endcsname{−0.367 (t −2.27)}
@@ -872,10 +864,16 @@
 \expandafter\def\csname v@t8.jan_lam.paper\endcsname{0.485 (t 2.15)}
 \expandafter\def\csname v@t8.rest_lam.paper\endcsname{−0.078 (t −1.45)}
 \expandafter\def\csname v@tests.code_match\endcsname{matches}
-\expandafter\def\csname v@tests.date\endcsname{2026-10-16T22:23:23Z}
-\expandafter\def\csname v@tests.log\endcsname{results/tests\_log/pytest\_20261016T222322Z.txt}
-\expandafter\def\csname v@tests.state\endcsname{a clean checkout of dd4b518}
-\expandafter\def\csname v@tests.summary\endcsname{183 passed, 3 xfailed}
+\expandafter\def\csname v@tests.date\endcsname{2026-10-16T23:04:24Z}
+\expandafter\def\csname v@tests.log\endcsname{results/tests\_log/pytest\_20261016T230424Z.txt}
+\expandafter\def\csname v@tests.state\endcsname{code-state hash tree:12fbe482e3b93415}
+\expandafter\def\csname v@tests.summary\endcsname{184 passed, 3 xfailed}
+\expandafter\def\csname v@verify.code\endcsname{8 of 10 do NOT match (20261016T221825Z\_3e8eb87e/report\_manifest.json, 20261016T221825Z\_3e8eb87e/run\_manifest.json, simulations/sim\_manifest.json, amihud\_noh/run\_manifest.json, edge\_spread/run\_manifest.json, hf\_lambda/run\_manifest.json, moex/run\_manifest.json, sentiment/run\_manifest.json)}
+\expandafter\def\csname v@verify.code.short\endcsname{8 of 10 do NOT match}
+\expandafter\def\csname v@verify.config\endcsname{all 10 match}
+\expandafter\def\csname v@verify.config.short\endcsname{all 10 match}
+\expandafter\def\csname v@verify.n_man\endcsname{10}
+\expandafter\def\csname v@verify.prereg\endcsname{match}
 \expandafter\def\csname v@w0.crit_max\endcsname{2.22}
 \expandafter\def\csname v@w0.crit_min\endcsname{2.00}
 \expandafter\def\csname v@w0.crit_res_ci\endcsname{2.04–2.96}

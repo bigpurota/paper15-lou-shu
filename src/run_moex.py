@@ -10,7 +10,7 @@ of the previous year), Ret[-12,-2], Ret[-1], IVOL. No B/M (deviation M5).
 Reproduces T1 (corr A-A_C, AT-AT_C, Q75/Q25), T3 (quintiles; terciles as robustness), T4 models
 (1)-(5) for A and AT, NW(6), and writes a paper-vs-MOEX CSV and a code-generated SUMMARY.md.
 
-Main choices (set in MOEX_SPEC; NOT pre-registered in git: this module and its results were first committed together):
+Main choices (set in MOEX_SPEC; NOT pre-registered: this module was written together with its results):
   * universe: TYPE == common_share (no preferred shares, depositary receipts, funds), as share
     codes 10/11 in the paper; >= 10 valid days in the estimation month;
     main filter: mean daily VALUE >= 100,000 RUB in the estimation month (removes only near-dead
@@ -93,7 +93,7 @@ DEVIATIONS_MOEX = [
      "Second market (upgrade 6); TQBR became the main T+ board only in mid-2014 (EQBR before)",
      "Far fewer months and stocks (about 100-250 per month) -> lower power"),
     ("M2", "Share codes 10/11", "TYPE == common_share (no preferred shares, DRs, funds); mean daily VALUE >= 100k RUB "
-     "(robustness 1M RUB); >= 10 valid days", "Closest analogue of ordinary common shares; filter set in MOEX_SPEC (git does not confirm that it predates the results)",
+     "(robustness 1M RUB); >= 10 valid days", "Closest analogue of ordinary common shares; filter set in MOEX_SPEC (nothing confirms that it predates the results)",
      "Thresholds are nominal RUB (inflation ignored)"),
     ("M3", "Shares outstanding from CRSP each month", "ISSUESIZE as of today for all months; volume split-adjusted to today's units",
      "ISS gives only the current ISSUESIZE", "Turnover and ME are mis-measured for firms with buybacks/SPOs; "
@@ -585,7 +585,7 @@ def summary_md(out: Path, base_run_id: str, run_id: str) -> str:
 
     L += ["## All variants (nothing was selected)", "",
           "Variants set in `MOEX_SPEC` before the first computation: main, filter 1M RUB, no dividends, raw returns, terciles "
-          "(the MOEX files were not committed before the computation, so git cannot confirm this order; it rests on the "
+          "(nothing in the repository confirms this order; it rests on the "
           "session log, which is not in the repository). "
           "Added after the first run and labelled as such: `main without M9 corrections` (the effect of the two manual "
           "data corrections), `diagnostic: raw returns, months of ret_adj FM`, `T3_alpha_detail.csv` and "

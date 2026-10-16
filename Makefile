@@ -1,13 +1,14 @@
 # Lou & Shu (2017) on Binance spot. `make all` is the single command (data -> tests -> sims -> run -> report ->
 # upgrades -> ledger -> docs -> check-outputs). It has been run on a clean clone (with cached downloads), and a from-scratch clone
-# redid the downloads on an older commit: results/repro/ and README "Reproducibility".
+# redid the downloads with an earlier version of the code: results/repro/ and README "Reproducibility".
+# `make verify` rechecks the config, code and input hashes recorded in the canonical manifests (no git needed).
 PY      := .venv/bin/python
 PYI     := $(PY) -I
 CONFIG  := config.yaml
 DAILY   := data/cache/daily.parquet
 ZIP     := ../paper15-lou-shu-team12.zip
 
-.PHONY: tests-log venv data tests sims run report figures p0 base upgrades upgrades-light ledger docs slides all all-light zip clean repro repro-final check-outputs
+.PHONY: verify tests-log venv data tests sims run report figures p0 base upgrades upgrades-light ledger docs slides all all-light zip clean repro repro-final check-outputs
 .DEFAULT_GOAL := all
 # stages depend on each other through files in results/ (LATEST, upgrade CSVs): keep them sequential
 .NOTPARALLEL:
@@ -86,9 +87,7 @@ ledger: | $(STAMP)
 	$(PYI) src/robustness_extra.py $(CONFIG) --ledger-only
 
 # README.md and slides/PLAN.md: every number is refilled from results/ (see src/build_docs.py); the same
-# values go to slides/gen/values.tex and the slide tables to slides/gen/*.tex. The docs also list the files that were
-# uncommitted at build time, so after a commit that changed other files run `make docs slides` again and commit the
-# regenerated files (they are excluded from that list, so `build_docs.py --check --strict` then passes on the commit)
+# values go to slides/gen/values.tex and the slide tables to slides/gen/*.tex
 docs: | $(STAMP)
 	$(PYI) src/build_docs.py
 
@@ -115,11 +114,17 @@ all-light: p0 upgrades-light ledger docs check-outputs
 check-outputs: | $(STAMP)
 	$(PYI) -m pytest -q tests/test_manifests.py
 
-# saved pytest log (all tests incl. the output contract) with the code state it ran on; read by build_docs
+# provenance from the files alone (works on the unpacked ZIP, no git): recomputes sha256 of config.yaml, of the
+# code files and of the inputs (data/ only if present) recorded in the canonical manifests; exit 1 on a mismatch
+verify: | $(STAMP)
+	$(PYI) src/verify_manifests.py
+
+# saved pytest log (all tests incl. the output contract) with the code state it ran on (content hash of the code
+# files; the git lines are metadata only); read by build_docs
 tests-log: | $(STAMP)
 	@mkdir -p results/tests_log; f=results/tests_log/pytest_$$(date -u +%Y%m%dT%H%M%SZ).txt; \
-	{ echo "git HEAD: $$(git rev-parse HEAD)"; \
-	  echo "dirty files: $$(git status --porcelain -- src tests config.yaml Makefile mk requirements.txt | wc -l | tr -d ' ')"; \
+	{ echo "git HEAD: $$(git rev-parse HEAD 2>/dev/null || echo n/a)"; \
+	  echo "dirty files: $$(git status --porcelain -- src tests config.yaml Makefile mk requirements.txt 2>/dev/null | wc -l | tr -d ' ')"; \
 	  echo "code state: $$($(PYI) src/build_docs.py --code-hash)"; \
 	  echo "date: $$(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo; \
 	  $(PYI) -m pytest -q 2>&1; } > $$f; tail -1 $$f; echo "wrote $$f"

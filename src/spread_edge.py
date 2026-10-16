@@ -22,7 +22,7 @@ root of the mean monthly s2 over 12 months ending at t-2, >= 6 months); half-spr
 noise) or per-coin "floor" / "abs" (abs = upper bound).
 
 Non-positive EDGE (the estimator returns a signed root; s^2 < 0 happens when the true spread is small
-relative to noise). Rule (set in the code; git does not show that it predates the results):
+relative to noise). Rule (set in the code; nothing shows that it predates the results):
   main  "floor": within each month's panel cross-section, non-positive estimates are set to the
         smallest positive estimate of that month (they are read as "spread too small to measure"),
         then winsorized 1/99% per month as in the paper, then logged;

@@ -14,10 +14,14 @@ Usage:
     python -I src/build_docs.py [--results-dir results] [--check] [--strict] [--list]
         --check   write nothing; exit 1 if README.md or slides/PLAN.md is out of date
         --strict  exit 1 if a decimal number appears outside markers (a hand-typed number), if a
-                  deliverable contains Cyrillic text, or if the team list in slides/meta.yaml is empty.
+                  deliverable contains Cyrillic text, if a deliverable (also slides/ROLES.md) cites a commit SHA
+                  (a SHA of this repository's history, or 7-40 hex characters next to the word "commit": the ZIP
+                  has no history, so provenance must point to files and content hashes), or if the team list in
+                  slides/meta.yaml is empty.
                   The hand-typed check covers decimals only: integers outside markers are not checked.
         --list    print all keys with their values and exit
-Writes: README.md, slides/PLAN.md, slides/gen/*.tex, results/docs_manifest.json (inputs with sha256, git state).
+Writes: README.md, slides/PLAN.md, slides/gen/*.tex, results/docs_manifest.json (inputs with sha256, git state as
+metadata). Provenance in the documents uses run ids and content hashes only (see src/verify_manifests.py).
 """
 from __future__ import annotations
 
@@ -171,86 +175,62 @@ def git_state() -> dict:
             "dirty_scope": "code+config (" + ", ".join(CODE_PATHS) + "); generated outputs excluded"}
 
 
-def commit_with_code_hash(code_sha: str, prefer: str | None = None) -> str | None:
-    """Short SHA of a commit whose src/*.py hash (as run.code_hash computes it) equals code_sha, else None.
-    `prefer` (the commit the manifest records) is tried first; later commits with the same src/ come after it."""
-    def run(*args, text=True):
-        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=text).stdout
-    for c in ([prefer] if prefer else []) + run("rev-list", "--all").split():
-        names = sorted(n for n in run("ls-tree", "--name-only", c, "src/").split()
-                       if n.endswith(".py") and n.count("/") == 1)
-        h = hashlib.sha256()
-        for n in names:
-            h.update(Path(n).name.encode())
-            h.update(run("show", f"{c}:{n}", text=False))
-        if h.hexdigest() == code_sha:
-            return c[:7]
-    return None
-
-
-# files written by `make docs slides` themselves: they are regenerated on every build, so counting them as
-# "uncommitted" would make the count depend on the build itself (they must be committed together with the rest)
-DOC_OUTPUTS = ("README.md", "slides/PLAN.md", "slides/gen/", "results/docs_manifest.json", "slides/paper15_team12_")
-
-
-def uncommitted() -> tuple[list[str], list[str]]:
-    """(modified tracked files, untracked files) of the whole working tree against HEAD, without DOC_OUTPUTS."""
-    out = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"], cwd=ROOT,
-                         capture_output=True, text=True).stdout
-    mod, new = [], []
-    for ln in out.splitlines():
-        if not ln.strip():
-            continue
-        path = ln[3:].strip().strip('"')
-        if path.startswith(DOC_OUTPUTS):
-            continue
-        (new if ln.startswith("??") else mod).append(path)
-    return sorted(mod), sorted(new)
-
-
-def uncommitted_text(mod: list[str], new: list[str]) -> str:
-    """One line: counts by top-level folder and the untracked files (a folder with several new files is shown once)."""
-    if not mod and not new:
-        return "none (the working tree matches the last commit, apart from the generated documents)"
-
-    def top(p):
-        return p.split("/", 1)[0] + ("/" if "/" in p else "")
-    by = {}
-    for p in mod + new:
-        by[top(p)] = by.get(top(p), 0) + 1
-    shown = {}
-    for p in new:
-        d = p.rsplit("/", 1)[0] + "/" if "/" in p else p
-        shown.setdefault(d, []).append(p)
-    nl = [f"`{d}` ({len(v)} files)" if len(v) > 1 else f"`{v[0]}`" for d, v in sorted(shown.items())]
-    return (f"{len(mod) + len(new)} files ({len(mod)} modified, {len(new)} untracked; by folder: "
-            + ", ".join(f"{k} {v}" for k, v in sorted(by.items())) + ")"
-            + ("; untracked: " + ", ".join(nl) if nl else ""))
-
-
-# code state that a pytest log refers to: the content of the code paths (tracked and untracked, not ignored)
+# code state that a pytest log refers to: the content of the code paths (no git needed, so it works on the ZIP)
 CODE_PATHS = ["src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"]
-EMPTY_DIFF16 = hashlib.sha256(b"").hexdigest()[:16]     # legacy logs: "<sha7>+<this>" = a clean checkout of <sha7>
+CODE_SKIP_DIRS = {"__pycache__", ".pytest_cache"}
+CODE_SKIP_SUFFIX = {".pyc", ".log"}
+
+
+def code_files() -> list[str]:
+    """Repo-relative code files under CODE_PATHS (caches, compiled files and logs left out, as in .gitignore)."""
+    out = set()
+    for p in CODE_PATHS:
+        q = ROOT / p
+        if q.is_file():
+            out.add(p)
+        elif q.is_dir():
+            for f in q.rglob("*"):
+                r = f.relative_to(ROOT)
+                if (f.is_file() and not set(r.parts) & CODE_SKIP_DIRS and f.suffix not in CODE_SKIP_SUFFIX
+                        and f.name != ".DS_Store"):
+                    out.add(r.as_posix())
+    return sorted(out)
 
 
 def code_state_hash() -> str:
-    """'tree:<sha256[:16]>' over the paths and bytes of every code file in the working tree. It does not depend on
-    HEAD, so a commit that changes no code (e.g. docs only) keeps the hash of the code a test log ran on."""
+    """'tree:<sha256[:16]>' over the paths and bytes of every code file. It depends on file content only (not on
+    the version history), so it can be recomputed from the ZIP."""
     h = hashlib.sha256()
-    files = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", *CODE_PATHS],
-                           cwd=ROOT, capture_output=True, text=True).stdout.split("\n")
-    for f in sorted({f for f in files if f.strip() and (ROOT / f).is_file()}):
+    for f in code_files():
         h.update(f.encode() + b"\0")
         h.update((ROOT / f).read_bytes())
     return "tree:" + h.hexdigest()[:16]
 
 
-def code_same_as_commit(sha: str) -> bool:
-    """True if the working tree's code paths equal those of commit `sha` (no diff, no untracked code files)."""
-    diff = subprocess.run(["git", "diff", "--quiet", sha, "--", *CODE_PATHS], cwd=ROOT).returncode
-    new = subprocess.run(["git", "ls-files", "--others", "--exclude-standard", "--", *CODE_PATHS], cwd=ROOT,
-                         capture_output=True, text=True).stdout.strip()
-    return diff == 0 and not new
+# a commit-SHA-like reference in a deliverable: 7-40 hex characters (with at least one digit) next to "commit"
+COMMIT_REF_RE = re.compile(
+    r"\bcommit\w*\W{1,3}(?:\w+\W{1,3}){0,2}?`?(?=[0-9a-f]*\d)[0-9a-f]{7,40}\b"
+    r"|\b(?=[0-9a-f]*\d)[0-9a-f]{7,40}`?\W{1,3}(?:\w+\W{1,3}){0,1}?commit", re.I)
+
+
+def known_shas() -> list[str]:
+    """Short SHAs of every commit in the local history (empty without git, e.g. in the ZIP)."""
+    try:
+        out = subprocess.run(["git", "log", "--all", "--format=%h"], cwd=ROOT, capture_output=True, text=True).stdout
+    except OSError:
+        return []
+    return sorted({x[:7] for x in out.split() if len(x) >= 7})
+
+
+def commit_refs(text: str, shas: list[str]) -> list[str]:
+    """Lines that cite a commit SHA: a hex string next to the word 'commit', or a known SHA of this repository."""
+    known = re.compile(r"(?<![0-9a-zA-Z])(?:" + "|".join(shas) + r")[0-9a-f]{0,33}(?![0-9a-zA-Z])") if shas else None
+    out = []
+    for i, ln in enumerate(text.splitlines(), 1):
+        m = COMMIT_REF_RE.search(ln) or (known.search(ln) if known else None)
+        if m:
+            out.append(f"line {i}: {m.group(0)!r} | {ln.strip()[:100]}")
+    return out
 
 
 def deviation_ranges(path: Path) -> str:
@@ -271,16 +251,11 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     B["manifest"] = man
     V.put("base.run", man["run_id"])
     V.put("base.dir", f"results/{man['run_id']}")
-    V.put("base.git", man["git"]["sha"][:7] + (" (dirty)" if man["git"]["dirty"] else ""))
     V.put("base.seed", man["seed"])
     V.put("base.cfg8", man["config_sha256"][:8])
     V.put("base.t_total", fx(man["timings_sec"]["total"], 0))
     V.put("base.rss", fx(man.get("peak_rss_mb", float("nan")), 0))
     V.put("base.code8", man["code_sha256"][:8])
-    hit = commit_with_code_hash(man["code_sha256"], prefer=man["git"]["sha"])
-    V.put("base.code_commit", f"matches commit {hit}" if hit else "matches no commit in the git history")
-    V.put("base.code_checkout", f"so the code that wrote it can be checked out (`git checkout {hit}`)" if hit
-          else "so the exact code that wrote it cannot be checked out from git")
 
     s = V.csv(rd / "sample.csv").iloc[0]
     V.put("n.months", int(s.n_months))
@@ -431,7 +406,7 @@ def sim_values(V: Values, B: dict, R: Path) -> None:
     V.put("sim.wall", fx(sm["wall_sec"], 0))
     V.put("sim.run", sm["run_id"])
     V.put("sim.cfg8", sm["config_sha256"][:8])
-    V.put("sim.git", sm["git_sha"][:7] + (" (dirty)" if sm.get("git_dirty") else ""))
+    V.put("sim.code8", sm["code_sha256_src"][:8])
     V.put("sim.assets", sm["n_assets"])
     V.put("sim.months", sm["n_months"])
     for w in ["V", "P", "0"]:
@@ -958,12 +933,12 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
 
 
 # ------------------------------------------------------------------------------------ reproducibility evidence
-REPRO_KEYS = ["repro.status", "repro.commit", "repro.steps", "repro.rc", "repro.data_min", "repro.n_files",
+REPRO_KEYS = ["repro.status", "repro.clone_run", "repro.steps", "repro.rc", "repro.data_min", "repro.n_files",
               "repro.n_csv", "repro.n_identical", "repro.n_textdiff", "repro.n_numdiff", "repro.daily",
               "repro.verdict", "repro.tests", "repro.groups", "repro.n_png", "repro.n_png_ident", "repro.not_covered",
               "repro.hf_min", "repro.code_vs", "repro.cover_text", "repro.n_other", "repro.other_text",
               "repro.hf_text", "repro.hf_n", "repro.skip_short", "repro.skip_text"]
-FC_KEYS = ["fc.status", "fc.report_exc", "fc.report_exc_short", "fc.code", "fc.head", "fc.rc", "fc.min", "fc.tests", "fc.n_man", "fc.n_canon", "fc.clean",
+FC_KEYS = ["fc.status", "fc.report_exc", "fc.report_exc_short", "fc.rc", "fc.min", "fc.tests", "fc.n_man", "fc.n_canon",
            "fc.hist", "fc.prev", "fc.base_n", "fc.base_maxdiff", "fc.base_numdiff", "fc.files", "fc.files_ident",
            "fc.verdict", "fc.data", "fc.home_n", "fc.home_list", "fc.home_text", "fc.contract", "fc.contract_xfail",
            "fc.hist_n", "fc.hist_home", "fc.files_diff_text", "fc.base_text"]
@@ -979,7 +954,7 @@ def repro_values(V: Values, R: Path) -> None:
     else:
         sm = V.json(sj)
         V.put("repro.status", "done")
-        V.put("repro.commit", sm["clone_commit"][:7])
+        V.put("repro.clone_run", sm["clone_base_run"])
         tg = [x["target"] for x in sm["steps"]]
         # repeated attempts of one target (hf_lambda after network drops) are shown once, with their count
         V.put("repro.steps", " → ".join(t + (f" ({tg.count(t)} attempts)" if tg.count(t) > 1 else "")
@@ -993,16 +968,17 @@ def repro_values(V: Values, R: Path) -> None:
         hf = [x for x in sm["steps"] if x["target"] == "upgrade-hf_lambda"]
         V.put("repro.hf_min", fx(sum(x["seconds"] for x in hf) / 60, 0) if hf else "n/a")
         V.put("repro.hf_n", len(hf))
-        fix = subprocess.run(["git", "log", "--reverse", "--format=%h", "-S", "allow-partial", "--", "src/hf_lambda.py"],
-                             cwd=ROOT, capture_output=True, text=True).stdout.split()
+        # the current src/hf_lambda.py stops on failed downloads unless --allow-partial is passed
+        fix = "--allow-partial" in (ROOT / "src" / "hf_lambda.py").read_text()
         if len(hfa) > 1:
             fails = [f"{a['n_failed']} ({', '.join(f'{n} {k}' for k, n in a['failed_downloads'].items())})"
                      for a in hfa if a["n_failed"]]
             V.put("repro.hf_text", (
                 f"`upgrade-hf_lambda` ran {len(hfa)} times because of network drops: the earlier attempts lost "
                 + " and then ".join(fails) + " downloads and still exited with code 0 and wrote results from incomplete "
-                f"data (the code at `{sm['clone_commit'][:7]}` did not fail on failed downloads"
-                + (f"; since `{fix[0]}` it does" if fix else "") + "); the last attempt had "
+                "data (that earlier code did not fail on failed downloads"
+                + ("; the current `src/hf_lambda.py` does, unless `--allow-partial` is passed" if fix else "")
+                + "); the last attempt had "
                 f"{hfa[-1]['n_failed']} failed downloads, and only its outputs were compared; the "
                 f"{len(hfa)} attempts took about {V['repro.hf_min']} min in total"))
         else:
@@ -1057,8 +1033,10 @@ def repro_values(V: Values, R: Path) -> None:
         pg = ck[kind == "png"]
         V.put("repro.n_png", int(len(pg)))
         V.put("repro.n_png_ident", int((pg.status == "identical").sum()))
-        V.put("repro.code_vs", f"the clone ran commit `{sm['clone_commit'][:7]}`; the outputs it is compared with were "
-              f"produced by commit `{V.json(R / sm['repo_base_run'] / 'run_manifest.json')['git']['sha'][:7]}`")
+        V.put("repro.code_vs", "the clone ran an earlier version of the code (its base run "
+              f"`{sm['clone_base_run']}`); the outputs it is compared with are the canonical outputs (base run "
+              f"`{sm['repo_base_run']}`, code sha256 "
+              f"`{V.json(R / sm['repo_base_run'] / 'run_manifest.json')['code_sha256'][:8]}…`)")
         tl = d / "clone_logs" / "make_tests.txt"
         m = re.findall(r"^(\d+ passed.*?) in [0-9.]+s", V.text(tl), re.M) if tl.exists() else []
         V.put("repro.tests", m[-1] if m else "not logged")
@@ -1071,8 +1049,6 @@ def repro_values(V: Values, R: Path) -> None:
     fc = V.json(fj)
     mf = V.csv(d / "final_clone" / "manifests.csv")
     V.put("fc.status", "done")
-    V.put("fc.code", fc["code_commit_run"] if isinstance(fc["code_commit_run"], str) else "several commits")
-    V.put("fc.head", fc["clone_head_now"])
     V.put("fc.rc", f"exit code {fc['make_all']['rc']}" if fc["make_all"] else "not logged")
     V.put("fc.min", fx(fc["make_all"]["seconds"] / 60, 0) if fc["make_all"] else "n/a")
     V.put("fc.tests", fc["tests_summary"] or "not logged")
@@ -1095,8 +1071,6 @@ def repro_values(V: Values, R: Path) -> None:
           "`src/report.py`" if fc.get("base_n_text_or_rows") else "all are identical")
     V.put("fc.n_man", fc["n_manifests"])
     V.put("fc.n_canon", fc["n_canonical"])
-    V.put("fc.clean", "all record that commit with `dirty = false`" if fc["canonical_all_same_commit_clean"]
-          else "NOT all record one commit with `dirty = false`")
     # the base run's report stage (report_manifest.json) is not one of the counted run manifests: if `make report`
     # rewrote it after the clone run, the outputs are not all the clone's, and every provenance sentence says so
     rpm = R / fc["canonical_base_run"] / "report_manifest.json"
@@ -1106,15 +1080,19 @@ def repro_values(V: Values, R: Path) -> None:
                   if d["file"].startswith(f"results/{fc['canonical_base_run']}/")]
         V.put("fc.report_exc", (
             f", except the base run's report-stage files ({', '.join(f'`{x}`' for x in rfiles) or '`report_manifest.json`'}), "
-            f"which `make report` rewrote afterwards at `{rg['sha'][:7]}`{' (uncommitted changes, dirty = true)' if rg.get('dirty') else ''} "
+            "which `make report` rewrote afterwards with a later version of the code "
             "with reworded explanation texts and added diagnostic rows (no shared number changed; see “Reproducibility”)"))
         V.put("fc.report_exc_short", f", except {len(rfiles)} report-stage files of the base run, rewritten later by "
-              f"`make report` at `{rg['sha'][:7]}`{' (dirty)' if rg.get('dirty') else ''}: text and added rows only")
+              "`make report` with a later version of the code: text and added rows only")
     else:
         V.put("fc.report_exc", "")
         V.put("fc.report_exc_short", "")
-    V.put("fc.hist",", ".join(f"`{h['run_id']}` (`{h['git_sha']}`, {'dirty' if h['dirty'] else 'clean'})"
-                               for h in fc["historical_runs"]) or "none")
+    hist_code = {}
+    for h in fc["historical_runs"]:
+        hm = R / h["run_id"] / "run_manifest.json"
+        hist_code[h["run_id"]] = V.json(hm).get("code_sha256", "")[:8] if hm.exists() else "?"
+    V.put("fc.hist", ", ".join(f"`{h['run_id']}` (code `{hist_code[h['run_id']]}…`)" for h in fc["historical_runs"])
+          or "none")
     V.put("fc.prev", fc["base_compared_with"] or "none")
     V.put("fc.base_n", fc["base_n_csv"])
     V.put("fc.base_maxdiff", fx(fc["base_max_abs_diff"], 0) if fc["base_max_abs_diff"] is not None else "n/a")
@@ -1137,8 +1115,7 @@ def repro_values(V: Values, R: Path) -> None:
 
 def tests_log_values(V: Values, R: Path) -> None:
     """Latest saved pytest log (results/tests_log/, latest by its `date:` line, not by file name) and whether it was
-    run on the code these docs are built from (same content hash; for legacy logs of a clean checkout: no code diff
-    between that commit and the working tree)."""
+    run on the code these docs are built from (same content hash of the code paths, see code_state_hash)."""
     keys = ["tests.log", "tests.summary", "tests.date", "tests.code_match", "tests.state"]
     logs = []
     for f in (R / "tests_log").glob("pytest_*.txt"):
@@ -1155,56 +1132,71 @@ def tests_log_values(V: Values, R: Path) -> None:
     m = re.findall(r"^(\d+ passed[^\n]*?) in [0-9.]+s", txt, re.M)
     V.put("tests.summary", m[-1] if m else "no pytest summary line")
     V.put("tests.date", date)
-    head = re.search(r"^git HEAD: (\w+)", txt, re.M)
-    dirty = re.search(r"^dirty files: (\d+)", txt, re.M)
     c = re.search(r"^code state: (\S+)", txt, re.M)
-    sha = head.group(1)[:7] if head else "?"
-    n_dirty = int(dirty.group(1)) if dirty else None
-    V.put("tests.state", f"a clean checkout of `{sha}`" if n_dirty == 0 else
-          f"commit `{sha}` plus {n_dirty} uncommitted code file(s)" if n_dirty else f"commit `{sha}`")
-    if not c:
-        match = "cannot be compared with (the log has no code-state line)"
-    elif c.group(1).startswith("tree:"):
+    if c and c.group(1).startswith("tree:"):
+        V.put("tests.state", f"code-state hash `{c.group(1)}`")
         match = "matches" if c.group(1) == code_state_hash() else "does NOT match"
-    elif n_dirty == 0 and c.group(1).endswith("+" + EMPTY_DIFF16) and head:
-        match = "matches" if code_same_as_commit(head.group(1)) else "does NOT match"
     else:
-        match = "cannot be compared with (an older log format of a working tree with uncommitted code)"
+        V.put("tests.state", "an older log format without a content hash")
+        match = "cannot be compared with (the log has no content hash of the code)"
     V.put("tests.code_match", match)
 
 
 # ------------------------------------------------------------------------------------ pre-registration
+PREREG = ROOT / "docs" / "preregistration" / "config_preregistered.yaml"
+
+
 def prereg_values(V: Values, B: dict, R: Path) -> None:
-    """First real-data run (earliest base run manifest) against the pre-registration commit."""
-    def git(*args):
-        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout
+    """First real-data run (earliest base run manifest) against the saved copy of the pre-registered config."""
     mans = []
     for mp in R.glob("*/run_manifest.json"):
         m = json.loads(mp.read_text())
-        if "created_utc" in m and "git" in m:
+        if "created_utc" in m:
             mans.append((m["created_utc"], mp, m))
-    if not mans or B["prereg"] == "n/a":
-        for k in ["git.refine", "git.firstrun", "git.firstrun.sha", "git.firstrun.cfg8", "git.prereg.cfgmatch",
-                  "fr.fm3res", "fr.res_tmax", "fr.t4_tmax"]:
+    V.put("prereg.file", str(PREREG.relative_to(ROOT)))
+    if not mans or not PREREG.exists():
+        for k in ["prereg.sha8", "prereg.firstrun", "prereg.firstrun.cfg8", "prereg.cfgmatch", "fr.fm3res",
+                  "fr.res_tmax", "fr.t4_tmax"]:
             V.put(k, "n/a")
         return
     _, mp, first = min(mans, key=lambda x: x[0])
     V.json(mp)
-    fsha = first["git"]["sha"]
-    refine = git("log", "--format=%h", f"{B['prereg']}..{fsha}", "--", "DEVIATIONS.md", "config.yaml").split()
-    V.put("git.refine", ", ".join(f"`{c}`" for c in reversed(refine)).strip("`") if refine else "none")
-    V.put("git.firstrun", first["run_id"])
-    V.put("git.firstrun.sha", fsha[:7] + (" (dirty)" if first["git"].get("dirty") else ""))
-    V.put("git.firstrun.cfg8", first["config_sha256"][:8])
-    pre_cfg = hashlib.sha256(subprocess.run(["git", "show", f"{B['prereg']}:config.yaml"], cwd=ROOT,
-                                            capture_output=True).stdout).hexdigest()
-    V.put("git.prereg.cfgmatch", "matches" if pre_cfg == first["config_sha256"] else "does NOT match")
+    pre_cfg = sha256(PREREG)
+    V.inputs[str(PREREG.relative_to(ROOT))] = pre_cfg
+    V.put("prereg.sha8", pre_cfg[:8])
+    V.put("prereg.firstrun", first["run_id"])
+    V.put("prereg.firstrun.cfg8", first["config_sha256"][:8])
+    V.put("prereg.cfgmatch", "matches" if pre_cfg == first["config_sha256"] else "does NOT match")
     # the pre-registered first run (before the J1 data audit): its T4 Res.lnA slopes
     t4 = V.csv(mp.parent / "T4_fm.csv")
     r = one(t4, model="(3)", var="ResLnA")
     V.put("fr.fm3res", ct(r.coef, r.t))
     V.put("fr.res_tmax", fx(t4[t4["var"] == "ResLnA"].t.abs().max(), 2))
     V.put("fr.t4_tmax", fx(t4.t.abs().max(), 2))
+
+
+# ------------------------------------------------------------------------------------ provenance from the files
+def verify_values(V: Values, B: dict, R: Path) -> None:
+    """Hashes recorded in the canonical manifests against the files here (src/verify_manifests.py, `make verify`).
+    Only config and code enter the docs: data/ is not in the ZIP and its presence depends on the machine."""
+    import verify_manifests as vm
+    rows = vm.verify(R)
+    canon = sorted({r["manifest"] for r in rows if r["check"] in ("config", "code")})
+    V.put("verify.n_man", len(canon))
+
+    def bad(check):
+        return sorted({r["manifest"] for r in rows if r["check"] == check and r["status"] == "MISMATCH"})
+    for check in ["config", "code"]:
+        b = bad(check)
+        V.put(f"verify.{check}", f"all {len(canon)} match" if not b else
+              f"{len(b)} of {len(canon)} do NOT match ("
+              + ", ".join(f"`{Path(x).parent.name}/{Path(x).name}`" for x in b) + ")")
+        V.put(f"verify.{check}.short", f"all {len(canon)} match" if not b else f"{len(b)} of {len(canon)} do NOT match")
+    base = [r for r in rows if r["check"] == "code" and r["manifest"].endswith(f"{V['base.run']}/run_manifest.json")]
+    V.put("base.code_match", "matches" if base and all(r["status"] == "match" for r in base) else "does NOT match")
+    pre = [r for r in rows if r["check"] == "pre-registration"]
+    V.put("verify.prereg", pre[0]["status"] if pre else "n/a")
+    B["verify_rows"] = rows
 
 
 # ------------------------------------------------------------------------------------ blocks
@@ -1215,16 +1207,17 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
 
     out["provenance"] = (
         f"_The numbers in this file are generated by `src/build_docs.py` from CSV files: base run `{V['base.run']}` "
-        f"(git `{V['base.git']}`, config sha256 `{V['base.cfg8']}…`), simulations `results/simulations/` "
-        f"(`{V['sim.run']}`, config `{V['sim.cfg8']}…`, git `{V['sim.git']}`), upgrades "
+        f"(config sha256 `{V['base.cfg8']}…`, code sha256 `{V['base.code8']}…`), simulations `results/simulations/` "
+        f"(`{V['sim.run']}`, config `{V['sim.cfg8']}…`, code `{V['sim.code8']}…`), upgrades "
         + ", ".join(f"`{k}` → `{m['run_id']}`" for k, m in sorted(up.items()))
-        + ". Refresh with `make docs`. Values between `<!--v:...-->` markers are never edited by hand. "
-        "`(dirty)` means the result was produced from a working copy with uncommitted changes. The manifest field "
-        f"`code_sha256` (sha256 of `src/*.py`) records that code state; for the base run (`{V['base.code8']}…`) it "
-        f"{V['base.code_commit']}, {V['base.code_checkout']}"
-        + (f"; `make all` on a clean clone of `{V['fc.code']}` wrote these outputs ({V['fc.rc']}, "
+        + ". Refresh with `make docs`. Values between `<!--v:...-->` markers are never edited by hand. Each run "
+        "folder holds a `run_manifest.json` with the sha256 of the config, of the code (`code_sha256`; for the base "
+        "run over `src/*.py`) and of the input data; `make verify` (`src/verify_manifests.py`) recomputes them from "
+        f"the files here. Config hashes of the {V['verify.n_man']} canonical manifests: {V['verify.config']}; "
+        f"code hashes: {V['verify.code']} the code in this repository"
+        + (f"; `make all` on a fresh clone wrote these outputs ({V['fc.rc']}, "
            f"`results/repro/final_clone/`){V['fc.report_exc']}" if V["fc.status"] == "done" else "")
-        + (f"; a from-scratch clone of the older commit `{V['repro.commit']}` (every download redone), compared with "
+        + (f"; a from-scratch clone of an earlier version of the code (every download redone), compared with "
            f"these outputs, gives the same numbers (verdict “{V['repro.verdict']}”, `results/repro/`)"
            if V["repro.status"] == "done" else "")
         + " (see “Reproducibility”)._")
@@ -1324,7 +1317,7 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     out["simulations"] = (t + f"\n\nCriteria in `sim_checks.csv`: {V['sim.checks.pass']} of "
                           f"{V['sim.checks.n']} passed ({V['sim.checks.loose_n']} of them use the loose rule "
                           f"“share {V['sim.checks.loose_rule']}” for unpriced signals; with ≤ 5% instead, "
-                          f"{V['sim.checks.pass_strict5']} of {V['sim.checks.n']}). {V['git.sim_rules']}\n" + fl + "\n\nPower in world V (`sim_power.csv`; "
+                          f"{V['sim.checks.pass_strict5']} of {V['sim.checks.n']}). {V['sim.rules_note']}\n" + fl + "\n\nPower in world V (`sim_power.csv`; "
                           f"{V['pow.reps']} replications per point, so each share is coarse, see the 95% CI "
                           "of the share of |t| > 1.96):\n\n" + pt)
 
@@ -1342,7 +1335,7 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
          "against A&N's coefficient and our power against an A&N-sized effect is unknown: insignificance does not "
          "show that DIF is unpriced. The only result in A&N's direction in the main "
          f"specification is fDIF on 12-month measures (below HLZ); on raw returns the monthly DIF in V2 is "
-         f"{V['an.ret.V2m']} and fDIF {V['an.ret.V4y']}. The verdict of our rule (not pre-registered: code and results were committed together) changes with the minimum number "
+         f"{V['an.ret.V2m']} and fDIF {V['an.ret.V4y']}. The verdict of our rule (not pre-registered: the rule was written together with its results) changes with the minimum number "
          f"of coins per month ({V['an.sens.levels']}: {V['an.sens.ret_adj']}; fDIF t {V['an.sens.fdif_t']}; this "
          f"sensitivity was added during checking, post hoc); |t| ≥ 3: {V['an.sens.n3']}",
          f"`{U}/amihud_noh/`"],
@@ -1426,16 +1419,19 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     # overfitting
     lg_src = f"base {V['lg.base.3']}, " + V["lg.all.3_by_source"]
     out["overfitting"] = "\n".join([
-        f"- **Pre-registration.** The specification (`config.yaml`, `DEVIATIONS.md` D1–D11) was committed in "
-        f"`{V['git.prereg']}`; refinements of `DEVIATIONS.md` (D7 rewritten, D12 and D13 added) in `{V['git.refine']}`, "
-        f"also before the first real-data run (`{V['git.firstrun']}`, git `{V['git.firstrun.sha']}`). The "
-        f"`config.yaml` of the first run {V['git.prereg.cfgmatch']} the pre-registered one (sha256 "
-        f"`{V['git.firstrun.cfg8']}…`). Changes after the first run are in the journal (J1 data audit, "
-        "J2 winsorization), each with a reason. J1 matters for the results: in the pre-registered first run, which "
-        f"still had the unadjusted COCOS redenomination, no FM slope in T4 reached |t| = 1.96 (largest |t| "
-        f"{V['fr.t4_tmax']}; Res.lnA in model (3) {V['fr.fm3res']}, `{V['git.firstrun']}/T4_fm.csv`). The audit "
-        "rules (thresholds and the gap rule) were designed after that run, so the Res.lnA significance depends on "
-        "a data fix made after the first run.",
+        f"- **Pre-registration.** The specification (`config.yaml`, `DEVIATIONS.md` D1–D11) was fixed before the "
+        "first real-data run; the refinements of `DEVIATIONS.md` (D7 rewritten, D12 and D13 added) were also made "
+        f"before it. A copy of the pre-registered `config.yaml` is `{V['prereg.file']}` (sha256 `{V['prereg.sha8']}…`); "
+        f"the manifest of the first real-data run (`results/{V['prereg.firstrun']}/run_manifest.json`) records "
+        f"config sha256 `{V['prereg.firstrun.cfg8']}…`, which {V['prereg.cfgmatch']} that file, so the first run "
+        "used the pre-registered specification (`make verify` rechecks this). That the specification was fixed "
+        "before the data were seen (the time order) rests on our version history, kept in the public repository; "
+        "it cannot be checked from the files of the ZIP alone. Changes after the first run are in the journal (J1 "
+        "data audit, J2 winsorization), each with a reason. J1 matters for the results: in the pre-registered first "
+        f"run, which still had the unadjusted COCOS redenomination, no FM slope in T4 reached |t| = 1.96 (largest "
+        f"|t| {V['fr.t4_tmax']}; Res.lnA in model (3) {V['fr.fm3res']}, `{V['prereg.firstrun']}/T4_fm.csv`). The "
+        "audit rules (thresholds and the gap rule) were designed after that run, so the Res.lnA significance "
+        "depends on a data fix made after the first run.",
         f"- **Test ledger** (`results/upgrades/robustness/ledger_summary.csv`). Base family: {V['lg.base.n']} unique "
         f"tests, |t| > 1.96 in {V['lg.base.196']} (with all effects zero we would expect {V['lg.base.exp']} at the "
         f"nominal 5% and about {V['w0.exp_base']} at the world-0 size of NW(6)), |t| > 3 in {V['lg.base.3']}; after "
@@ -1499,8 +1495,7 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         "show that the check flags a shifted signal. It does not cover Res.A/Res.lnA, |Ret|, DIF, the 12-month "
         "A&N measures or the separate panels of the upgrades (`hf_lambda`, `moex`, `sentiment`). Latest saved test "
         f"log (by its date line): `{V['tests.log']}` ({V['tests.date']}, {V['tests.state']}: {V['tests.summary']}); "
-        f"its code-state hash {V['tests.code_match']} the code these docs were built from. Uncommitted work: see "
-        "“What was not done”.",
+        f"its code-state hash {V['tests.code_match']} the code these docs were built from.",
         "- **Post hoc variants** (added after we saw the main result; not pre-registered) are labelled in the "
         "`SUMMARY.md` of each upgrade and are never the main specification. In the CSVs, "
         "`hf_lambda/variants.csv` and `sentiment/panel_b.csv` carry a post hoc column, and "
@@ -1736,7 +1731,8 @@ def main(argv=None) -> int:
     ap.add_argument("--strict", action="store_true")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--code-hash", action="store_true",
-                    help="print the code-state hash (HEAD + diff of src/, tests/, config, Makefile, mk/) and exit")
+                    help="print the code-state hash (content of src/, tests/, config.yaml, Makefile, mk/, "
+                         "requirements.txt) and exit")
     a = ap.parse_args(argv)
     if a.code_hash:
         print(code_state_hash())
@@ -1754,28 +1750,20 @@ def main(argv=None) -> int:
     openap_values(V, B, U)
     moex_values(V, B, U)
     robustness_values(V, B, U)
-    pre = subprocess.run(["git", "log", "--diff-filter=A", "--format=%h", "--", "config.yaml"], cwd=ROOT,
-                         capture_output=True, text=True).stdout.split()
-    B["prereg"] = pre[-1] if pre else "n/a"
-    V.put("git.prereg", B["prereg"])
+    verify_values(V, B, R)
     prereg_values(V, B, R)
     V.put("dev.range", deviation_ranges(ROOT / "DEVIATIONS.md"))
-    added = {f: subprocess.run(["git", "log", "--diff-filter=A", "--format=%h", "--", f], cwd=ROOT,
-                               capture_output=True, text=True).stdout.split()
-             for f in ["src/simulate.py", "results/simulations/sim_checks.csv"]}
-    c_rules, c_res = (added[f][-1] if added[f] else None for f in added)
-    V.put("git.sim_rules", f"The pass rules (`src/simulate.py`) were committed in the same commit as the first "
-          f"simulation results (`{c_rules}`), so git does not show that they came first."
-          if c_rules and c_rules == c_res else
-          f"The pass rules were first committed in `{c_rules}`, the first simulation results in `{c_res}`.")
-    mod, new = uncommitted()
-    V.put("git.uncommitted_n", len(mod) + len(new))
-    V.put("git.uncommitted_evidence", uncommitted_text(mod, new))
-    first_deck = subprocess.run(["git", "log", "--diff-filter=A", "--format=%h %ad", "--date=format:%Y-%m-%d %H:%M",
-                                 "--", "slides/deck.tex"], cwd=ROOT, capture_output=True, text=True).stdout.split("\n")
-    first_deck = [x for x in first_deck if x.strip()]
-    V.put("git.deck_first", f"{first_deck[-1].split(' ', 1)[1]} (commit `{first_deck[-1].split()[0]}`)"
-          if first_deck else "not committed")
+    V.put("sim.rules_note", "The pass rules (`src/simulate.py`) were written together with the first simulation "
+          "results, so nothing shows that they came first.")
+    # date only (no commit id): when slides/deck.tex first appears in the version history; unknown without git
+    try:
+        first_deck = subprocess.run(["git", "log", "--diff-filter=A", "--format=%ad", "--date=format:%Y-%m-%d %H:%M",
+                                     "--", "slides/deck.tex"], cwd=ROOT, capture_output=True, text=True).stdout
+    except OSError:
+        first_deck = ""
+    first_deck = [x for x in first_deck.split("\n") if x.strip()]
+    V.put("deck.first", f"{first_deck[-1]} (the first version of `slides/deck.tex` in our version history)"
+          if first_deck else "an unknown time (no version history available here)")
     repro_values(V, R)
     tests_log_values(V, R)
     mp = ROOT / "slides" / "meta.yaml"
@@ -1853,6 +1841,17 @@ def main(argv=None) -> int:
             if bad:
                 rc = 1
                 print(f"{path.relative_to(ROOT)}: {len(bad)} line(s) with Cyrillic text:", file=sys.stderr)
+                for h in bad[:20]:
+                    print("   ", h, file=sys.stderr)
+        # provenance must be checkable from the ZIP: no commit SHA (known SHA of this history, or hex next to "commit")
+        shas = known_shas()
+        for path in list(dict.fromkeys(targets + [ROOT / "slides" / "ROLES.md"])):
+            if path not in rendered and not path.exists():
+                continue
+            bad = commit_refs(rendered[path] if path in rendered else path.read_text(), shas)
+            if bad:
+                rc = 1
+                print(f"{path.relative_to(ROOT)}: {len(bad)} line(s) cite a commit SHA:", file=sys.stderr)
                 for h in bad[:20]:
                     print("   ", h, file=sys.stderr)
         if not (B["meta"].get("team") or []):

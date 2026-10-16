@@ -126,7 +126,7 @@ Res.$\ln A$: the residual of a cross-sectional regression of $\ln A$ on $\ln A_C
 \bigskip
 \begin{itemize}
 \item Data audit: \V{audit.redenomination} redenominations adjusted like splits, \V{audit.ticker_reuse} reused tickers split into separate assets (dates match trading halts).
-\item Base specification committed in git (\V{git.prereg}) before the first real-data run; first-run config vs pre-registered: \V{git.prereg.cfgmatch}. The main run uses config \V{base.cfg8}, which adds the data audit (J1) and a robustness-only option (J2).
+\item Base specification fixed before the first real-data run; its config hash \V{prereg.cfgmatch} the copy in docs/preregistration/. The main run uses config \V{base.cfg8}, which adds the data audit (J1) and a robustness-only option (J2).
 \end{itemize}
 \end{frame}
 
@@ -229,7 +229,7 @@ fDIF (12-month): \V{an.V4y}, the only main-specification result toward A\&N, bel
 Res.lnA: \V{an.V3m} with IVOL, \V{an.V5m} with $\ln|Ret|$ + IVOL; R² of Res.lnA on $\ln|Ret|$ + DIF = \V{an.r2_res_dif}. ``Residual = volatility'' is a hypothesis.
 \end{column}
 \end{columns}
-\src{results/upgrades/amihud\_noh/; verdict rule (not recorded in git before the run): \V{an.sens.ret_adj} at minimum coins \V{an.sens.levels} (sensitivity added post hoc)}
+\src{results/upgrades/amihud\_noh/; verdict rule (not pre-registered): \V{an.sens.ret_adj} at minimum coins \V{an.sens.levels} (sensitivity added post hoc)}
 \end{frame}
 
 % ------------------------------------------------------------------------------------------ 12
@@ -260,12 +260,12 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \textbf{Authors:} subperiods, NASDAQ out of sample, annual measures, raw returns.\par\smallskip
 \textbf{Us:}
 \begin{itemize}
-\item Base specification committed before the first run (git \V{git.prereg}); later changes J1, J2 logged. In that first run no T4 slope reached 1.96 (Res.lnA (3) \V{fr.fm3res}); the J1 audit rules were designed after it, so the Res.lnA significance depends on a post-first-run data fix. Upgrade specifications and verdict rules were not pre-registered in git; post hoc variants are labelled.
+\item Base specification fixed before the first run (time order: our version history); later changes J1, J2 logged. In that first run no T4 slope reached 1.96 (Res.lnA (3) \V{fr.fm3res}); the J1 audit rules were designed after it, so the Res.lnA significance depends on a post-first-run data fix. Upgrade specifications and verdict rules were not pre-registered; post hoc variants are labelled.
 \item Ledger of every t: base family \V{lg.base.n} tests, |t| > 1.96 for \V{lg.base.196} (\V{lg.base.exp}–\V{w0.exp_base} expected under the null; most are correlated variants of the Res.lnA hypothesis, so this is not a formal test); |t| > 3 for \V{lg.base.3}; Bonferroni/BH \V{lg.base.bonf}/\V{lg.base.bh}.
 \item Size in world 0 (a balanced, lighter-tailed panel): NW(6) gives \V{w0.fpr_min}–\V{w0.fpr_max} false |t| > 1.96; empirical 5\% cut-off \V{w0.crit_min}–\V{w0.crit_max}. Simulations: \V{sim.checks.pass} of \V{sim.checks.n} criteria pass (\V{sim.checks.loose_n} under a loose ``share \V{sim.checks.loose_rule}'' rule; \V{sim.checks.pass_strict5} with 5\%); failed: {\color{warn}\V{sim.checks.failed}}.
 \item Month-block bootstrap: a CI excluding zero is stable for only \V{rb.robust} of \V{rb.n} statistics (both Res.lnA). Placebo: shuffling the measures within month (\V{plc.shuffle_reps} permutations) gives |mean t| $\le$ \V{plc.shuffle_maxabs_meant}, s.d. of t \V{plc.shuffle_sd_t_min}–\V{plc.shuffle_sd_t_max}, share |t| > 1.96 $\le$ \V{plc.shuffle_share196_max}; a lag-0 signal (contemporaneous, not a pure leak test) gives |t| up to \V{plc.leak_maxabs_t}.
 \item Survivorship: later-delisted pairs kept (count not recorded), no delisting returns. Costs: break-even \V{ed.breakeven} per side, from an insignificant gross spread. Non-stationarity: $\ln A_C$ \V{pvu.SubAlnAC} in the first half, \V{pvu.SubBlnAC} in the second.
-\item Out of sample: MOEX (variants not pre-registered in git), US after 2012 (ready-made OpenAP portfolios). Robustness, not out of sample: without 2021.
+\item Out of sample: MOEX (variants not pre-registered), US after 2012 (ready-made OpenAP portfolios). Robustness, not out of sample: without 2021.
 \end{itemize}
 \src{results/upgrades/robustness/ (ledger\_summary, bootstrap\_ci, world0\_calibration); \V{base.dir}/placebo.csv}
 \end{frame}
@@ -348,9 +348,9 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \small
 \begin{itemize}
 \item \texttt{make all} runs data → tests → simulations → base run → report → upgrades → ledger → documents → manifest check; \texttt{make slides} builds this deck.
-\item \textbf{make all on a clean clone} of commit \V{fc.code} (results/repro/final\_clone/): \V{fc.rc}, about \V{fc.min} min; code tests \V{fc.tests}, output-manifest contract \V{fc.contract} (xfails: historical runs); data/ \V{fc.data}. Its outputs are the committed results (\V{fc.n_canon} run manifests, all at \V{fc.code} with dirty = false)\V{fc.report_exc_short}; base CSVs vs the previous base run: max abs diff \V{fc.base_maxdiff}. Verdict: \V{fc.verdict}.
-\item \textbf{From-scratch clone} of the older commit \V{repro.commit} with an empty data/ (every download redone): \V{repro.steps}; hf\_lambda needed reruns after network drops; earlier attempts exited 0 despite failed downloads (the code now fails); only the complete last one was compared. Against the current canonical outputs: of \V{repro.n_csv} result CSVs (\V{repro.skip_short}), \V{repro.n_numdiff} differ numerically (\V{repro.n_textdiff} only in text; \V{repro.n_other} agree in totals or shared rows); daily panel \V{repro.daily}. Verdict: \V{repro.verdict}.
-\item Every run writes \texttt{run\_manifest.json} (git SHA, dirty flag, hashes of config, code and data, seed, timings). The base run's code state \V{base.code_commit}. Canonical manifests failing the path check: \V{fc.home_n}; home paths remain only in history files.
+\item \textbf{make all on a fresh clone} of the final code (results/repro/final\_clone/): \V{fc.rc}, about \V{fc.min} min; code tests \V{fc.tests}, output-manifest contract \V{fc.contract} (xfails: historical runs); data/ \V{fc.data}. Its outputs are the canonical results (\V{fc.n_canon} run manifests)\V{fc.report_exc_short}; base CSVs vs the previous base run: max abs diff \V{fc.base_maxdiff}. Verdict: \V{fc.verdict}.
+\item \textbf{From-scratch clone} of an earlier version of the code with an empty data/ (every download redone): \V{repro.steps}; hf\_lambda needed reruns after network drops; earlier attempts exited 0 despite failed downloads (the code now fails); only the complete last one was compared. Against the current canonical outputs: of \V{repro.n_csv} result CSVs (\V{repro.skip_short}), \V{repro.n_numdiff} differ numerically (\V{repro.n_textdiff} only in text; \V{repro.n_other} agree in totals or shared rows); daily panel \V{repro.daily}. Verdict: \V{repro.verdict}.
+\item Every run writes \texttt{run\_manifest.json} (sha256 of config, code and data, seed, timings); \texttt{make verify} recomputes them from the files, no git needed: config \V{verify.config.short}, code \V{verify.code.short} the code here (list: README). Canonical manifests failing the path check: \V{fc.home_n}; home paths remain only in history files.
 \item Deviations from the paper: DEVIATIONS.md (\V{dev.range}).
 \end{itemize}
 \src{README.md, section ``Reproducibility''; results/repro/ and results/repro/final\_clone/}
@@ -360,12 +360,12 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \begin{frame}{B7. What was not done and limitations}
 \footnotesize
 \begin{itemize}
-\item \textbf{Reproducibility:} no single clean-clone run both redid the downloads and ran \texttt{make all} (\texttt{make all} at \V{fc.code} used cached data; the from-scratch clone ran the older \V{repro.commit}, and its hf\_lambda step needed \V{repro.hf_n} attempts); macOS only.
+\item \textbf{Reproducibility:} no single clean-clone run both redid the downloads and ran \texttt{make all} (\texttt{make all} of the final code used cached data; the from-scratch clone ran an earlier version of the code, and its hf\_lambda step needed \V{repro.hf_n} attempts); macOS only.
 \item \textbf{Simulations:} the world-0 size criterion fails for Res.lnA (\V{sim.0.fm3}); \V{sim.checks.loose_n} passes use a loose ``share \V{sim.checks.loose_rule}'' rule.
-\item \textbf{Pre-registration:} the Res.lnA significance appears only after the J1 audit, designed after the first run; verdict rules and upgrade specifications were not pre-registered in git; post hoc diagnostics (λ checks, MOEX same-months check, without the most influential month) are labelled.
+\item \textbf{Pre-registration:} the Res.lnA significance appears only after the J1 audit, designed after the first run; verdict rules and upgrade specifications were not pre-registered; post hoc diagnostics (λ checks, MOEX same-months check, without the most influential month) are labelled.
 \item \textbf{Unevidenced checks:} no stored announcement sources, no saved cache comparison; the number of delisted pairs is not recorded; no delisting returns; the paper's numbers were checked against the PDF by hand, with no automated test.
 \item \textbf{Not done:} market caps (size control, VW by cap); the t+1 leak placebo; corr($AT_C$, λ); λ from midquotes.
-\item \textbf{Formalities:} the slides were due 24 hours before the defence (16 October, 13:00), but the deck was first committed on \V{git.deck_first}: deadline missed. Uncommitted files when the docs were built: \V{git.uncommitted_n} (list in README). Latin spelling of the names not confirmed by the members; no timed rehearsal recorded.
+\item \textbf{Formalities:} the slides were due 24 hours before the defence (16 October, 13:00), but the deck was first saved on \V{deck.first}: deadline missed. Latin spelling of the names not confirmed by the members; no timed rehearsal recorded.
 \end{itemize}
 \src{README.md, section ``What was not done and limitations''}
 \end{frame}

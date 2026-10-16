@@ -43,7 +43,7 @@ Thresholds: |t| > 1.96 (5%) and t > 3.0 (Harvey–Liu–Zhu, 2016).
 
 ## All variants (nothing was selected)
 
-Variants set in `MOEX_SPEC` before the first computation: main, filter 1M RUB, no dividends, raw returns, terciles (the MOEX files were not committed before the computation, so git cannot confirm this order; it rests on the session log, which is not in the repository). Added after the first run and labelled as such: `main without M9 corrections` (the effect of the two manual data corrections), `diagnostic: raw returns, months of ret_adj FM`, `T3_alpha_detail.csv` and `diag_by_year.csv` (at the verification stage).
+Variants set in `MOEX_SPEC` before the first computation: main, filter 1M RUB, no dividends, raw returns, terciles (nothing in the repository confirms this order; it rests on the session log, which is not in the repository). Added after the first run and labelled as such: `main without M9 corrections` (the effect of the two manual data corrections), `diagnostic: raw returns, months of ret_adj FM`, `T3_alpha_detail.csv` and `diag_by_year.csv` (at the verification stage).
 
 | Variant | H–L A_C raw (t) | H–L A_C alpha (t) | H–L Res.A raw (t) | FM(1) lnA (t) | FM(4) lnA_C (t) | FM(4) ResLnA (t) | FM(4) lnAT_C (t) | FM(4) ResLnAT (t) |
 |---|---|---|---|---|---|---|---|---|

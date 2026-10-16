@@ -67,7 +67,7 @@ NS = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}
 BAR_MS = 300_000
 log = logging.getLogger("hf_lambda")
 
-# ------------------------------------------------------------------ main specification (not pre-registered in git)
+# ------------------------------------------------------------------ main specification (not pre-registered)
 # Fixed BEFORE looking at any lambda-based result.  Window: the 36 most recent measure months, ending
 # at the last month whose t+2 return exists (2026-07).  Listing sizes (`--plan`, base run
 # 20261016T134056Z_18099336): 13.7k coin-months, 4.02 GB of 5m klines (the ~3 GB guideline would allow

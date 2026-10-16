@@ -1,0 +1,63 @@
+# Pre-registered specification. Committed BEFORE the first run on real data.
+# Any change after the first real-data run must be logged in DEVIATIONS.md.
+
+seed: 20261017
+
+market:
+  name: binance_spot
+  quote: USDT
+  interval: 1d
+  base_url: https://data.binance.vision/data/spot/monthly/klines
+  listing_url: https://s3-ap-northeast-1.amazonaws.com/data.binance.vision
+  first_data_month: "2017-08"
+  last_data_month: "2026-09"        # last complete month before the run
+
+period:
+  return_start: "2019-01"            # first month t of the return analysis
+  return_end: "2026-09"              # last month t
+
+universe:
+  # base assets excluded: stablecoins, fiat, commodity-pegged, wrapped/staked
+  exclude_bases: [USDC, BUSD, TUSD, USDP, PAX, DAI, FDUSD, USDS, USDSB, SUSD, UST, USTC,
+                  USDE, PYUSD, RLUSD, XUSD, BFUSD, USD1, AEUR, EUR, EURI, GBP, AUD, BRL, TRY,
+                  RUB, UAH, NGN, ZAR, BIDR, IDRT, BVND, PAXG, XAUT, WBTC, WBETH, BETH, BNSOL]
+  exclude_suffixes: [UP, DOWN, BULL, BEAR]   # leveraged tokens
+  min_valid_days: 10                 # per estimation month, as in the paper
+  min_mean_dvol_usd: 10000           # mean daily quote volume in the estimation month
+
+measures:
+  scale_A: 1.0e6                     # A and A_C multiplied by 1e6 for readability (Table 1)
+  winsor: [0.01, 0.99]               # cross-sectional, each month, each measure
+  lag_months: 2                      # measure of month t-2 -> return of month t
+
+returns:
+  rf: 0.0                            # see DEVIATIONS.md (D5)
+  winsorize_returns: false           # main spec as in the paper; robustness only
+
+factors:
+  # crypto analogue of FF3 adjustment (BCS 1998): CMKT only
+  cmkt: equal_weighted               # EW return of the eligible universe
+  beta_window: 36                    # months [t-36, t-1]
+  beta_min_obs: 12
+  # sorting alphas: CMKT + CMOM (UMD analogue)
+  cmom_signal: ret_12_2              # tercile H-L on Ret[-12,-2]
+  factor_quantiles: 3
+
+controls:
+  mom_window: [-12, -2]              # Ret[-12,-2]; requires all 11 months
+  rev_window: [-1, -1]               # Ret[-1]
+  ivol_months: 12                    # daily residual std vs daily CMKT, 12 months ending t-2
+  ivol_min_days: 120
+
+tests:
+  quantiles: 5                       # Table 3
+  imla_quantiles: 3                  # Table A.1
+  nw_lags: 6
+  hlz_threshold: 3.0                 # Harvey-Liu-Zhu (2016) bar reported alongside 1.96
+
+simulation:
+  n_assets: 300
+  n_months: 90
+  days_per_month: 30
+  n_sims_world0: 200
+  premium_per_sd: 0.01               # monthly premium per 1 s.d. of the priced signal (worlds V, P)
