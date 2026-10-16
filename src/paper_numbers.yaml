@@ -1,0 +1,67 @@
+# Numbers from Lou & Shu (2017, RFS) and Amihud & Noh (2021) used in the "paper vs us" report
+# and the key figure. Verified against ../docs/papers/*.pdf with `pdftotext -layout`.
+# Page numbers are the printed page numbers of the working-paper PDFs in ../docs/papers/.
+# Sample of LS (2017): NYSE/AMEX common shares, returns 1964-2012 (588 months).
+# Returns and coefficients are in percent per month; t-statistics are Newey-West with 6 lags.
+
+lou_shu_2017:
+  sample: {market: "NYSE/AMEX", period: "1964-2012", months: 588, avg_obs: 1775,
+           source: "Table 2 and Table 4, bottom rows (p. 44, 46)"}
+
+  table1_panelA:                   # pooled summary statistics, firm-months; A and A_C x 1e6
+    source: "Table 1, Panel A (p. 43)"
+    A:      {q25: 0.008, q50: 0.101, q75: 0.861}
+    A_C:    {q25: 0.62,  q50: 8.29,  q75: 72.29}
+    absret: {q25: 0.011, q50: 0.016, q75: 0.024}
+
+  table1_panelB:                   # time-series average of monthly cross-sectional correlations
+    source: "Table 1, Panel B (p. 43)"
+    corr_A_AC: 0.899
+    corr_AT_ATC: 0.746
+    corr_A_absret: 0.489
+    corr_AC_absret: 0.394
+
+  table2_model3:                   # FF3-adjusted return on ln A_C + ln|Ret| (+ ln ME, B/M, mom, rev)
+    source: "Table 2, model (3) (p. 44)"
+    lnA_C: {coef: 0.165, t: 3.92}
+    ln_absret: {coef: -0.319, t: -2.13}
+
+  table3_panelA:                   # quintiles of signal measured in t-2; EW returns (%), 4-factor alpha
+    source: "Table 3, Panel A (p. 45)"
+    A:
+      raw:   {q: [0.96, 1.16, 1.23, 1.29, 1.53], hl: 0.56, t: 2.36}
+      alpha: {q: [-0.03, 0.04, 0.03, 0.10, 0.32], hl: 0.35, t: 2.31}
+    A_C:
+      raw:   {q: [0.96, 1.13, 1.23, 1.28, 1.57], hl: 0.61, t: 2.95}
+      alpha: {q: [-0.05, -0.01, 0.03, 0.11, 0.39], hl: 0.44, t: 3.20}
+    ResA:
+      raw:   {q: [1.39, 1.29, 1.19, 1.10, 1.21], hl: -0.17, t: -1.05}
+      alpha: {q: [0.25, 0.14, 0.04, -0.05, 0.09], hl: -0.16, t: -0.96}
+
+  table4_panelA:                   # FM on FF3-adjusted returns, measures in t-2
+    source: "Table 4, Panel A (p. 46)"
+    "(1)": {lnA: {coef: 0.119, t: 3.01}}
+    "(2)": {lnA_C: {coef: 0.183, t: 4.79}}
+    "(3)": {ResLnA: {coef: -0.383, t: -5.07}}
+    "(4)": {lnA_C: {coef: 0.130, t: 3.31}, ResLnA: {coef: -0.248, t: -3.14}}
+    "(5)": {lnA_C: {coef: 0.120, t: 3.11}, ResLnA: {coef: -0.303, t: -4.65}, ivol: {coef: -2.903, t: -0.57}}
+
+  tableA1_panelA:                  # alpha of H-L quintile spread on A
+    source: "Internet Appendix Table A.1, Panel A (IA p. 2)"
+    imla_one_factor: {alpha: -0.04, t: -0.77}
+    imla_five_factor: {alpha: -0.08, t: -1.66}
+
+  table9:                          # NYSE/AMEX 1983-2012, 358 months
+    source: "Table 9, Panels A and B (p. 52-53)"
+    corr_A_lambda: 0.737
+    corr_AC_lambda: 0.747
+    corr_ATC_lambda: 0.352
+    fm_ln_lambda: {coef: -0.034, t: -0.67}   # model (1)
+
+amihud_noh_2021:
+  sample: {market: "NYSE/AMEX/NASDAQ (CRSP)", period: "1955-2016", months: 744,
+           note: "measures over 12 months ending in s, lagged 2 months; excess returns"}
+  source: "Amihud & Noh (2021), Table 1 (p. 15) and text p. 5-6"
+  col2: {lnLSIlliq: {coef: 0.111, t: 2.64}, DIF: {coef: 1.219, t: 4.42}}
+  col3: {ln_absret: {coef: -0.317, t: -2.10}, lnIDVOL: {coef: 0.093, t: 2.64}, DIF: {coef: 0.996, t: 3.75}}
+  col4: {lnIDVOL: {coef: 0.099, t: 3.01}, RlnILLIQ: {coef: 0.736, t: 4.63}, IdioVol: {coef: -0.663, t: -8.82}}

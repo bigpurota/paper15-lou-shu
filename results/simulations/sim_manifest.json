@@ -1,0 +1,64 @@
+{
+  "run_id": "sim_20261016_162400",
+  "seed": 20261017,
+  "seed_scheme": "SeedSequence([seed, world_code, rep, round(premium*1e6)+1e6 or 999999])",
+  "git_sha": "a90a72be14ee2f00d1b947c5b37b1b3c844f02bd",
+  "config_sha256": "18099336d02261720cda4b1356b8e149cd942c1c7c2d91536a9120284f83db76",
+  "code_sha256_src": "aa61263fc5025d17c94de0c0f60e80044d89922536bc15e892f5b14ab89f3271",
+  "git_dirty": true,
+  "n_reps": {
+    "V": 50,
+    "P": 50,
+    "0": 200,
+    "power_V": 80
+  },
+  "errors": {
+    "V": 0,
+    "P": 0,
+    "0": 0,
+    "power_V": 0
+  },
+  "n_sims_world0_config": 200,
+  "power_grid": [
+    0.0,
+    0.0025,
+    0.005,
+    0.01
+  ],
+  "runtime_sec": {
+    "V": 23.7,
+    "P": 19.0,
+    "0": 81.9,
+    "power_V": 32.4
+  },
+  "wall_sec": 157.1,
+  "workers": 9,
+  "n_assets": 300,
+  "n_months": 90,
+  "premium_per_sd": 0.01,
+  "dgp": {
+    "warmup_months": 14,
+    "first_month": "2015-01",
+    "lv_mean": 15.424948470398375,
+    "lv_sd_asset": 2.5,
+    "lv_rho": 0.9,
+    "lv_sd_time": 0.6,
+    "dvol_daily_sd": 0.5,
+    "vol_mean": -3.3524072174927233,
+    "vol_sd_asset": 0.3,
+    "vol_rho": 0.8,
+    "vol_sd_time": 0.25,
+    "mkt_sd": 0.025,
+    "beta_lo": 0.5,
+    "beta_hi": 1.5,
+    "t_df": 5,
+    "impact_exp": 0.5
+  },
+  "world0_structure": "world P returns (|r|-volume link), mu = 0",
+  "python": "3.12.13",
+  "numpy": "2.5.4",
+  "pandas": "3.0.6",
+  "notes": [],
+  "checks_passed": 14,
+  "checks_total": 17
+}
