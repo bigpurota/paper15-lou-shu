@@ -8,3 +8,9 @@
 === make p0 rc=0 took 247s
 === make upgrades-light start 20:13:10
 === make upgrades-light rc=0 took 852s
+=== make upgrade-hf_lambda start 21:04:26
+=== make upgrade-hf_lambda rc=0 took 4874s
+=== make upgrade-hf_lambda (retry of 148 failed downloads) start 22:28:42
+=== make upgrade-hf_lambda rc=0 took 414s
+=== make upgrade-hf_lambda (retry 1 of remaining failed downloads) start 00:04:40
+=== make upgrade-hf_lambda rc=0 took 132s

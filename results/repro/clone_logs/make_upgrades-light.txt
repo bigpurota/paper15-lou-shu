@@ -5,9 +5,9 @@
 [edge_spread] bidask_check: 0.4s
 [edge_spread] tests: 8.7s
 [edge_spread] write: 0.0s
-[edge_spread] wrote /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/upgrades/edge_spread
+[edge_spread] wrote <scratch>/fresh/results/upgrades/edge_spread
 .venv/bin/python -I src/amihud_noh.py config.yaml
-2026-10-16 20:14:25,876 INFO amihud_noh written to /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/upgrades/amihud_noh (base run 20261016T171236Z_3e8eb87e)
+2026-10-16 20:14:25,876 INFO amihud_noh written to <scratch>/fresh/results/upgrades/amihud_noh (base run 20261016T171236Z_3e8eb87e)
 .venv/bin/python -I src/run_moex.py config.yaml
 2026-10-16 20:14:27,505 INFO stage data ...
 2026-10-16 20:14:55,375 INFO universe: 153 month-ends, 711 distinct SECIDs
@@ -16,14 +16,14 @@
 2026-10-16 20:26:24,121 INFO stage main ...
 2026-10-16 20:26:34,239 INFO stage variants ...
 2026-10-16 20:26:50,830 INFO stage report ...
-2026-10-16 20:26:53,120 INFO moex upgrade moex_20261016T171427Z_b4264d55 written to /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/upgrades/moex
+2026-10-16 20:26:53,120 INFO moex upgrade moex_20261016T171427Z_b4264d55 written to <scratch>/fresh/results/upgrades/moex
 moex_20261016T171427Z_b4264d55
 .venv/bin/python -I src/openap_us.py config.yaml
 2026-10-16 20:26:59,846 INFO downloaded PredictorLSretWide.csv from https://drive.usercontent.google.com/download?id=10sOryk_ddjkXagaajTKUk1nwJs2ZLRiI&export=download&confirm=t
 2026-10-16 20:27:01,500 INFO downloaded SignalDoc.csv from https://drive.usercontent.google.com/download?id=1rdi0jTPSA6xtn6TpQAMT5WyEczQ1gK59&export=download&confirm=t
 2026-10-16 20:27:03,285 INFO downloaded F-F_Research_Data_Factors_CSV.zip from https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip
 2026-10-16 20:27:04,310 INFO downloaded F-F_Momentum_Factor_CSV.zip from https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip
-2026-10-16 20:27:04,486 INFO openap_us written to /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/upgrades/openap_us
+2026-10-16 20:27:04,486 INFO openap_us written to <scratch>/fresh/results/upgrades/openap_us
 .venv/bin/python -I src/robustness_extra.py config.yaml
 2026-10-16 20:27:06,246 INFO stage load_panel done in 0.2s
 2026-10-16 20:27:06,996 INFO stage monthly_series done in 0.8s
@@ -32,7 +32,7 @@ moex_20261016T171427Z_b4264d55
 2026-10-16 20:27:10,768 INFO stage mde done in 0.0s
 2026-10-16 20:27:11,990 INFO stage ledger done in 1.2s
 2026-10-16 20:27:12,057 INFO stage summary done in 0.1s
-2026-10-16 20:27:12,121 INFO robustness upgrade written to /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/upgrades/robustness
+2026-10-16 20:27:12,121 INFO robustness upgrade written to <scratch>/fresh/results/upgrades/robustness
 .venv/bin/python -I src/sentiment.py config.yaml
 2026-10-16 20:27:13,687 INFO base run 20261016T171236Z_3e8eb87e
-2026-10-16 20:27:22,062 INFO written to /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/upgrades/sentiment
+2026-10-16 20:27:22,062 INFO written to <scratch>/fresh/results/upgrades/sentiment

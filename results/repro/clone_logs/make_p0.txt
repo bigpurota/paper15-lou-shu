@@ -81,7 +81,7 @@ wall 143.4 s; notes: []
 2026-10-16 20:13:02,009 INFO stage placebo done in 12.5s
 2026-10-16 20:13:02,009 INFO stage write ...
 2026-10-16 20:13:02,064 INFO stage write done in 0.1s
-2026-10-16 20:13:02,143 INFO run 20261016T171236Z_3e8eb87e written to /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/20261016T171236Z_3e8eb87e
+2026-10-16 20:13:02,143 INFO run 20261016T171236Z_3e8eb87e written to <scratch>/fresh/results/20261016T171236Z_3e8eb87e
 20261016T171236Z_3e8eb87e
 .venv/bin/python -I src/report.py
                                         metric      paper          us      us_t     match
@@ -121,4 +121,4 @@ wall 143.4 s; notes: []
 A&N (2021) col. 4: RlnILLIQ with ln A_C + IVOL   0.736000   -6.329644 -1.981667        no
   A&N (2021) col. 3: DIF with ln A_C + ln|Ret|   0.996000   -1.638115 -0.435959        no
 .venv/bin/python -I src/figures.py
-figures written to /private/tmp/claude-501/-Users-purota-rs3-paper15-impl/f6be567a-8a80-4513-a297-0b1b8dfff261/scratchpad/fresh/results/20261016T171236Z_3e8eb87e: fig_quintiles, fig_quintiles_demeaned, fig_hl_ci, fig_tstats, fig_hl_cumulative, fig_an_dif
+figures written to <scratch>/fresh/results/20261016T171236Z_3e8eb87e: fig_quintiles, fig_quintiles_demeaned, fig_hl_ci, fig_tstats, fig_hl_cumulative, fig_an_dif

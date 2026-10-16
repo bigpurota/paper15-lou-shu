@@ -347,24 +347,25 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \begin{frame}{B6. Reproducibility}
 \small
 \begin{itemize}
-\item \texttt{make all} is designed to run data → tests → simulations → base run → report → upgrades → ledger → documents; \texttt{make slides} builds this deck.
-\item Clean-clone check (results/repro/): a fresh clone of committed code \V{repro.commit} with an empty data/ ran \V{repro.steps} (\V{repro.rc}). Of \V{repro.n_csv} result CSVs compared, \V{repro.n_numdiff} differ numerically (\V{repro.n_textdiff} differ only in text). Not covered: hf\_lambda, the ledger, docs and slides; simulation CSVs not compared. A full \texttt{make all} from a clean clone of the final commit is pending.
-\item Every run writes \texttt{run\_manifest.json}: run id, git SHA and dirty flag, sha256 of config, code and data, seed, time per stage. The manifests of the base runs, the simulations and hf\_lambda use an older format and are xfail in tests/test\_manifests.py until they are regenerated; the base run's code state \V{base.code_commit}, but committed code \V{repro.commit} reproduces its CSVs.
+\item \texttt{make all} runs data → tests → simulations → base run → report → upgrades → ledger → documents; \texttt{make slides} builds this deck.
+\item \textbf{make all on a clean clone} of commit \V{fc.code} (results/repro/final\_clone/): \V{fc.rc}, about \V{fc.min} min, tests \V{fc.tests}; data/ was linked to the cached downloads. Its outputs are the committed results (\V{fc.n_canon} manifests, all at \V{fc.code} with dirty = false); base CSVs vs the previous base run: max abs diff \V{fc.base_maxdiff}. Verdict: \V{fc.verdict}.
+\item \textbf{From-scratch clone} of the older commit \V{repro.commit} with an empty data/ (every download redone): \V{repro.steps} (\V{repro.rc}). Of \V{repro.n_csv} result CSVs compared, \V{repro.n_numdiff} differ numerically (\V{repro.n_textdiff} differ only in text); daily panel \V{repro.daily}. Verdict: \V{repro.verdict}.
+\item Every run writes \texttt{run\_manifest.json}: run id, git SHA and dirty flag, sha256 of config, code and data, seed, time per stage. The base run's code state \V{base.code_commit}. Open: \V{fc.home_n} canonical manifests fail the path check of tests/test\_manifests.py (paths through the data/ link).
 \item Deviations from the paper: DEVIATIONS.md (\V{dev.range}).
 \end{itemize}
-\src{README.md}
+\src{README.md, section ``Reproducibility''; results/repro/ and results/repro/final\_clone/}
 \end{frame}
 
 \owner{Alexia Fox}
 \begin{frame}{B7. What was not done and limitations}
 \footnotesize
 \begin{itemize}
-\item \textbf{Reproducibility:} a clean clone of \V{repro.commit} reproduces the base and light-upgrade CSVs (\V{repro.n_numdiff} numeric differences), but not via \texttt{make all} and without hf\_lambda; a full \texttt{make all} from a clean clone is pending (P0 item 1 not fully met); the base run's code state \V{base.code_commit}.
+\item \textbf{Reproducibility:} no single clean-clone run both redid the downloads and ran \texttt{make all} (\texttt{make all} at \V{fc.code} used cached data; the from-scratch clone ran the older \V{repro.commit}); \V{fc.home_n} canonical manifests fail the manifest path check; macOS only.
 \item \textbf{Simulations:} the world-0 size criterion fails for Res.lnA (\V{sim.0.fm3}); \V{sim.checks.loose_n} passes use a loose ``share \V{sim.checks.loose_rule}'' rule.
 \item \textbf{Pre-registration:} the Res.lnA significance appears only after the J1 audit, designed after the first run; verdict rules and upgrade specifications were not pre-registered in git; post hoc diagnostics (λ checks, MOEX same-months check, without the most influential month) are labelled.
 \item \textbf{Unevidenced checks:} no stored announcement sources, no saved cache comparison; the number of delisted pairs is not recorded; no delisting returns; the paper's numbers are transcribed, not tested against the PDF.
 \item \textbf{Not done:} market caps (size control, VW by cap); the t+1 leak placebo; corr($AT_C$, λ); λ from midquotes.
-\item \textbf{Formalities:} the slides were due 24 hours before the defence (16 October, 13:00), but the deck was first committed on \V{git.deck_first}: deadline missed. \V{git.uncommitted_n} files were uncommitted when the docs were built (list in README). Latin spelling of the names pending confirmation; no timed rehearsal yet.
+\item \textbf{Formalities:} the slides were due 24 hours before the defence (16 October, 13:00), but the deck was first committed on \V{git.deck_first}: deadline missed. \V{git.uncommitted_n} files were uncommitted when the docs were built (list in README). Latin spelling of the names not confirmed by the members; no timed rehearsal recorded.
 \end{itemize}
 \src{README.md, section ``What was not done and limitations''}
 \end{frame}

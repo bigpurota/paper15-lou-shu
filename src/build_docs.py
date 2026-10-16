@@ -166,14 +166,17 @@ def md_table(header: list[str], rows: list[list[str]]) -> str:
 def git_state() -> dict:
     def run(*args):
         return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    return {"sha": run("rev-parse", "HEAD"), "dirty": bool(run("status", "--porcelain"))}
+    # same scope as the run manifests (src/run.py git_info): code and config only, generated outputs excluded
+    return {"sha": run("rev-parse", "HEAD"), "dirty": bool(run("status", "--porcelain", "--", *CODE_PATHS)),
+            "dirty_scope": "code+config (" + ", ".join(CODE_PATHS) + "); generated outputs excluded"}
 
 
-def commit_with_code_hash(code_sha: str) -> str | None:
-    """Short SHA of a commit whose src/*.py hash (as run.code_hash computes it) equals code_sha, else None."""
+def commit_with_code_hash(code_sha: str, prefer: str | None = None) -> str | None:
+    """Short SHA of a commit whose src/*.py hash (as run.code_hash computes it) equals code_sha, else None.
+    `prefer` (the commit the manifest records) is tried first; later commits with the same src/ come after it."""
     def run(*args, text=True):
         return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=text).stdout
-    for c in run("rev-list", "--all").split():
+    for c in ([prefer] if prefer else []) + run("rev-list", "--all").split():
         names = sorted(n for n in run("ls-tree", "--name-only", c, "src/").split()
                        if n.endswith(".py") and n.count("/") == 1)
         h = hashlib.sha256()
@@ -265,8 +268,10 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     V.put("base.t_total", fx(man["timings_sec"]["total"], 0))
     V.put("base.rss", fx(man.get("peak_rss_mb", float("nan")), 0))
     V.put("base.code8", man["code_sha256"][:8])
-    hit = commit_with_code_hash(man["code_sha256"])
+    hit = commit_with_code_hash(man["code_sha256"], prefer=man["git"]["sha"])
     V.put("base.code_commit", f"matches commit {hit}" if hit else "matches no commit in the git history")
+    V.put("base.code_checkout", f"so the code that wrote it can be checked out (`git checkout {hit}`)" if hit
+          else "so the exact code that wrote it cannot be checked out from git")
 
     s = V.csv(rd / "sample.csv").iloc[0]
     V.put("n.months", int(s.n_months))
@@ -925,38 +930,95 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
 
 
 # ------------------------------------------------------------------------------------ reproducibility evidence
+REPRO_KEYS = ["repro.status", "repro.commit", "repro.steps", "repro.rc", "repro.data_min", "repro.n_files",
+              "repro.n_csv", "repro.n_identical", "repro.n_textdiff", "repro.n_numdiff", "repro.daily",
+              "repro.verdict", "repro.tests", "repro.groups", "repro.n_png", "repro.n_png_ident", "repro.not_covered",
+              "repro.hf_min", "repro.code_vs", "repro.cover_text"]
+FC_KEYS = ["fc.status", "fc.code", "fc.head", "fc.rc", "fc.min", "fc.tests", "fc.n_man", "fc.n_canon", "fc.clean",
+           "fc.hist", "fc.prev", "fc.base_n", "fc.base_maxdiff", "fc.base_numdiff", "fc.files", "fc.files_ident",
+           "fc.verdict", "fc.data", "fc.home_n", "fc.home_list", "fc.home_text"]
+
+
 def repro_values(V: Values, R: Path) -> None:
-    """Clean-clone check written by src/repro_check.py (results/repro/), plus the clone's own make logs."""
+    """Two clean clones (src/repro_check.py): from scratch (results/repro/) and `make all` (results/repro/final_clone/)."""
     d = R / "repro"
     sj = d / "repro_summary.json"
     if not sj.exists():
-        for k in ["repro.status", "repro.commit", "repro.steps", "repro.rc", "repro.data_min", "repro.n_files",
-                  "repro.n_csv", "repro.n_identical", "repro.n_textdiff", "repro.n_numdiff", "repro.daily",
-                  "repro.verdict", "repro.tests", "repro.groups"]:
+        for k in REPRO_KEYS:
+            V.put(k, "n/a")
+    else:
+        sm = V.json(sj)
+        V.put("repro.status", "done")
+        V.put("repro.commit", sm["clone_commit"][:7])
+        V.put("repro.steps", " → ".join(x["target"] for x in sm["steps"]))
+        V.put("repro.rc", "every step exited with code 0" if sm["all_steps_rc0"] else "NOT every step exited with code 0")
+        data = [x for x in sm["steps"] if x["target"] == "data"]
+        V.put("repro.data_min", fx(data[0]["seconds"] / 60, 0) if data else "n/a")
+        hf = [x for x in sm["steps"] if x["target"] == "upgrade-hf_lambda"]
+        V.put("repro.hf_min", fx(hf[0]["seconds"] / 60, 0) if hf else "n/a")
+        V.put("repro.n_files", int(sm["n_files_compared"]))
+        V.put("repro.verdict", sm["verdict"])
+        V.put("repro.not_covered", ", ".join(f"`{u}`" for u in sm["not_covered"]) if sm["not_covered"] else "none")
+        V.put("repro.cover_text", "all seven upgrades were regenerated and compared, including `upgrade-hf_lambda` "
+              f"(about 5 GB of downloads, {V['repro.hf_min']} min)" if not sm["not_covered"] else
+              "upgrades not regenerated by this clone, so not compared: " + V["repro.not_covered"])
+        ck = V.csv(d / "repro_check.csv")
+        kind = ck["kind"] if "kind" in ck else pd.Series("csv", index=ck.index).where(ck.group != "data", "parquet")
+        cs = ck[kind == "csv"]                       # result CSVs only (data and figures are reported separately)
+        V.put("repro.n_identical", int((cs.status == "identical").sum()))
+        V.put("repro.n_textdiff", int((cs.status == "numbers_identical_text_differs").sum()))
+        V.put("repro.n_numdiff", int((~cs.status.isin(["identical", "numbers_identical_text_differs"])).sum()))
+        dl = ck[ck.group == "data"]
+        V.put("repro.daily", f"{dl.status.iloc[0]} ({num(dl.rows_clone.iloc[0])} rows)" if len(dl) else "not compared")
+        V.put("repro.n_csv", int(len(cs)))
+        g = cs.groupby("group", sort=False).size()
+        V.put("repro.groups", ", ".join(f"{'base run' if k == 'base' else k} {n}" for k, n in g.items()))
+        pg = ck[kind == "png"]
+        V.put("repro.n_png", int(len(pg)))
+        V.put("repro.n_png_ident", int((pg.status == "identical").sum()))
+        V.put("repro.code_vs", f"the clone ran commit `{sm['clone_commit'][:7]}`; the outputs it is compared with were "
+              f"produced by commit `{V.json(R / sm['repo_base_run'] / 'run_manifest.json')['git']['sha'][:7]}`")
+        tl = d / "clone_logs" / "make_tests.txt"
+        m = re.findall(r"^(\d+ passed.*?) in [0-9.]+s", V.text(tl), re.M) if tl.exists() else []
+        V.put("repro.tests", m[-1] if m else "not logged")
+
+    fj = d / "final_clone" / "summary.json"
+    if not fj.exists():
+        for k in FC_KEYS:
             V.put(k, "n/a")
         return
-    sm = V.json(sj)
-    V.put("repro.status", "done")
-    V.put("repro.commit", sm["clone_commit"][:7])
-    V.put("repro.steps", " → ".join(x["target"] for x in sm["steps"]))
-    V.put("repro.rc", "every step exited with code 0" if sm["all_steps_rc0"] else "NOT every step exited with code 0")
-    data = [x for x in sm["steps"] if x["target"] == "data"]
-    V.put("repro.data_min", fx(data[0]["seconds"] / 60, 0) if data else "n/a")
-    V.put("repro.n_files", int(sm["n_files_compared"]))
-    V.put("repro.verdict", sm["verdict"])
-    ck = V.csv(d / "repro_check.csv")
-    cs = ck[ck.group != "data"]                      # result CSVs only (the data row is reported separately)
-    V.put("repro.n_identical", int((cs.status == "identical").sum()))
-    V.put("repro.n_textdiff", int((cs.status == "numbers_identical_text_differs").sum()))
-    V.put("repro.n_numdiff", int((~cs.status.isin(["identical", "numbers_identical_text_differs"])).sum()))
-    dl = ck[ck.group == "data"]
-    V.put("repro.daily", f"{dl.status.iloc[0]} ({num(dl.rows_clone.iloc[0])} rows)" if len(dl) else "not compared")
-    V.put("repro.n_csv", int((ck.group != "data").sum()))
-    g = ck[ck.group != "data"].groupby("group", sort=False).size()
-    V.put("repro.groups", ", ".join(f"{'base run' if k == 'base' else k} {n}" for k, n in g.items()))
-    tl = d / "clone_logs" / "make_tests.txt"
-    m = re.findall(r"^(\d+ passed.*?) in [0-9.]+s", V.text(tl), re.M) if tl.exists() else []
-    V.put("repro.tests", m[-1] if m else "not logged")
+    fc = V.json(fj)
+    mf = V.csv(d / "final_clone" / "manifests.csv")
+    V.put("fc.status", "done")
+    V.put("fc.code", fc["code_commit_run"] if isinstance(fc["code_commit_run"], str) else "several commits")
+    V.put("fc.head", fc["clone_head_now"])
+    V.put("fc.rc", f"exit code {fc['make_all']['rc']}" if fc["make_all"] else "not logged")
+    V.put("fc.min", fx(fc["make_all"]["seconds"] / 60, 0) if fc["make_all"] else "n/a")
+    V.put("fc.tests", fc["tests_summary"] or "not logged")
+    V.put("fc.n_man", fc["n_manifests"])
+    V.put("fc.n_canon", fc["n_canonical"])
+    V.put("fc.clean", "all record that commit with `dirty = false`" if fc["canonical_all_same_commit_clean"]
+          else "NOT all record one commit with `dirty = false`")
+    V.put("fc.hist", ", ".join(f"`{h['run_id']}` (`{h['git_sha']}`, {'dirty' if h['dirty'] else 'clean'})"
+                               for h in fc["historical_runs"]) or "none")
+    V.put("fc.prev", fc["base_compared_with"] or "none")
+    V.put("fc.base_n", fc["base_n_csv"])
+    V.put("fc.base_maxdiff", fx(fc["base_max_abs_diff"], 0) if fc["base_max_abs_diff"] is not None else "n/a")
+    V.put("fc.base_numdiff", fc["base_n_not_identical"])
+    V.put("fc.files", fc["results_files_in_clone"])
+    V.put("fc.files_ident", fc["results_files_identical_to_repo"])
+    V.put("fc.verdict", fc["verdict"])
+    V.put("fc.data", "linked to the cached downloads of the main working copy" if fc["data_dir_was_link"]
+          else "a directory of the clone")
+    home = mf[(mf.role == "canonical") & (mf.n_home_paths > 0)]
+    V.put("fc.home_n", int(len(home)))
+    V.put("fc.home_list", ", ".join(f"`{Path(p).parent.name}`" for p in home.manifest) or "none")
+    V.put("fc.home_text", (
+        f"{len(home)} of the {fc['n_canonical']} canonical manifests ({V['fc.home_list']}) hold relative paths that "
+        "run through the `data/` link into the main working copy (`../…/Users/…`); `tests/test_manifests.py` rejects "
+        "them (a failure for the cheap upgrades, an xfail for the base run and `hf_lambda`), so `make tests` on the "
+        "committed results fails until these manifests are regenerated without the link"
+        if len(home) else f"none of the {fc['n_canonical']} canonical manifests holds an absolute or home-directory path"))
 
 
 def tests_log_values(V: Values, R: Path) -> None:
@@ -1025,9 +1087,11 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         + ". Refresh with `make docs`. Values between `<!--v:...-->` markers are never edited by hand. "
         "`(dirty)` means the result was produced from a working copy with uncommitted changes. The manifest field "
         f"`code_sha256` (sha256 of `src/*.py`) records that code state; for the base run (`{V['base.code8']}…`) it "
-        f"{V['base.code_commit']}, so the exact code that built the base panel cannot be checked out from git"
-        + (f"; a clean clone of the committed code `{V['repro.commit']}` reproduces the base run's CSVs numerically "
-           "(`results/repro/`)" if V["repro.status"] == "done" else "")
+        f"{V['base.code_commit']}, {V['base.code_checkout']}"
+        + (f"; `make all` on a clean clone of `{V['fc.code']}` wrote these outputs ({V['fc.rc']}, "
+           "`results/repro/final_clone/`)" if V["fc.status"] == "done" else "")
+        + (f"; a from-scratch clone of `{V['repro.commit']}` (every download redone) reproduces them numerically "
+           f"(verdict “{V['repro.verdict']}”, `results/repro/`)" if V["repro.status"] == "done" else "")
         + " (see “Reproducibility”)._")
 
     # paper vs us: the generated report itself (sections Key findings + Paper vs us)

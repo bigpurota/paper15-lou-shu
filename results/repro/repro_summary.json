@@ -1,6 +1,10 @@
 {
+  "mode": "from_scratch_clone",
+  "clone_dir": "<scratch>/fresh",
   "clone_commit": "c631dba60163f0e975e8a34592529a080cf8b0e4",
-  "repo_base_run": "20261016T135240Z_3e8eb87e",
+  "clone_data_dir": "empty at start; every download redone by the clone",
+  "code_note": "the clone ran the code of commit c631dba; it is compared with this repository's canonical outputs, which were produced by commit 06ee202 (base run 20261016T181948Z_3e8eb87e)",
+  "repo_base_run": "20261016T181948Z_3e8eb87e",
   "clone_base_run": "20261016T171236Z_3e8eb87e",
   "steps": [
     {
@@ -27,24 +31,58 @@
       "target": "upgrades-light",
       "rc": 0,
       "seconds": 852
+    },
+    {
+      "target": "upgrade-hf_lambda",
+      "rc": 0,
+      "seconds": 4874
+    },
+    {
+      "target": "upgrade-hf_lambda",
+      "rc": 0,
+      "seconds": 414
+    },
+    {
+      "target": "upgrade-hf_lambda",
+      "rc": 0,
+      "seconds": 132
     }
   ],
   "all_steps_rc0": true,
-  "n_files_compared": 98,
-  "n_identical": 88,
+  "n_files_compared": 126,
+  "n_csv_compared": 119,
+  "n_identical": 108,
   "n_numbers_identical_text_differs": 10,
   "n_not_identical": 0,
+  "n_png_compared": 6,
+  "n_png_identical": 6,
+  "daily_identical": true,
   "upgrades_compared": [
     "amihud_noh",
     "edge_spread",
+    "hf_lambda",
     "moex",
     "openap_us",
     "robustness",
     "sentiment"
   ],
-  "not_covered": [
-    "hf_lambda"
+  "not_covered": [],
+  "not_compared": [
+    "PDF figures (they embed a creation date)",
+    "README/PLAN/deck (rendered from the CSVs)",
+    "the test ledger (written by `make ledger`, not run in this clone)"
   ],
   "daily_sha256_repo": "47d0542600dbce83",
-  "verdict": "reproduced_except_not_covered"
+  "verdict": "reproduced",
+  "logs": [
+    "results/repro/clone_logs/fresh_run.txt",
+    "results/repro/clone_logs/make_data.txt",
+    "results/repro/clone_logs/make_p0.txt",
+    "results/repro/clone_logs/make_tests.txt",
+    "results/repro/clone_logs/make_upgrade-hf_lambda.txt",
+    "results/repro/clone_logs/make_upgrade-hf_lambda_retry.txt",
+    "results/repro/clone_logs/make_upgrade-hf_lambda_retry1.txt",
+    "results/repro/clone_logs/make_upgrades-light.txt",
+    "results/repro/clone_logs/make_venv.txt"
+  ]
 }

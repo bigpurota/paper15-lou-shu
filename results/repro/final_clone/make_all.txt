@@ -1,0 +1,196 @@
+Checked 32 packages in 51ms
+.venv/bin/python -I -m pytest -q
+......................................................................xx [ 39%]
+..x....x................................................................ [ 79%]
+.....................................                                    [100%]
+177 passed, 4 xfailed in 69.06s (0:01:09)
+.venv/bin/python -I src/simulate.py config.yaml --out results/simulations
+[V] 50 reps, 21.2 s, errors: 0
+[P] 50 reps, 19.7 s, errors: 0
+[0] 200 reps, 74.6 s, errors: 0
+[power_V] 80 reps, 33.2 s, errors: 0
+world           stat  n_reps  mean_coef  mean_t  share_abs_t_gt_1.96  ci95_lo  ci95_hi  share_t_gt_1.96  share_abs_t_gt_3
+    V      fm2_lnA_C      50      0.412   7.244                1.000    0.929    1.000            1.000             1.000
+    V     fm3_ResLnA      50      0.028   0.065                0.040    0.005    0.137            0.020             0.000
+    V      fm4_lnA_C      50      0.412   7.241                1.000    0.929    1.000            1.000             1.000
+    V     fm4_ResLnA      50      0.012   0.033                0.040    0.005    0.137            0.020             0.000
+    V           hl_A      50      2.857   6.415                1.000    0.929    1.000            1.000             1.000
+    V         hl_A_C      50      2.863   6.614                1.000    0.929    1.000            1.000             1.000
+    V        hl_ResA      50     -0.019  -0.051                0.080    0.022    0.192            0.020             0.000
+    V  fm2_lnA_C_nw0      50      0.412   6.890                1.000    0.929    1.000            1.000             1.000
+    V fm3_ResLnA_nw0      50      0.028   0.039                0.020    0.001    0.106            0.020             0.000
+    P      fm2_lnA_C      50      0.001   0.012                0.180    0.086    0.314            0.060             0.000
+    P     fm3_ResLnA      50      2.459   4.778                1.000    0.929    1.000            1.000             0.940
+    P      fm4_lnA_C      50      0.001   0.013                0.180    0.086    0.314            0.060             0.000
+    P     fm4_ResLnA      50      2.460   4.778                1.000    0.929    1.000            1.000             0.940
+    P           hl_A      50      0.244   0.570                0.180    0.086    0.314            0.140             0.000
+    P         hl_A_C      50     -0.049  -0.112                0.120    0.045    0.243            0.060             0.020
+    P        hl_ResA      50      1.616   2.832                0.760    0.618    0.869            0.760             0.400
+    P  fm2_lnA_C_nw0      50      0.001   0.008                0.160    0.072    0.291            0.060             0.000
+    P fm3_ResLnA_nw0      50      2.459   4.476                1.000    0.929    1.000            1.000             0.980
+    0      fm2_lnA_C     200     -0.003  -0.032                0.080    0.046    0.127            0.035             0.015
+    0     fm3_ResLnA     200     -0.058  -0.145                0.095    0.058    0.144            0.040             0.015
+    0      fm4_lnA_C     200     -0.003  -0.031                0.080    0.046    0.127            0.035             0.015
+    0     fm4_ResLnA     200     -0.058  -0.145                0.095    0.058    0.144            0.040             0.015
+    0           hl_A     200     -0.029  -0.066                0.065    0.035    0.109            0.025             0.010
+    0         hl_A_C     200     -0.032  -0.064                0.065    0.035    0.109            0.025             0.010
+    0        hl_ResA     200     -0.005  -0.035                0.070    0.039    0.115            0.035             0.000
+    0  fm2_lnA_C_nw0     200     -0.003  -0.044                0.060    0.031    0.102            0.025             0.000
+    0 fm3_ResLnA_nw0     200     -0.058  -0.125                0.050    0.024    0.090            0.020             0.010
+ premium      stat  n_reps  mean_t  share_t_gt_1.96  share_abs_t_gt_3
+   0.000 fm2_lnA_C      20   0.360             0.10              0.00
+   0.000 fm4_lnA_C      20   0.363             0.10              0.00
+   0.000    hl_A_C      20   0.199             0.10              0.00
+   0.002 fm2_lnA_C      20   1.501             0.35              0.05
+   0.002 fm4_lnA_C      20   1.498             0.35              0.05
+   0.002    hl_A_C      20   1.604             0.45              0.05
+   0.005 fm2_lnA_C      20   3.835             0.95              0.75
+   0.005 fm4_lnA_C      20   3.841             0.95              0.75
+   0.005    hl_A_C      20   3.514             0.85              0.50
+   0.010 fm2_lnA_C      20   7.506             1.00              1.00
+   0.010 fm4_lnA_C      20   7.501             1.00              1.00
+   0.010    hl_A_C      20   6.684             1.00              1.00
+world                                                        criterion  value             rule  pass
+    V                                   share t(lnA_C, model 2) > 1.96  1.000           >= 0.8  True
+    V                share |t(fm3_ResLnA)| > 1.96 (should be unpriced)  0.040           <= 0.2  True
+    V                share |t(fm4_ResLnA)| > 1.96 (should be unpriced)  0.040           <= 0.2  True
+    V                                     share t(H-L A_C sort) > 1.96  1.000           >= 0.8  True
+    V             share |t(H-L ResA sort)| > 1.96 (should be unpriced)  0.080           <= 0.2  True
+    P                                       share t(fm3_ResLnA) > 1.96  1.000           >= 0.8  True
+    P                                       share t(fm4_ResLnA) > 1.96  1.000           >= 0.8  True
+    P                                          share t(hl_ResA) > 1.96  0.760           >= 0.8 False
+    P                   share |t(fm2_lnA_C)| > 1.96 (ideally unpriced)  0.180           <= 0.2  True
+    P                   share |t(fm4_lnA_C)| > 1.96 (ideally unpriced)  0.180           <= 0.2  True
+    0  false-positive rate |t(fm2_lnA_C)| > 1.96 [95% CI 0.046, 0.127]  0.080 CI contains 0.05  True
+    0 false-positive rate |t(fm3_ResLnA)| > 1.96 [95% CI 0.058, 0.144]  0.095 CI contains 0.05 False
+    0  false-positive rate |t(fm4_lnA_C)| > 1.96 [95% CI 0.046, 0.127]  0.080 CI contains 0.05  True
+    0 false-positive rate |t(fm4_ResLnA)| > 1.96 [95% CI 0.058, 0.144]  0.095 CI contains 0.05 False
+    0       false-positive rate |t(hl_A)| > 1.96 [95% CI 0.035, 0.109]  0.065 CI contains 0.05  True
+    0     false-positive rate |t(hl_A_C)| > 1.96 [95% CI 0.035, 0.109]  0.065 CI contains 0.05  True
+    0    false-positive rate |t(hl_ResA)| > 1.96 [95% CI 0.039, 0.115]  0.070 CI contains 0.05  True
+wall 148.9 s; notes: []
+.venv/bin/python -I src/run.py config.yaml --daily data/cache/daily.parquet
+2026-10-16 21:19:48,862 INFO stage load ...
+2026-10-16 21:19:49,057 INFO stage load done in 0.2s
+2026-10-16 21:19:49,058 INFO stage audit ...
+2026-10-16 21:19:55,279 INFO stage audit done in 6.2s
+2026-10-16 21:19:55,280 INFO stage build_panel ...
+2026-10-16 21:19:57,269 INFO stage build_panel done in 2.0s
+2026-10-16 21:19:57,269 INFO stage run_tests ...
+2026-10-16 21:20:02,056 INFO stage run_tests done in 4.8s
+2026-10-16 21:20:02,056 INFO stage placebo ...
+2026-10-16 21:20:14,579 INFO stage placebo done in 12.5s
+2026-10-16 21:20:14,579 INFO stage write ...
+2026-10-16 21:20:14,637 INFO stage write done in 0.1s
+2026-10-16 21:20:14,717 INFO run 20261016T181948Z_3e8eb87e written to <scratch>/final/results/20261016T181948Z_3e8eb87e
+20261016T181948Z_3e8eb87e
+.venv/bin/python -I src/report.py
+                                        metric      paper          us      us_t     match
+                                  corr(A, A_C)   0.899000    0.955787       NaN       yes
+                                corr(A, |Ret|)   0.489000   -0.133148       NaN        no
+                              corr(A_C, |Ret|)   0.394000   -0.247455       NaN        no
+                                Q75/Q25 of A_C 116.596774    9.395636       NaN        no
+                              Q75/Q25 of |Ret|   2.181818    1.745525       NaN       yes
+     FM ln A_C, with ln|Ret| (Table 2 model 3)   0.165000    0.813635  1.456264 sign only
+     FM ln|Ret|, with ln A_C (Table 2 model 3)  -0.319000   -9.050866 -2.501617       yes
+                          H-L on A, raw (%/mo)   0.560000    1.543153  0.979105 sign only
+                        H-L on A, alpha (%/mo)   0.350000    0.555838  0.475133 sign only
+                        H-L on A_C, raw (%/mo)   0.610000    1.701062  1.115990 sign only
+                      H-L on A_C, alpha (%/mo)   0.440000    0.781081  0.616124 sign only
+                      H-L on Res.A, raw (%/mo)  -0.170000   -0.509757 -0.488296       yes
+                    H-L on Res.A, alpha (%/mo)  -0.160000   -1.000129 -1.014861       yes
+                            FM ln A, model (1)   0.119000    0.580315  1.242984 sign only
+                          FM ln A_C, model (2)   0.183000    0.760324  1.529116 sign only
+                         FM Res.lnA, model (3)  -0.383000   -5.092343 -2.464137       yes
+             FM ln A_C, model (4) with Res.lnA   0.130000    1.022065  1.667605 sign only
+             FM Res.lnA, model (4) with ln A_C  -0.248000   -8.103392 -2.372627       yes
+      FM ln A_C, model (5) with Res.lnA + IVOL   0.120000    1.194143  1.697861 sign only
+      FM Res.lnA, model (5) with ln A_C + IVOL  -0.303000   -6.329644 -1.981667       yes
+                            FM IVOL, model (5)  -2.903000 -101.337109 -2.643170 sign only
+     FM ln DVol, with Res.lnA (Table 6 col. 1)  -0.158000   -1.308338 -1.806972 sign only
+     FM Res.lnA, with ln DVol (Table 6 col. 1)  -0.167000   -8.762492 -2.286298       yes
+              alpha of H-L(A) on IMLA_C (%/mo)  -0.040000    0.234410  0.499549       yes
+    alpha of H-L(A) on IMLA_C + factors (%/mo)  -0.080000    0.155006  0.352576       yes
+               FM ln A, raw returns, model (1)   0.081000    0.687753  1.388966 sign only
+             FM ln A_C, raw returns, model (2)   0.095000    0.859867  1.696265       yes
+            FM Res.lnA, raw returns, model (3)  -0.143000   -3.704835 -2.109603 sign only
+            FM Res.lnA, raw returns, model (5)  -0.185000   -6.037047 -2.615207       yes
+        FM ln A_C (2), first half vs 1964-1988   0.272000    1.982164  2.588592       yes
+       FM Res.lnA (4), first half vs 1964-1988  -0.222000  -13.904360 -2.288914       yes
+       FM ln A_C (2), second half vs 1989-2012   0.902000   -0.279540 -1.093544        no
+      FM Res.lnA (4), second half vs 1989-2012  -0.275000   -3.166397 -1.396324 sign only
+A&N (2021) col. 4: RlnILLIQ with ln A_C + IVOL   0.736000   -6.329644 -1.981667        no
+  A&N (2021) col. 3: DIF with ln A_C + ln|Ret|   0.996000   -1.638115 -0.435959        no
+.venv/bin/python -I src/figures.py
+figures written to <scratch>/final/results/20261016T181948Z_3e8eb87e: fig_quintiles, fig_quintiles_demeaned, fig_hl_ci, fig_tstats, fig_hl_cumulative, fig_an_dif
+.venv/bin/python -I src/spread_edge.py config.yaml
+[edge_spread] ohlc: 0.5s
+[edge_spread] align: 7.5s
+[edge_spread] edge: 22.6s
+[edge_spread] bidask_check: 0.4s
+[edge_spread] tests: 8.8s
+[edge_spread] write: 0.0s
+[edge_spread] wrote <scratch>/final/results/upgrades/edge_spread
+.venv/bin/python -I src/amihud_noh.py config.yaml
+2026-10-16 21:21:21,448 INFO amihud_noh written to <scratch>/final/results/upgrades/amihud_noh (base run 20261016T181948Z_3e8eb87e)
+.venv/bin/python -I src/hf_lambda.py config.yaml 
+2026-10-16 21:21:23,223 INFO base run 20261016T181948Z_3e8eb87e: 24628 rows
+2026-10-16 21:21:23,390 INFO   download 0/13709
+2026-10-16 21:21:23,414 INFO   download 500/13709
+2026-10-16 21:21:23,437 INFO   download 1000/13709
+2026-10-16 21:21:23,461 INFO   download 1500/13709
+2026-10-16 21:21:23,483 INFO   download 2000/13709
+2026-10-16 21:21:23,506 INFO   download 2500/13709
+2026-10-16 21:21:23,528 INFO   download 3000/13709
+2026-10-16 21:21:23,549 INFO   download 3500/13709
+2026-10-16 21:21:23,571 INFO   download 4000/13709
+2026-10-16 21:21:23,593 INFO   download 4500/13709
+2026-10-16 21:21:23,616 INFO   download 5000/13709
+2026-10-16 21:21:23,634 INFO   download 5500/13709
+2026-10-16 21:21:23,655 INFO   download 6000/13709
+2026-10-16 21:21:23,678 INFO   download 6500/13709
+2026-10-16 21:21:23,701 INFO   download 7000/13709
+2026-10-16 21:21:23,721 INFO   download 7500/13709
+2026-10-16 21:21:23,741 INFO   download 8000/13709
+2026-10-16 21:21:23,765 INFO   download 8500/13709
+2026-10-16 21:21:23,783 INFO   download 9000/13709
+2026-10-16 21:21:23,804 INFO   download 9500/13709
+2026-10-16 21:21:23,827 INFO   download 10000/13709
+2026-10-16 21:21:23,847 INFO   download 10500/13709
+2026-10-16 21:21:23,871 INFO   download 11000/13709
+2026-10-16 21:21:23,893 INFO   download 11500/13709
+2026-10-16 21:21:23,917 INFO   download 12000/13709
+2026-10-16 21:21:23,940 INFO   download 12500/13709
+2026-10-16 21:21:23,967 INFO   download 13000/13709
+2026-10-16 21:21:23,996 INFO   download 13500/13709
+2026-10-16 21:21:24,013 INFO   download 0/70
+2026-10-16 21:21:24,021 INFO downloads: {('aggTrades', 'cached'): 70, ('klines5m', 'cached'): 13709}
+2026-10-16 21:23:24,031 INFO written to <scratch>/final/results/upgrades/hf_lambda (121s)
+.venv/bin/python -I src/run_moex.py config.yaml
+2026-10-16 21:23:25,981 INFO stage data ...
+2026-10-16 21:23:26,116 INFO stage monthly ...
+2026-10-16 21:23:28,553 INFO stage main ...
+2026-10-16 21:23:38,728 INFO stage variants ...
+2026-10-16 21:23:55,363 INFO stage report ...
+2026-10-16 21:23:57,742 INFO moex upgrade moex_20261016T182325Z_b4264d55 written to <scratch>/final/results/upgrades/moex
+moex_20261016T182325Z_b4264d55
+.venv/bin/python -I src/openap_us.py config.yaml
+2026-10-16 21:23:59,499 INFO openap_us written to <scratch>/final/results/upgrades/openap_us
+.venv/bin/python -I src/robustness_extra.py config.yaml
+2026-10-16 21:24:01,196 INFO stage load_panel done in 0.2s
+2026-10-16 21:24:01,959 INFO stage monthly_series done in 0.8s
+2026-10-16 21:24:05,561 INFO stage bootstrap done in 3.6s
+2026-10-16 21:24:05,609 INFO stage stability done in 0.0s
+2026-10-16 21:24:05,637 INFO stage mde done in 0.0s
+2026-10-16 21:24:06,852 INFO stage ledger done in 1.2s
+2026-10-16 21:24:06,918 INFO stage summary done in 0.1s
+2026-10-16 21:24:06,964 INFO robustness upgrade written to <scratch>/final/results/upgrades/robustness
+.venv/bin/python -I src/sentiment.py config.yaml
+2026-10-16 21:24:08,505 INFO base run 20261016T181948Z_3e8eb87e
+2026-10-16 21:24:15,988 INFO written to <scratch>/final/results/upgrades/sentiment
+.venv/bin/python -I src/robustness_extra.py config.yaml --ledger-only
+2026-10-16 21:24:18,786 INFO ledger rebuilt: {'source': 'BASE', 'role': 'test (family)', 'n_rows': 85, 'n_unique': 73, 'n_abs_t_gt_1.96': 16, 'n_abs_t_gt_3': 0, 'expected_false_1.96_if_all_null': 3.6500000000000004, 'n_bonferroni_sig': 0.0, 'n_bh_sig': 0.0, 'bonferroni_crit_t': 3.395540856184292}
+.venv/bin/python -I src/build_docs.py
+wrote README.md
+wrote slides/PLAN.md
+wrote slides/gen/values.tex

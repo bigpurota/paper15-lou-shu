@@ -1,12 +1,13 @@
-# Lou & Shu (2017) on Binance spot. `make all` is the intended single command (data -> tests -> sims -> run ->
-# report -> upgrades -> ledger -> docs); a run from a clean clone is pending (README, "What was not done").
+# Lou & Shu (2017) on Binance spot. `make all` is the single command (data -> tests -> sims -> run -> report ->
+# upgrades -> ledger -> docs). It has been run on a clean clone (with cached downloads), and a from-scratch clone
+# redid the downloads on an older commit: results/repro/ and README "Reproducibility".
 PY      := .venv/bin/python
 PYI     := $(PY) -I
 CONFIG  := config.yaml
 DAILY   := data/cache/daily.parquet
 ZIP     := ../paper15-lou-shu-team12.zip
 
-.PHONY: venv data tests sims run report figures p0 base upgrades upgrades-light ledger docs slides all all-light zip clean
+.PHONY: venv data tests sims run report figures p0 base upgrades upgrades-light ledger docs slides all all-light zip clean repro repro-final check-outputs
 .DEFAULT_GOAL := all
 # stages depend on each other through files in results/ (LATEST, upgrade CSVs): keep them sequential
 .NOTPARALLEL:
@@ -52,6 +53,17 @@ zip:
 	  | zip -q -@ $(ZIP)
 	@echo "wrote $(ZIP)"; unzip -l $(ZIP) | tail -1
 
+# reproducibility evidence from a clean clone in CLONE=<dir> (src/repro_check.py; README "Reproducibility"):
+#   repro       from-scratch clone (empty data/): reads $(CLONE)/fresh_run.log and $(CLONE)/make_*.log
+#   repro-final clone that ran `make all`: reads $(CLONE)/final_run.log and $(CLONE)/make_all.log
+repro: | $(STAMP)
+	@test -n "$(CLONE)" || { echo "usage: make repro CLONE=<clone dir>"; exit 2; }
+	$(PYI) src/repro_check.py $(CLONE) --log $(CLONE)/fresh_run.log
+
+repro-final: | $(STAMP)
+	@test -n "$(CLONE)" || { echo "usage: make repro-final CLONE=<clone dir>"; exit 2; }
+	$(PYI) src/repro_check.py $(CLONE) --final --log $(CLONE)/final_run.log --make-log $(CLONE)/make_all.log
+
 clean:
 	rm -rf .pytest_cache src/__pycache__ tests/__pycache__ $(ZIP)
 	rm -f data/cache/panel_*.parquet
@@ -91,5 +103,10 @@ UPGRADES_ORDERED := $(filter upgrade-edge_spread,$(UPGRADES)) $(filter-out upgra
 upgrades: $(UPGRADES_ORDERED)
 # without hf_lambda (it downloads ~5 GB on the first run): its committed results/upgrades/hf_lambda/ stay as they are
 upgrades-light: $(filter-out upgrade-hf_lambda,$(UPGRADES_ORDERED))
-all: p0 upgrades ledger docs
-all-light: p0 upgrades-light ledger docs
+all: p0 upgrades ledger docs check-outputs
+all-light: p0 upgrades-light ledger docs check-outputs
+
+# run LAST: the manifest contract (no absolute paths, required keys) on the outputs this run just wrote;
+# `make tests` inside p0 runs before the upgrades and therefore sees the previous outputs
+check-outputs: | $(STAMP)
+	$(PYI) -m pytest -q tests/test_manifests.py

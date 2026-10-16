@@ -66,15 +66,19 @@ def rel_path(path) -> str:
     resolve_repo_path() still round-trips it on the same machine."""
     import os
     p = Path(path)
-    p = (p if p.is_absolute() else Path.cwd() / p).resolve()
+    p = Path(os.path.normpath(p if p.is_absolute() else Path.cwd() / p))
     root = ROOT.resolve()
-    try:
-        return p.relative_to(root).as_posix()
-    except ValueError:
+    # lexical first: a path under the repo stays repo-relative even if a directory in it (e.g. data/)
+    # is a symlink to a location outside the repo
+    for q, r in ((p, ROOT), (p, root), (p.resolve(), root)):
         try:
-            return Path(os.path.relpath(p, root)).as_posix()
-        except ValueError:                       # other drive (Windows): nothing relative exists
-            return p.name
+            return q.relative_to(r).as_posix()
+        except ValueError:
+            pass
+    try:
+        return Path(os.path.relpath(p.resolve(), root)).as_posix()
+    except ValueError:                           # other drive (Windows): nothing relative exists
+        return p.name
 
 
 def resolve_repo_path(p) -> Path:

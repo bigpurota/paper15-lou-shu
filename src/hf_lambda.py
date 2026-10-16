@@ -863,6 +863,8 @@ def main(argv: list[str] | None = None) -> None:
                     help="offline: use only files already in data/raw (missing ones are logged as not_downloaded)")
     ap.add_argument("--strict-offline", action="store_true",
                     help="with --no-download: fail (exit != 0) if any needed file is missing instead of running on a subset")
+    ap.add_argument("--allow-partial", action="store_true",
+                    help="run even if some downloads failed after retries (default: exit != 0)")
     ap.add_argument("--workers", type=int, default=6, help="processes for lambda estimation")
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -917,6 +919,13 @@ def main(argv: list[str] | None = None) -> None:
             raise SystemExit(f"--strict-offline: {n_off} needed files missing from data/raw, e.g. "
                              + ", ".join(dl_all.loc[dl_all['status'] == 'not_downloaded', 'key'].head(3)))
     log.info("downloads: %s", dl_all.groupby(["kind", "status"]).size().to_dict())
+    n_failed = int((dl_all["status"] == "failed_after_retries").sum())
+    if n_failed and not a.allow_partial:
+        # a flaky connection must not silently yield results on a subset: fail; a rerun downloads only the rest
+        raise SystemExit(f"{n_failed} downloads failed after retries (e.g. "
+                         + ", ".join(dl_all.loc[dl_all['status'] == 'failed_after_retries', 'key'].head(3))
+                         + "). Rerun `make upgrade-hf_lambda`: cached files are kept and only the rest is fetched "
+                         "(or pass --allow-partial to run on the subset; it is then flagged in SUMMARY.md).")
     if a.download_only:
         return
 
