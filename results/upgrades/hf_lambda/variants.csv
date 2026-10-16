@@ -12,3 +12,4 @@ T9B_diagnostics: ex exit month (coin leaves panel),sqrt_sides,1000,post-hoc diag
 T9B_diagnostics: raw ret (not CMKT-adjusted),sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
 T9B_diagnostics: ret_adj winsorized 1/99 within month,sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
 T9B_diagnostics: + ivol control,sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
+T9B_diagnostics: + lnVOL control (size proxy; verify stage),sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)

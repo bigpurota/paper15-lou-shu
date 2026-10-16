@@ -1,10 +1,10 @@
 {
-  "run_id": "sim_20261016_162400",
+  "run_id": "sim_20261016_191215",
   "seed": 20261017,
   "seed_scheme": "SeedSequence([seed, world_code, rep, round(premium*1e6)+1e6 or 999999])",
-  "git_sha": "a90a72be14ee2f00d1b947c5b37b1b3c844f02bd",
-  "config_sha256": "18099336d02261720cda4b1356b8e149cd942c1c7c2d91536a9120284f83db76",
-  "code_sha256_src": "aa61263fc5025d17c94de0c0f60e80044d89922536bc15e892f5b14ab89f3271",
+  "git_sha": "aa8f4aa517b75d38b4ac066b252585257c031053",
+  "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
+  "code_sha256_src": "84073201a391b67b7d499c318fd44286d8a70ecfbb524206c41f9ac074fe3765",
   "git_dirty": true,
   "n_reps": {
     "V": 50,
@@ -26,12 +26,12 @@
     0.01
   ],
   "runtime_sec": {
-    "V": 23.7,
-    "P": 19.0,
-    "0": 81.9,
-    "power_V": 32.4
+    "V": 21.5,
+    "P": 18.8,
+    "0": 72.4,
+    "power_V": 30.3
   },
-  "wall_sec": 157.1,
+  "wall_sec": 143.2,
   "workers": 9,
   "n_assets": 300,
   "n_months": 90,

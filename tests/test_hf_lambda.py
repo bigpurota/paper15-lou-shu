@@ -359,6 +359,7 @@ def test_relabelled_asset_ids_use_the_binance_symbol_files():
 def test_diagnostics_variants_and_exit_rows():
     panel = _toy_panel(n_months=20, n=60, priced="cost")
     panel["ivol"] = np.random.default_rng(1).uniform(0.01, 0.1, len(panel))
+    panel["lnVOL"] = np.random.default_rng(2).normal(15, 2, len(panel))
     last_m = panel["month"].max()
     exit_month = panel["month"].min() + 9
     panel = panel[~((panel["symbol"] == "C000USDT") & (panel["month"] > exit_month))]   # C000 leaves the panel
@@ -366,7 +367,7 @@ def test_diagnostics_variants_and_exit_rows():
     p = H.attach_lambda(base, _lam_table(panel), H.SPEC, 2, "sqrt_sides", 1000, (0.0, 1.0))
     tab, slopes = H.diagnostics(p, base, 6)
     v = list(tab["variant"].unique())
-    assert v[0] == "main (same as T9B)" and len(v) == 7
+    assert v[0] == "main (same as T9B)" and len(v) == 8
     t = tab.set_index(["variant", "model", "var"])
     main_n = t.loc[("main (same as T9B)", "(1)", "lnlam"), "n_months"]
     halves = [x for x in v if "half" in x]
@@ -375,6 +376,7 @@ def test_diagnostics_variants_and_exit_rows():
     assert (tab.loc[tab["variant"] == ex, "n_rows_dropped_vs_main"] == 1).all()   # only C000 at its exit month
     assert last_m != exit_month
     assert ("+ ivol control", "(1)", "ivol") in t.index
+    assert ("+ lnVOL control (size proxy; verify stage)", "(2)", "lnVOL") in t.index
     assert (tab.loc[tab["var"] == "lnlam", "coef"] > 0.5).all()                   # returns load on ln lambda
     r = tab[tab["var"] == "lnlam"]
     np.testing.assert_allclose(r["coef_per_cs_sd"], r["coef"] * r["cs_sd_lnlam"])

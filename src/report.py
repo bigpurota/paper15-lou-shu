@@ -32,6 +32,10 @@ PAPER = Path(__file__).resolve().parent / "paper_numbers.yaml"
 T_CRIT = 1.96
 Z_POWER80 = 0.8416212335729143          # Phi^{-1}(0.80): MDE = (1.96 + 0.84) * SE
 CONTROLS = ["mom", "ret_1"]
+# Lou & Shu (2017), p. 13: "one standard deviation change (2.53) in ln(A_C)" gives 0.46%/mo in model (2).
+# Used when paper_numbers.yaml has no lou_shu_2017.table4_text.sd_lnA_C entry (same rule as
+# robustness_extra.PAPER_SD_LNA_C, so README, slides and robustness/mde.csv quote one paper effect).
+PAPER_SD_LNA_C = 2.53
 
 # (id, section, label, kind); kind 't' = rule on sign and t-stat, 'level' = sign and order of magnitude,
 # 'ratio' = order of magnitude only (positive by construction, so the sign carries no information).
@@ -135,8 +139,10 @@ WHY = {
     "FMlnA": "Same sign, not significant. Returns are CMKT-adjusted with 36-month betas (D4), with no ln ME or "
              "B/M controls (D2, D3). FM uses {fmMonths} months and {fmAvgObs} coins per month (paper "
              "{paperMonths} and {paperAvgObs}). MDE80 = {mde}.",
-    "FMlnAC": "Same sign, not significant. Per cross-sectional s.d. of ln A_C, our slope is {psUs}%/mo vs the "
-              "paper's {psPaper} (paper s.d. from IQR/1.349, an estimate), with MDE80 = {mdePs} per s.d. "
+    "FMlnAC": "Same sign, not significant. Per log unit of ln A_C, MDE80 = {mde} against the paper's slope "
+              "{paper}. Per 1 s.d. of ln A_C, each in its own s.d., our slope is {psUs}%/mo and MDE80 = {mdePs} "
+              "(our cross-sectional s.d. {sdLnAC}), against the paper's {psPaper} (its s.d. {sdPaper}, p. 13); "
+              "the paper's slope times our s.d. is {psPaperOurSd}. "
               "Without the most influential month ({fmTopMonthTwo}) the slope is {fmExTwo} (t {fmExTwoT}). "
               "First half {subAFm} (t {subAFmT}), second half {subBFm} (t {subBFmT}).",
     "FMResLnA": "Matches: negative and significant at 1.96 (t {us_t}), but below the HLZ bar of {hlz}. In "
@@ -549,11 +555,16 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
               for _, g in panel[["month", "ln_absret", "lnVOL"]].dropna().groupby("month") if len(g) >= 10]
         D.add("elasMean", np.mean(sl), "mean monthly cs slope of ln DVol on ln|Ret|", src)
         D.add("elasMed", np.median(sl), "median monthly cs slope of ln DVol on ln|Ret|", src)
-        sd = panel.groupby("month")["lnA_C"].std().mean()
-        D.add("sdLnAC", sd, "mean monthly cs s.d. of ln A_C", src)
+        # s.d. of ln A_C in the FM model (2) sample (rows with ret_adj, ln A_C and the controls), as in
+        # robustness_extra.real_se_frame, so that per-s.d. numbers agree with robustness/mde.csv
+        fm2 = panel.dropna(subset=["ret_adj", "lnA_C"] + CONTROLS)
+        sd = fm2.groupby("month")["lnA_C"].std(ddof=1).mean()
+        D.add("sdLnAC", sd, "mean monthly cs s.d. of ln A_C, FM (2) sample", src)
         c, t = us["FMlnAC"]
-        D.add("psUs", c * sd, "FM (2) ln A_C slope per 1 cs s.d., %/mo", src)
-        D.add("mdePs", mde80(c, t) * sd, "MDE80 of FM (2) ln A_C per 1 cs s.d., %/mo", src)
+        D.add("psUs", c * sd, "FM (2) ln A_C slope per 1 cs s.d. (ours), %/mo", src)
+        D.add("mdePs", mde80(c, t) * sd, "MDE80 of FM (2) ln A_C per 1 cs s.d. (ours), %/mo", src)
+        D.add("psPaperOurSd", ls["table4_panelA"]["(2)"]["lnA_C"]["coef"] * sd,
+              "paper FM (2) ln A_C slope x our cs s.d. of ln A_C, %/mo", "paper_numbers.yaml + " + src)
         for xs, var, key, model in [(["lnA_C"], "lnA_C", "Two", "(2)"), (["ResLnA"], "ResLnA", "Three", "(3)"),
                                     (["lnA_C", "ResLnA"], "lnA_C", "FourAC", "(4)"),
                                     (["lnA_C", "ResLnA"], "ResLnA", "FourRes", "(4)")]:
@@ -565,10 +576,10 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
             # consistency check: the slope recomputed from the cached panel must equal T4_fm.csv
             D.add(f"fmReproDiff{key}", abs(c - _fm(t4, model, var)[0]),
                   f"|FM {model} {var} from panel - T4_fm.csv| (should be ~0)", src, d=6)
-    ps_paper = ls["table4_panelA"]["(2)"]["lnA_C"]["coef"] * math.log(
-        ls["table1_panelA"]["A_C"]["q75"] / ls["table1_panelA"]["A_C"]["q25"]) / 1.349
-    D.add("psPaper", ps_paper, "paper FM (2) ln A_C slope per 1 s.d. (IQR/1.349 of pooled ln A_C, estimate)",
-          "paper_numbers.yaml")
+    sd_paper = float(ls.get("table4_text", {}).get("sd_lnA_C", PAPER_SD_LNA_C))
+    D.add("sdPaper", sd_paper, "paper s.d. of ln A_C (Lou & Shu 2017, p. 13)", "paper text p. 13", d=2)
+    D.add("psPaper", ls["table4_panelA"]["(2)"]["lnA_C"]["coef"] * sd_paper,
+          "paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper p. 13)", "paper_numbers.yaml")
 
     # simulations: size of the tests in world 0 and power in world V
     ws = _read(sim_dir, "sim_world_summary")
@@ -787,7 +798,8 @@ def key_findings(df: pd.DataFrame, rob: pd.DataFrame, diag: pd.DataFrame) -> lis
     t3 = abs(r.loc["FMResLnA", "us_t"])
     lines = [
         f"- **Scorecard.** Of {len(t)} Lou & Shu coefficient rows, {int(counts.get('yes', 0))} match, "
-        f"{int(counts.get('sign only', 0))} match in sign only and {int(counts.get('no', 0))} are 'no' (opposite sign); "
+        f"{int(counts.get('sign only', 0))} match in sign only and {int(counts.get('no', 0))} "
+        f"{'is' if int(counts.get('no', 0)) == 1 else 'are'} 'no' (opposite sign); "
         f"{n_sig} of these t-statistics have |t| ≥ 1.96 and {n_hlz} have |t| > {hlz:g} (HLZ bar). Several rows "
         "are overlapping specifications of the same few signals, so they are not independent tests. "
         f"Against Amihud & Noh (2021), {int(an['match'].eq('no').sum())} of {len(an)} rows have the opposite "
@@ -861,7 +873,7 @@ def write_md(df: pd.DataFrame, rob: pd.DataFrame, diag: pd.DataFrame, rd: Path, 
               "Q75/Q25 ratios are positive by construction, so they get *yes* or *no* on magnitude alone. "
               "*Months needed* (in the A_C sort row) assumes the SE falls as 1/sqrt(T): an estimate. "
               "Units: H-L and alphas in %/month; FM slopes in %/month per unit of the regressor (paper: "
-              "FF3-adjusted; us: CMKT-adjusted, D4). Deviations D1–D13 and journal entries J1–J2: `DEVIATIONS.md`.",
+              "FF3-adjusted; us: CMKT-adjusted, D4). Deviations D1–D17, upgrade deviations U1–U8 and journal entries J1–J2: `DEVIATIONS.md`.",
               "", "## Robustness of our results (base vs variant)", "",
               "*Same conclusion* = same sign and same side of |t| = 1.96 as the base estimate.", "",
               "| Statistic | Variant | Base | Variant estimate | Same conclusion? |", "|---|---|---|---|---|"]

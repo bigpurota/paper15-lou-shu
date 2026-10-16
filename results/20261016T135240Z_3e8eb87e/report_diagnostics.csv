@@ -83,9 +83,10 @@ corrLnACAbs,-0.14881258255476582,-0.15,"mean cs corr(ln A_C, ln|Ret|)",panel cac
 corrLnACVol,-0.968612421695116,-0.97,"mean cs corr(ln A_C, ln DVol)",panel cache (run_manifest.json: panel_cache)
 elasMean,1.1159907278152568,1.12,mean monthly cs slope of ln DVol on ln|Ret|,panel cache (run_manifest.json: panel_cache)
 elasMed,1.513230061809158,1.51,median monthly cs slope of ln DVol on ln|Ret|,panel cache (run_manifest.json: panel_cache)
-sdLnAC,1.5359947185037452,1.54,mean monthly cs s.d. of ln A_C,panel cache (run_manifest.json: panel_cache)
-psUs,1.167853055049255,1.17,"FM (2) ln A_C slope per 1 cs s.d., %/mo",panel cache (run_manifest.json: panel_cache)
-mdePs,2.139721129205674,2.14,"MDE80 of FM (2) ln A_C per 1 cs s.d., %/mo",panel cache (run_manifest.json: panel_cache)
+sdLnAC,1.5441680766271775,1.54,"mean monthly cs s.d. of ln A_C, FM (2) sample",panel cache (run_manifest.json: panel_cache)
+psUs,1.1740674522340058,1.17,"FM (2) ln A_C slope per 1 cs s.d. (ours), %/mo",panel cache (run_manifest.json: panel_cache)
+mdePs,2.1511070453566807,2.15,"MDE80 of FM (2) ln A_C per 1 cs s.d. (ours), %/mo",panel cache (run_manifest.json: panel_cache)
+psPaperOurSd,0.2825827580227735,0.28,"paper FM (2) ln A_C slope x our cs s.d. of ln A_C, %/mo",paper_numbers.yaml + panel cache (run_manifest.json: panel_cache)
 fmTopMonthTwo,,2021-03,"most influential month, FM (2) lnA_C",panel cache (run_manifest.json: panel_cache)
 fmTopValTwo,37.565278800574355,37.57,FM (2) lnA_C: monthly slope in that month,panel cache (run_manifest.json: panel_cache)
 fmExTwo,0.33235901853828076,0.33,FM (2) lnA_C: slope without that month,panel cache (run_manifest.json: panel_cache)
@@ -106,7 +107,8 @@ fmTopValFourRes,-133.3847288899827,-133.38,FM (4) ResLnA: monthly slope in that 
 fmExFourRes,-6.646632023471577,-6.65,FM (4) ResLnA: slope without that month,panel cache (run_manifest.json: panel_cache)
 fmExFourResT,-2.5363263289702433,-2.54,FM (4) ResLnA: NW t without that month,panel cache (run_manifest.json: panel_cache)
 fmReproDiffFourRes,0.0,0.000000,|FM (4) ResLnA from panel - T4_fm.csv| (should be ~0),panel cache (run_manifest.json: panel_cache)
-psPaper,0.6455493359939234,0.65,"paper FM (2) ln A_C slope per 1 s.d. (IQR/1.349 of pooled ln A_C, estimate)",paper_numbers.yaml
+sdPaper,2.53,2.53,"paper s.d. of ln A_C (Lou & Shu 2017, p. 13)",paper text p. 13
+psPaper,0.46298999999999996,0.46,"paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper p. 13)",paper_numbers.yaml
 fprFmTwo,8.0,8.0,"world 0: % of runs with |t|>1.96, fm2_lnA_C",sim_world_summary.csv
 fprFmTwoLo,4.64176083998225,4.6,95% CI low,sim_world_summary.csv
 fprFmTwoHi,12.66648560220817,12.7,95% CI high,sim_world_summary.csv

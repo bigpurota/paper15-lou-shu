@@ -1,0 +1,324 @@
+% Team 12, Paper 15: Lou & Shu (2017). Slide text is written by hand; every number is \V{key}, a value
+% that src/build_docs.py writes into gen/values.tex from the CSVs under results/ (the same keys as in
+% README.md and PLAN.md: `python -I src/build_docs.py --list`). Tables: gen/slide8.tex, gen/slide9.tex,
+% gen/slide10.tex, gen/sims.tex. Build: `make slides` (xelatex). Plan and speaker notes: PLAN.md.
+\documentclass[aspectratio=169,10pt]{beamer}
+\usepackage{fontspec}
+\setsansfont{Arial}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\input{gen/values.tex}
+\newcommand\V[1]{\ifcsname v@#1\endcsname\csname v@#1\endcsname\else\errmessage{undefined value: #1}\fi}
+
+\definecolor{ink}{HTML}{1F2937}
+\definecolor{accent}{HTML}{1D4E89}
+\definecolor{muted}{HTML}{6B7280}
+\definecolor{warn}{HTML}{9A3412}
+\setbeamercolor{frametitle}{fg=accent}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamercolor{structure}{fg=accent}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}{\textbullet}
+\setbeamertemplate{footline}{\hfill{\color{muted}\scriptsize Team 12 · Lou \& Shu (2017) on Binance \quad \insertframenumber\ /\ \inserttotalframenumber}\hspace{1.5em}\vspace{0.6em}}
+\newcommand\msg[1]{{\color{accent}\textbf{#1}}\par\medskip}
+\newcommand\src[1]{\par\vfill{\color{muted}\scriptsize Источник: #1}}
+\renewcommand\arraystretch{1.15}
+
+\begin{document}
+
+% ------------------------------------------------------------------------------------------ 1
+\begin{frame}[plain]
+\vspace{1.5em}
+{\color{muted}Team 12 · Paper 15 · RS3, DSBA-3, ВШЭ · защита 17.10.2026}\par\bigskip
+{\Large\bfseries\color{accent} Price Impact or Trading Volume:\\ Why Is the Amihud (2002) Measure Priced?}\par\medskip
+X. Lou, T. Shu, \emph{Review of Financial Studies} 30(12), 2017\par\bigskip
+Репликация на Binance spot (пары к USDT, \V{n.first}…\V{n.last}) и апгрейды: Amihud \& Noh (2021), λ по 5-минутным барам, EDGE, сентимент, MOEX, США после 2012\par\vfill
+\textbf{Команда:} \teamnames\par
+\textbf{Репозиторий:} \ifx\repourl\empty{\color{warn}ссылка будет добавлена}\else\url{\repourl}\fi\par
+{\color{muted}\scriptsize Все числа на слайдах — макросы из \texttt{results/} (src/build\_docs.py), базовый прогон \V{base.run}}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 2
+\begin{frame}{Problem: мера Amihud прайсится — но за что?}
+\msg{Неликвидные по Amihud акции дают премию. Принято считать, что это плата за price impact. Lou \& Shu спрашивают, так ли это.}
+\[ A_{i,t} = \frac{1}{D}\sum_{d} \frac{|r_{i,d}|}{\mathrm{DVol}_{i,d}} \]
+\begin{itemize}
+\item Премия у статьи: квинтильный H-L по $A$ — \V{pvu.HLArawCoef.paper} \%/мес (NYSE/AMEX 1964–2012, \V{d.paperMonths} месяцев).
+\item Если премия за price impact, $A$ годится и чтобы \emph{мерить} ликвидность, и чтобы \emph{объяснять} доходности. Статья показывает, что это два разных вопроса.
+\end{itemize}
+\bigskip
+{\small\color{muted}Место в литературе: мера (Amihud 2002) → проверка мер по HF-бенчмаркам (Goyenko–Holden–Trzcinka 2009) → за что прайсится (Lou \& Shu 2017) → критика декомпозиции (Amihud \& Noh 2021) → спред по OHLC (EDGE, Ardia–Guidotti–Kroencke 2024).}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 3
+\begin{frame}{Наблюдение: в поперечном сечении $A$ — это почти только объём}
+\msg{Разброс объёма огромен, разброс $|r|$ мал, поэтому $A \approx A_C$.}
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & \textbf{статья (NYSE/AMEX)} & \textbf{мы (Binance)} \\
+\midrule
+corr($A$, $A_C$) & \V{pvu.corrAAC.paper} & \V{pvu.corrAAC} \\
+Q75/Q25 для $A_C$ & \V{pvu.QratioAC.paper} & \V{pvu.QratioAC} \\
+Q75/Q25 для $|Ret|$ & \V{pvu.QratioAbs.paper} & \V{pvu.QratioAbs} \\
+corr($A$, $|Ret|$) & \V{pvu.corrAabs.paper} & \V{pvu.corrAabs} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item Разброс ликвидности у нас на порядок меньше (фильтр объёма и сам листинг Binance — гипотеза), но вывод тот же: $A$ почти совпадает с $A_C$.
+\item Отличие: у монет объём растёт с волатильностью, поэтому corr($A$, $|Ret|$) отрицательна.
+\end{itemize}
+\src{\V{base.dir}/paper\_vs\_us.csv (T1)}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 4
+\begin{frame}{Метод: «константная» мера и остаток}
+\msg{Если прайсится $A_C$, а часть $A$ сверх $A_C$ — нет, то премия Amihud — это премия за объём.}
+\[ A_C = \frac{1}{D}\sum_d \frac{1}{\mathrm{DVol}_d}, \qquad \ln A = a_t + b_t \ln A_C + \mathrm{Res.}\ln A \ \ \text{(в каждом месяце)} \]
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Гипотеза «объём»}\par прайсится $A_C$, остаток — нет
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{Гипотеза «price impact»}\par прайсится остаток Res.$A$
+\end{column}
+\end{columns}
+\bigskip
+\textbf{Сначала проверили, что конвейер различает гипотезы} (симуляции, \V{sim.assets} монет × \V{sim.months} месяцев):
+\begin{itemize}
+\item мир V (премия за объём): $A_C$ значим в \V{sim.V.fm2} повторов, Res.lnA — в \V{sim.V.fm3};
+\item мир P (премия за price impact): Res.lnA значим в FM в \V{sim.P.fm3}, в квинтильной сортировке — только в \V{sim.P.hlResA}.
+\end{itemize}
+\src{results/simulations/sim\_world\_summary.csv}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 5
+\begin{frame}{Метод: тесты и данные}
+\msg{Квинтильные сортировки и Fama–MacBeth с сигналом из $t-2$ и Newey–West(6).}
+\centerline{мера за месяц $t-2$ \quad → \quad пропуск $t-1$ \quad → \quad доходность месяца $t$}
+\[ r_{i,t} - \hat\beta_i\,\mathrm{CMKT}_t = \gamma_0 + \gamma_1 X_{i,t-2} + \text{controls} + \varepsilon_{i,t} \]
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Статья:} NYSE/AMEX 1964–2012, \V{d.paperMonths} месяцев, \V{d.paperAvgObs} акций в месяц; FF3-скорректированная доходность.
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{Мы:} Binance spot USDT, все пары с делистингом, \V{n.months} месяцев, в среднем \V{n.avgcoins} монет (\V{n.coins} всего); FM — \V{n.fmmonths} месяцев по \V{n.fmobs} монет. CMKT вместо FF3 (нет размера и B/M).
+\end{column}
+\end{columns}
+\bigskip
+\begin{itemize}
+\item Аудит данных: \V{audit.redenomination} редоминаций скорректированы как сплиты, \V{audit.ticker_reuse} повторных тикера разведены (даты совпадают с остановками торгов).
+\item Спецификация зафиксирована в git \V{git.prereg} до первого прогона на реальных данных; config первого прогона \V{git.prereg.cfgmatch} с предрегистрированным.
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 6
+\begin{frame}{Результаты статьи (Table 3, Table 4)}
+\msg{У статьи спред по $A$ и по $A_C$ положительный и значимый, по Res.$A$ — нет; в FM Res.lnA значимо отрицателен.}
+\begin{center}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{сигнал} & \textbf{квинтили Q1…Q5, \%/мес} & \textbf{H-L} \\
+\midrule
+$A$ & \V{q.A.paper} & \V{pvu.HLArawCoef.paper} \\
+$A_C$ & \V{q.A_C.paper} & \V{pvu.HLACrawCoef.paper} \\
+Res.$A$ & \V{q.ResA.paper} & \V{pvu.HLResArawCoef.paper} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item FM: $\ln A_C$ \V{pvu.FMlnAC.paper}; Res.lnA \V{pvu.FMResLnA.paper}.
+\item Логика статьи: часть $A$ сверх объёма прайсится со знаком минус, значит, премия не за price impact.
+\end{itemize}
+\src{src/paper\_numbers.yaml (сверено с PDF)}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 7
+\begin{frame}{Наша репликация рядом со статьёй}
+\msg{Форма совпадает, но наши спреды шумные и незначимые.}
+\begin{columns}[c]
+\begin{column}{0.64\textwidth}
+\includegraphics[width=\linewidth]{\basedir/fig_quintiles.png}
+\end{column}
+\begin{column}{0.34\textwidth}
+\small
+H-L $A_C$: \V{pvu.HLACrawCoef}\\ (статья \V{pvu.HLACrawCoef.paper})\par\smallskip
+H-L $A$: \V{pvu.HLArawCoef}\par\smallskip
+H-L Res.$A$: \V{pvu.HLResArawCoef}\par\medskip
+s.d. месячной доходности монеты \V{d.retSd}\%.\par\smallskip
+Без марта 2021 (альтсезон) спред $A_C$ \V{d.exMeanAC} \%/мес (t \V{d.exTAC}).
+\end{column}
+\end{columns}
+\src{\V{base.dir}/fig\_quintiles.png: статья (Table 3, Panel A) и мы на одних осях}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 8
+\begin{frame}{Статья против нас}
+\msg{Знаки совпадают у \V{sc.samesign} из \V{sc.ls_n} коэффициентов. Значимость повторяется только у Res.lnA (|t| ≥ 1.96 в \V{sc.res_sig} из \V{sc.res_n}, HLZ — ни разу); премия за объём незначима.}
+{\scriptsize\input{gen/slide8.tex}}
+\par\smallskip
+{\small Почему: (1) мощность — \V{n.months} месяцев против \V{d.paperMonths}, MDE80 спреда $A_C$ \V{mde.hlAC} \%/мес; (2) другой рынок — объём растёт с волатильностью; (3) нет размера и B/M, CMKT вместо FF3.}
+\src{\V{base.dir}/paper\_vs\_us.md (все \V{sc.ls_n} строк с объяснениями — backup)}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 9
+\begin{frame}{HF-бенчмарк: λ по 5-минутным барам с точным знаком}
+\msg{λ хорошо мерит $A$ и прайсится со знаком минус. С моделью (1) статьи это расходится, с моделью (2) — нет; премии $A_C$ в этом окне нет, Table 9 не воспроизведена.}
+{\scriptsize\input{gen/slide9.tex}}
+\par\smallskip
+{\small
+\begin{itemize}
+\item \V{hf.months} месяцев, \V{hf.coinmonths} монето-месяцев; знак из taker-buy объёма 5-минутных klines. Бар-λ сверен с потрейдовым λ по aggTrades на \V{hf.val.n} монето-месяцах: corr ln λ \V{hf.val.corr}.
+\item С контролем долларового объёма ln λ \V{hf.vol.b1}; ln $A_C$ без λ в этом окне \V{hf.b0}.
+\end{itemize}}
+\src{results/upgrades/hf\_lambda/ (T9A\_corr, T9B\_fm, T10\_fm). Статья: T9 — 1983–2012, T10 — 1964–2012}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 10
+\begin{frame}{Mispricing: сентимент, неликвидность рынка, январь}
+\msg{Сентимент премию не объясняет; неликвидность рынка даёт знак статьи, но слабеет с контролем рынка.}
+{\scriptsize\input{gen/slide10.tex}}
+\par\smallskip
+{\small
+\begin{itemize}
+\item Сравнимы знак и t, не масштаб: у статьи сортировки по turnover и индексы Baker–Wurgler / Pástor–Stambaugh.
+\item Сентимент: 1.96 проходят \V{se.var_196} из \V{se.var_n} предзаданных вариантов. Январей у нас \V{t7.jan.n}: январь в крипте — только плацебо.
+\end{itemize}}
+\src{results/upgrades/sentiment/paper\_vs\_us.csv, panel\_b.csv; \V{base.dir}/T7\_january.csv}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 11
+\begin{frame}{Кто прав: Lou \& Shu или Amihud \& Noh?}
+\msg{Предпосылка A\&N на крипте выполняется, но их член DIF не прайсится; данные спор не разрешают.}
+\begin{columns}[c]
+\begin{column}{0.55\textwidth}
+\includegraphics[width=\linewidth]{\basedir/fig_an_dif.png}
+\end{column}
+\begin{column}{0.43\textwidth}
+\small
+$\ln A = \ln|Ret| + \ln A_C + \mathrm{DIF}$\par\smallskip
+COV < 0 в \V{an.covneg} монето-месяцев\par\smallskip
+DIF при $\ln A_C$, $\ln|Ret|$: \V{an.V1m} (мес.), \V{an.V1y} (12 мес.); у A\&N \V{an.p.col3}\par\smallskip
+fDIF (12 мес.): \V{an.V4y} — единственный результат в сторону A\&N, ниже HLZ\par\smallskip
+Res.lnA: \V{an.V3m} → \V{an.V5m} при $\ln|Ret|$ + IVOL. Но это почти тождество: R² Res.lnA на $\ln|Ret|$ + DIF = \V{an.r2_res_dif}. «Остаток — это волатильность» — гипотеза.
+\end{column}
+\end{columns}
+\src{results/upgrades/amihud\_noh/; вердикт правила: \V{an.sens.ret_adj} при минимуме монет \V{an.sens.levels}}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 12
+\begin{frame}{Критика}
+\msg{У статьи слабое звено — интерпретация остатка; у нас — мощность и один месяц.}
+\begin{columns}[c]
+\begin{column}{0.46\textwidth}
+\includegraphics[width=\linewidth]{\basedir/fig_hl_cumulative.png}
+\end{column}
+\begin{column}{0.52\textwidth}
+\footnotesize
+\begin{enumerate}
+\item Декомпозиция теряет ковариационный член (A\&N); остаток ≈ $|Ret|$ (IVOL-пазл, Ang et al. 2006).
+\item «Объём, а не ликвидность» — ложная дихотомия: ликвидные активы больше торгуются (Amihud–Mendelson 1986).
+\item Шумный бенчмарк — λ статьи (5 минут, Lee–Ready): ошибка измерения занижает его коэффициент.
+\item EW-портфели, только США до 2012: после 2012 премия Illiquidity исчезла (OpenAP: \V{op.ill.pre} → \V{op.ill.post}).
+\end{enumerate}
+У нас: без 2021 года спред $A_C$ \V{x21.hlAC}; на MOEX спред поглощается размером (SMB \V{mx.smb}), а FM $\ln A_C$ \V{mx.fm2} повторяет статью.
+\end{column}
+\end{columns}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 13
+\begin{frame}{Переобучение: могли ли результаты быть переобучены?}
+\small
+\textbf{Авторы:} подпериоды, NASDAQ вне выборки, годовые меры, сырая доходность.\par\medskip
+\textbf{Мы:}
+\begin{itemize}
+\item Спецификация закоммичена до первого прогона (git \V{git.prereg}); реестр всех t: в базовом семействе \V{lg.base.n} тестов, |t| > 1.96 у \V{lg.base.196} (ожидалось бы \V{lg.base.exp}–\V{w0.exp_base} при нуле), |t| > 3 у \V{lg.base.3}, после Бонферрони/BH — \V{lg.base.bonf}/\V{lg.base.bh}.
+\item Размер теста в мире 0: NW(6) даёт \V{w0.fpr_min}–\V{w0.fpr_max} ложных |t| > 1.96; эмпирический 5\%-порог \V{w0.crit_min}–\V{w0.crit_max}. Симуляции: \V{sim.checks.pass} из \V{sim.checks.n} критериев; не пройдены: {\color{warn}\V{sim.checks.failed}}.
+\item Бутстрап по блокам месяцев: ДИ без нуля устойчиво только у \V{rb.robust} из \V{rb.n} статистик (обе — Res.lnA).
+\item Плацебо: перемешивание мер внутри месяца — средний t по \V{plc.shuffle_reps} перестановкам не больше \V{plc.shuffle_maxabs_meant} по модулю, доля |t| > 1.96 не выше \V{plc.shuffle_share196_max}; утечка (лаг 0) даёт |t| до \V{plc.leak_maxabs_t}.
+\item Вне выборки: другой рынок (MOEX), США после 2012 (OpenAP), без 2021 года. Post hoc варианты помечены.
+\end{itemize}
+\src{results/upgrades/robustness/ (ledger\_summary, bootstrap\_ci, world0\_calibration); \V{base.dir}/placebo.csv}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------ 14
+\begin{frame}{Next steps: что бы мы сделали за 3 месяца}
+\msg{Главное — мощность и измерение спреда.}
+\begin{enumerate}
+\item Капитализация монет (supply из CoinGecko/CMC) → контроль размера, $AT$/$AT_C$ и VW-портфели.
+\item Внутридневной EDGE на 5-минутных барах и спреды из снапшотов стакана.
+\item λ по midquote и на всей истории, а не на \V{hf.months} месяцах.
+\item Тест A\&N на 12-месячных мерах с заранее заданным минимумом монет; остаток на $\ln$ VOLUME, как в Table 6.
+\item McLean–Pontiff: распад премии после публикации внутри выборки США.
+\end{enumerate}
+\bigskip
+{\small MDE80 для FM $\ln A_C$: \V{mde.fm2.slope} на единицу $\ln A_C$ против наклона статьи \V{mde.fm2.paper_slope} (в \V{mde.fm2.slope_ratio} раза больше). Нужно больше месяцев или меньше шума, а не больше спецификаций.}
+\end{frame}
+
+% ========================================================================================== backup
+\begin{frame}[plain]
+\centering\vfill{\Large\color{accent}\bfseries Backup}\vfill
+\end{frame}
+
+\begin{frame}{B1. Определения}
+\small
+\begin{itemize}
+\item $A = \mathrm{mean}_d(|r_d|/\mathrm{DVol}_d)$, $A_C = \mathrm{mean}_d(1/\mathrm{DVol}_d)$; Res.lnA — остаток $\ln A$ на $\ln A_C$ в каждом месяце.
+\item Amihud \& Noh: $\ln A = \ln|Ret| + \ln A_C + \mathrm{DIF}$, DIF отражает $\mathrm{cov}(|r|, 1/\mathrm{DVol})$.
+\item λ (Hasbrouck): 5-минутная доходность на $\sum \mathrm{sign}\cdot\sqrt{\mathrm{DVol}}$, у нас SVol $= \sqrt{B} - \sqrt{S}$ по taker-объёму.
+\item IMLA$_C$ — терцильный H-L по $A_C$; CMKT — EW-рынок вселенной; CMOM — терцильный H-L по Ret[−12,−2].
+\end{itemize}
+\src{src/measures.py, src/hf\_lambda.py, src/factors.py}
+\end{frame}
+
+\begin{frame}{B2. Симуляции: миры V / P / 0}
+\msg{В мире V прайсится $A_C$, в мире P — Res.lnA; в мире 0 NW(6) слегка переотвергает.}
+{\scriptsize\input{gen/sims.tex}}
+\par\medskip
+{\small Пройдено \V{sim.checks.pass} из \V{sim.checks.n} критериев. Не пройдены: \V{sim.checks.failed}.}
+\src{results/simulations/sim\_world\_summary.csv, sim\_checks.csv}
+\end{frame}
+
+\begin{frame}{B3. t-статистики статьи и наши}
+\centering\includegraphics[height=0.8\textheight]{\basedir/fig_tstats.png}
+\src{\V{base.dir}/fig\_tstats.png (линии 1.96 и HLZ 3)}
+\end{frame}
+
+\begin{frame}{B4. Мощность и устойчивость}
+\small
+\begin{itemize}
+\item MDE80: H-L $A_C$ \V{mde.hlAC} \%/мес против премии статьи \V{mde.hlAC.paper}. FM $\ln A_C$: \V{mde.fm2.slope} на единицу $\ln A_C$ против \V{mde.fm2.paper_slope}; на 1 s.d. (каждое в своём s.d.) \V{mde.fm2} (s.d. \V{mde.fm2.sd}) против \V{mde.fm2.paper} (s.d. статьи \V{mde.fm2.paper_sd}).
+\item Без 2021 года: H-L $A_C$ \V{x21.hlAC}, FM $\ln A_C$ \V{x21.fm2}, Res.lnA (3) \V{x21.fm3}.
+\item \V{rob.same} из \V{rob.n} вариантов (винзоризация, сырая доходность, веса, подпериоды) сохраняют вывод. Подпериоды: $\ln A_C$ \V{pvu.SubAlnAC} и \V{pvu.SubBlnAC}.
+\item Бутстрап: FM Res.lnA (3) \V{rb.ci.fm3_ResLnA}, (4) \V{rb.ci.fm4_ResLnA}; FM $\ln A_C$ (4) на грани (\V{rb.seedshare.fm4_lnA_C} сидов без нуля).
+\end{itemize}
+\src{results/upgrades/robustness/; \V{base.dir}/robustness\_vs\_base.csv}
+\end{frame}
+
+\begin{frame}{B5. Остальные апгрейды}
+\small
+\begin{itemize}
+\item \textbf{EDGE и издержки:} H-L $A_C$ брутто \V{ed.gross}, нетто \V{ed.net}; дневной EDGE спред не мерит (вес гэпа \V{ed.w2}); безубыточная издержка \V{ed.breakeven} на сторону.
+\item \textbf{MOEX TQBR:} FM $\ln A$ \V{mx.fm1}, $\ln A_C$ \V{mx.fm2}, Res.lnA (4) \V{mx.fm4res}; спред $A_C$ \V{mx.hlAC}, альфа \V{mx.hlACalpha}; \V{mx.topyear} год даёт \V{mx.topyear_share} суммарного спреда.
+\item \textbf{США (OpenAP):} Illiquidity \V{op.ill.pre} → \V{op.ill.post}, DolVol \V{op.dv.pre} → \V{op.dv.post}; t разницы по лагам NW \V{op.ill.decay_lags}: \V{op.ill.decay_ts}.
+\item \textbf{Реестр тестов:} базовые тесты и апгрейды вместе — \V{lg.all.n} тестов, |t| > 3 у \V{lg.all.3}, после Бонферрони \V{lg.all.bonf}.
+\end{itemize}
+\src{results/upgrades/*/SUMMARY.md}
+\end{frame}
+
+\begin{frame}{B6. Воспроизводимость}
+\small
+\begin{itemize}
+\item \texttt{make all}: данные → тесты → симуляции → базовый прогон → отчёт → апгрейды → реестр → документы; \texttt{make slides} собирает эту колоду.
+\item Каждый прогон пишет \texttt{run\_manifest.json}: run id, git SHA и флаг dirty, sha256 конфига, кода и данных, seed, время по этапам.
+\item Отступления от статьи: DEVIATIONS.md (D1–D17, U1–U8, журнал J1–J2).
+\end{itemize}
+\src{README.md}
+\end{frame}
+
+\end{document}

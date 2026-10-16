@@ -1,13 +1,13 @@
 {
   "stage": "report",
   "base_run_id": "20261016T135240Z_3e8eb87e",
-  "created_utc": "20261016T141901Z",
+  "created_utc": "20261016T161812Z",
   "git": {
-    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "sha": "aa8f4aa517b75d38b4ac066b252585257c031053",
     "dirty": true
   },
   "code_sha256": {
-    "report.py": "dae17b41705d136bac0f002a387236fda314d0c3e712d4820bc6e761dd2856c6",
+    "report.py": "791eb9fcd50856ae13909b4fb2845546adb4fe02c0c3ad775839f42598ea9448",
     "figures.py": "82e32829127ced38c0add7d255d06323df87ae8bea5cf00b4f59bb31a6ac53f9",
     "paper_numbers.yaml": "2a4339f7bd1e9a771d5349b7a12e4b782c81f3314055f1ec0c34bf9b910a33ae",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
@@ -44,10 +44,10 @@
   "simulations_sha256": {
     "sim_checks.csv": "d4848fa0da0424e7b259d8b9f577aec9902c8573fb5c974ce7c5682fdfb3becf",
     "sim_power.csv": "9a436d76e97335971138b3da96116f600a0f12b485b76518da18f6fbc509e9b5",
-    "sim_power_reps.csv": "e9b597bc7dccdb021717788c909618515bffe28ddd3dc9ce23b9860589f9a5c2",
-    "sim_world0_reps.csv": "b0e96e12370ab2544c960acef6f4f5fba203b9871807397b0ce5be593fc2f090",
+    "sim_power_reps.csv": "ecc9f1eb2fc13007f9783ffc43ccb59e317f310fbcdf85cea3be01fa47171e80",
+    "sim_world0_reps.csv": "2ac291b74d1da7e709e8dee3777699b820a36cbcbd4bf81b7941a07635cbda05",
     "sim_world_diagnostics.csv": "460f9ea94e7508f3bf855b6cf79627dc49db8eee911b6817d8a02c7236ebae80",
-    "sim_world_reps.csv": "33d3aa8e748d48ed465ca7c19c85e57b8c40f8b249e454803c2ad555bc3bb623",
+    "sim_world_reps.csv": "289c63fd404c6df1b61c5704464e9017cad943920ebf0c62dda5b1efad0d7930",
     "sim_world_summary.csv": "b20700bf8986f2ac8f440e0a8d56bc8c076c8cb1a1491a0c27bb4d2b9016bf08"
   },
   "panel_cache": "/Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135240Z_3e8eb87e.parquet",
@@ -55,7 +55,7 @@
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "seed": 20261017,
   "timings_sec": {
-    "build": 1.593,
-    "write": 0.026
+    "build": 1.586,
+    "write": 0.024
   }
 }

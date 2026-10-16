@@ -1,15 +1,15 @@
 {
-  "run_id": "hf_lambda_20261016T152528Z_3e8eb87e",
-  "created_utc": "20261016T152528Z",
+  "run_id": "hf_lambda_20261016T154107Z_3e8eb87e",
+  "created_utc": "20261016T154107Z",
   "base_run_id": "20261016T135240Z_3e8eb87e",
   "base_panel": "/Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135240Z_3e8eb87e.parquet",
   "git": {
-    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "sha": "aa8f4aa517b75d38b4ac066b252585257c031053",
     "dirty": true
   },
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "code_sha256": {
-    "hf_lambda.py": "14a72259c89ea44946b18dc8cbbf5bfcbeb7310227b515d2b3bdd54eebfa56b3",
+    "hf_lambda.py": "0ac2e511a9e6e5342e53d248a5de37a6fd42330fe82fcb8f3e41601b82a2867b",
     "analysis.py": "91476d46a8e44cd573b3ebad8d7e7d389018f1589b45a279487d45a08909a6da",
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
     "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64"
@@ -94,13 +94,13 @@
   },
   "edge_status": "used column 'edge' of edge_monthly.parquet (26347 coin-months); main rule 'floor' as in edge_spread, floored share 0.510",
   "timings_sec": {
-    "load_panel": 0.13,
-    "download": 0.64,
-    "lambda_klines": 66.57,
-    "lambda_aggtrades": 66.23,
-    "tests": 3.82,
-    "hash": 8.71,
-    "total": 146.1
+    "load_panel": 0.14,
+    "download": 0.63,
+    "lambda_klines": 66.71,
+    "lambda_aggtrades": 38.45,
+    "tests": 3.62,
+    "hash": 8.82,
+    "total": 118.37
   },
   "versions": {
     "python": "3.12.13",

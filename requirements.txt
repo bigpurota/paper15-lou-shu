@@ -1,4 +1,5 @@
-# pinned to the versions in .venv (Python 3.12)
+# pinned to the versions in .venv (Python 3.12); `make venv` installs exactly these
+# direct dependencies
 numpy==2.5.4
 pandas==3.0.6
 statsmodels==0.15.0
@@ -8,3 +9,27 @@ PyYAML==6.0.3
 pyarrow==26.0.0
 requests==2.34.2
 pytest==9.1.1
+bidask==2.1.0            # reference EDGE estimator (Ardia et al. 2024), used only as a test of src/spread_edge.py
+# transitive dependencies, pinned for a reproducible environment
+certifi==2026.7.22
+charset-normalizer==3.5.2
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.67.0
+formulaic==1.2.2
+idna==3.20
+iniconfig==2.3.1
+interface_meta==2.0.1
+kiwisolver==1.5.1
+narwhals==2.27.1
+packaging==26.3
+patsy==1.0.3
+pillow==12.3.0
+pluggy==1.7.0
+Pygments==2.21.0
+pyparsing==3.3.3
+python-dateutil==2.9.0.post0
+six==1.17.0
+typing_extensions==4.16.0
+urllib3==2.8.0
+wrapt==2.5.1

@@ -16,7 +16,9 @@ without trades).  The paper uses the quote midpoint; Binance has no public histo
 we use trade prices (bid-ask bounce: see SUMMARY caveats).  A bar is used if Q_n > 0, bar n-1 exists
 and |r_n| <= MAX_ABS_R (redenomination / bad-print guard).  lambda = OLS slope WITHOUT intercept, as
 in eq. (11).  A coin-month needs >= MIN_BARS such bars (paper: >= 10; we require far more).
-Negative lambdas are dropped when logs are taken (as in the paper, footnote 16).
+Deviation from the paper (footnote 16 drops negative lambdas after taking logs): lambda is winsorized
+1/99 within each month FIRST, so a lambda <= 0 below the 1st percentile is raised to it and kept
+(3 coin-months in the main run; counted in coverage.csv as n_lambda_nonpos).
 
 Then: Table 9 analogue (Panel A correlations of lambda with A, A_C, Res.A; Panel B Fama-MacBeth of
 CMKT-adjusted returns on ln lambda [+ ln A_C], controls mom, ret_1, signals at t-2, NW 6 lags) and
@@ -549,7 +551,9 @@ def diagnostics(p: pd.DataFrame, panel: pd.DataFrame, lags: int) -> tuple[pd.Dat
     Variants: halves of the return months; without each coin's last panel month when it leaves the panel
     before the panel ends (delisting months, D10); raw instead of CMKT-adjusted returns; returns
     winsorized 1/99 within month (as base R_winsor_returns); + ivol control (lambda from trade prices
-    co-moves with volatility, and ivol is priced in base T4 model 5).
+    co-moves with volatility, and ivol is priced in base T4 model 5); + lnVOL control (added in the
+    VERIFY stage: the paper controls ln ME in Tables 9-10, we have no size control, ln dollar volume
+    at t-2 is the closest proxy in the panel; skipped if the panel has no lnVOL).
     Returns (table, monthly slope series of models (0) and (1))."""
     from analysis import winsorize_returns
     from fama_macbeth import fama_macbeth
@@ -568,9 +572,13 @@ def diagnostics(p: pd.DataFrame, panel: pd.DataFrame, lags: int) -> tuple[pd.Dat
         "ret_adj winsorized 1/99 within month": (winsorize_returns(s, (0.01, 0.99)), "ret_adj"),
         "+ ivol control": (s.dropna(subset=["ivol"]), "ret_adj"),
     }
+    extras = {"+ ivol control": ["ivol"]}
+    if "lnVOL" in s:
+        name = "+ lnVOL control (size proxy; verify stage)"
+        samples[name], extras[name] = (s.dropna(subset=["lnVOL"]), "ret_adj"), ["lnVOL"]
     rows = []
     for name, (d, y) in samples.items():
-        extra = ["ivol"] if name.startswith("+ ivol") else []
+        extra = extras.get(name, [])
         models = {"(0)": ["lnA_C"], "(1)": ["lnlam"], "(2)": ["lnlam", "lnA_C"]}
         fb = _fm_block(d, y, {k: v + extra for k, v in models.items()}, lags, controls)
         fb = fb[~fb["var"].isin(controls)]
@@ -770,9 +778,11 @@ def write_summary(out: Path, hlz: float) -> None:
     sign = lambda b: "—" if not np.isfinite(b) else ("отрицательный" if b < 0 else "положительный")
     L.append(f"- Знаки против статьи: ln λ отдельно — {sign(b1)} (статья: −0.034, t −0.67, т. е. λ сам по себе не прайсится); "
              f"ln λ вместе с ln A_C — {sign(b2)} (статья: −0.155), ln A_C — {sign(bc)} (статья: +0.180). "
-             f"На этом окне ln A_C без λ: {_fmt(b0)} (t {_fmt(t0, 2)}); в базовом прогоне за весь период "
-             f"(T4 модель (2), {base_txt}) — окно λ отличается от полного периода по самой премии A_C.")
-    L.append("- В Table 10 модель (1) cost-часть — линейная функция ln λ внутри месяца, поэтому её t совпадает с t модели (1) Table 9.")
+             f"На этом окне ln A_C без λ: {_fmt(b0)} (t {_fmt(t0, 2)}, {_sig(t0, hlz)}); в базовом прогоне за весь период "
+             f"(T4 модель (2): {base_txt}). Точечные оценки премии A_C в окне λ и за весь период разного знака; "
+             "различие между ними формально не тестировалось.")
+    L.append("- В Table 10 модель (1) cost-часть внутри месяца — линейная функция ln λ (cost = a_t + b_t·ln λ), поэтому её t "
+             "близка к t модели (1) Table 9, но не равна ей: наклон b_t меняется по месяцам.")
     L.append(f"- Пороги: 1.96 и HLZ t > {hlz:g}. Все варианты (прокси SVol, min_bars, Спирмен, логарифмы) — в `T9B_fm.csv`, "
              "`T10_fm.csv`, `T9A_corr.csv`, список — `variants.csv`.\n")
     dpath = out / "T9B_diagnostics.csv"
