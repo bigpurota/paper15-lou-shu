@@ -1,9 +1,9 @@
 {
-  "run_id": "sentiment_20261016T212204Z",
-  "base_run_id": "20261016T211736Z_3e8eb87e",
-  "created_utc": "20261016T212204Z",
+  "run_id": "sentiment_20261016T222253Z",
+  "base_run_id": "20261016T221825Z_3e8eb87e",
+  "created_utc": "20261016T222253Z",
   "git": {
-    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
+    "sha": "06cc8d82855ddee0c3f95fa848af49836a7e0d2d",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -23,7 +23,7 @@
     "fng_url": "https://api.alternative.me/fng/?limit=0&format=json",
     "daily": "data/cache/daily.parquet",
     "daily_sha256": "47d0542600dbce8339e3bfff34a7648f3a37107b1cc86af8c45de1c75f1dca1d",
-    "panel_cache": "data/cache/panel_20261016T211736Z_3e8eb87e.parquet",
+    "panel_cache": "data/cache/panel_20261016T221825Z_3e8eb87e.parquet",
     "panel_sha256": "3a1397327cc45f1fbf200d262c58df7d55a7c90ccc05b11b5676968255699cd9"
   },
   "seed": 20261017,
@@ -64,12 +64,12 @@
     "pytest": "9.1.1"
   },
   "timings_sec": {
-    "fng": 0.022,
-    "illiquidity": 6.196,
-    "premium": 0.264,
+    "fng": 0.024,
+    "illiquidity": 6.895,
+    "premium": 0.266,
     "tests": 0.286,
-    "write": 0.023,
-    "total": 6.791
+    "write": 0.026,
+    "total": 7.497
   },
   "outputs": [
     "SUMMARY.md",

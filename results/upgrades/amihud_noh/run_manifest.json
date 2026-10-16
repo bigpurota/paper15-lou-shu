@@ -1,10 +1,10 @@
 {
-  "run_id": "20261016T211909Z_amihud_noh",
+  "run_id": "20261016T221957Z_amihud_noh",
   "upgrade": "amihud_noh",
-  "base_run_id": "20261016T211736Z_3e8eb87e",
-  "created_utc": "20261016T211909Z",
+  "base_run_id": "20261016T221825Z_3e8eb87e",
+  "created_utc": "20261016T221957Z",
   "git": {
-    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
+    "sha": "06cc8d82855ddee0c3f95fa848af49836a7e0d2d",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -16,7 +16,7 @@
     "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
     "run.py": "06b516de8c499e834aa316d796aa7b1b7586a9d9acd2131e26d7244f2ccb90a9",
     "data_audit.py": "e01e63fd3ccb2f924e800be1b7dc0de21fee657f47985a9dd020986aba4c5a69",
-    "paper_numbers.yaml": "ddd3b031e9d03d702192094f236f56b3bba6c6c21f5d27aaf421d35c70863325"
+    "paper_numbers.yaml": "e2e1a2a89bb7f0da2183dd7f39222409f1f4baa7c7a82dfc2f40624b9fa521f2"
   },
   "inputs": {
     "daily": {
@@ -24,12 +24,12 @@
       "sha256": "47d0542600dbce8339e3bfff34a7648f3a37107b1cc86af8c45de1c75f1dca1d"
     },
     "base_panel": {
-      "path": "data/cache/panel_20261016T211736Z_3e8eb87e.parquet",
+      "path": "data/cache/panel_20261016T221825Z_3e8eb87e.parquet",
       "sha256": "3a1397327cc45f1fbf200d262c58df7d55a7c90ccc05b11b5676968255699cd9"
     },
     "base_manifest": {
-      "path": "results/20261016T211736Z_3e8eb87e/run_manifest.json",
-      "sha256": "5ecb4772d9ff2b8f756ee2d1a35e58bf4ced9d80c6e3f8e900cd1ad69960a924"
+      "path": "results/20261016T221825Z_3e8eb87e/run_manifest.json",
+      "sha256": "382cf930fb160c138c1e42b5011cf8271a6dec8b6cdf7d255fb01cee00b8982a"
     }
   },
   "data_matches_base": true,
@@ -106,13 +106,13 @@
     "SUMMARY.md"
   ],
   "timings_sec": {
-    "load": 6.808,
-    "monthly": 1.601,
-    "an12_measures": 0.971,
-    "an12_fm": 2.179,
-    "ivol_channel": 0.754,
-    "write": 0.144,
-    "total": 15.635
+    "load": 6.574,
+    "monthly": 1.591,
+    "an12_measures": 0.903,
+    "an12_fm": 2.152,
+    "ivol_channel": 0.696,
+    "write": 0.127,
+    "total": 15.243
   },
-  "peak_rss_mb": 845.9
+  "peak_rss_mb": 850.6
 }

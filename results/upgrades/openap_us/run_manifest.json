@@ -1,11 +1,11 @@
 {
   "upgrade": "openap_us",
-  "run_id": "20261016T212148Z_openap_us",
-  "created_utc": "20261016T212148Z",
-  "base_run_id": "20261016T211736Z_3e8eb87e",
+  "run_id": "20261016T222236Z_openap_us",
+  "created_utc": "20261016T222236Z",
+  "base_run_id": "20261016T221825Z_3e8eb87e",
   "base_run_used_for": "provenance only (US data do not depend on the crypto panel)",
   "git": {
-    "sha": "f526a1b288d27bbb03ff0db9ecca93714e7313ff",
+    "sha": "06cc8d82855ddee0c3f95fa848af49836a7e0d2d",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -13,7 +13,7 @@
   "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
   "code_sha256": {
     "openap_us.py": "10fa4c0b043d0352f4b20d6bcecdcf7d101d8d624bae7f27106f9e9f60781650",
-    "paper_numbers.yaml": "ddd3b031e9d03d702192094f236f56b3bba6c6c21f5d27aaf421d35c70863325"
+    "paper_numbers.yaml": "e2e1a2a89bb7f0da2183dd7f39222409f1f4baa7c7a82dfc2f40624b9fa521f2"
   },
   "input_data": {
     "openap/PredictorLSretWide.csv": {
@@ -73,10 +73,10 @@
   "seed": 20261017,
   "seed_used": false,
   "timings_sec": {
-    "download": 0.006,
+    "download": 0.007,
     "load": 0.047,
-    "tests": 0.08,
-    "total": 0.166
+    "tests": 0.077,
+    "total": 0.164
   },
   "tables": [
     "correlation.csv",
