@@ -751,7 +751,8 @@ def write_summary(out: Path, base: str, tabs: dict, paper: dict, hlz: float, blo
     ms, mr = g("fm2_lnA_C", "sim_scaled_to_real_crit_1.96"), g("fm2_lnA_C", "real_se_nw_crit_1.96")
     if np.isfinite(ms) and np.isfinite(mr):
         ratio = mr / ms
-        L.append(f"- MDE from the real SE / MDE from the simulation (FM lnA_C) = {_f(ratio)}: "
+        L.append(f"- MDE from the real SE / MDE from the simulation (FM lnA_C) = {_f(ratio)} (an estimate: the simulated "
+                 "MDE is rescaled to our N×T by √(N·T)): "
                  + ("the simulation substantially understates the noise of real returns, so we rely on the MDE from the real SE."
                     if ratio > 2 else "the simulation and the real SE agree in order of magnitude."
                     if ratio >= 0.5 else "the real SE is clearly smaller than the simulated one; the simulated MDE is conservative."))
@@ -784,7 +785,11 @@ def write_summary(out: Path, base: str, tabs: dict, paper: dict, hlz: float, blo
              "or an average cross-sectional s.d.; ours is the average cross-sectional s.d. The ratio of the MDE to the paper's effect is an estimate.")
     L.append("- Dropping a year joins the neighbouring months in the NW estimate; betas/CMOM are not re-estimated.")
     L.append("- The simulated MDE depends on the DGP (noise, number of coins); rescaling to the real N×T is an estimate, not a measurement.")
-    L.append(f"- The HLZ bar t>{hlz:g} is shown next to 1.96; in world 0 NW(6) over-rejects, so 1.96 is laxer than its nominal level.")
+    lo = w0["fpr_1.96"] - 1.96 * w0["fpr_1.96_se"]
+    rej = ", ".join(w0.loc[lo > 0.05, "stat"]) or "none"
+    L.append(f"- The HLZ bar t>{hlz:g} is shown next to 1.96. In world 0 the NW(6) false-positive rate at 1.96 is "
+             f"{_f(100 * w0['fpr_1.96'].min(), 1)}–{_f(100 * w0['fpr_1.96'].max(), 1)}%; its 95% CI (±1.96 s.e.) excludes 5% "
+             f"only for {rej}, so 1.96 may be laxer than its nominal level, clearly so only for those statistics.")
     if not chk["match"].all():
         L.append("- The point estimates differ from the base run; the interpretation is invalid until this is fixed.")
     text = "\n".join(L) + "\n"

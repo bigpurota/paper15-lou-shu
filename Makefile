@@ -1,5 +1,5 @@
 # Lou & Shu (2017) on Binance spot. `make all` is the single command (data -> tests -> sims -> run -> report ->
-# upgrades -> ledger -> docs). It has been run on a clean clone (with cached downloads), and a from-scratch clone
+# upgrades -> ledger -> docs -> check-outputs). It has been run on a clean clone (with cached downloads), and a from-scratch clone
 # redid the downloads on an older commit: results/repro/ and README "Reproducibility".
 PY      := .venv/bin/python
 PYI     := $(PY) -I
@@ -86,7 +86,9 @@ ledger: | $(STAMP)
 	$(PYI) src/robustness_extra.py $(CONFIG) --ledger-only
 
 # README.md and slides/PLAN.md: every number is refilled from results/ (see src/build_docs.py); the same
-# values go to slides/gen/values.tex and the slide tables to slides/gen/*.tex
+# values go to slides/gen/values.tex and the slide tables to slides/gen/*.tex. The docs also list the files that were
+# uncommitted at build time, so after a commit that changed other files run `make docs slides` again and commit the
+# regenerated files (they are excluded from that list, so `build_docs.py --check --strict` then passes on the commit)
 docs: | $(STAMP)
 	$(PYI) src/build_docs.py
 

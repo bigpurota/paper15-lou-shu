@@ -20,9 +20,9 @@ audit_events.csv,identical,0.0
 audit_summary.csv,identical,0.0
 factors.csv,identical,0.0
 panel_summary.csv,identical,0.0
-paper_vs_us.csv,identical,0.0
+paper_vs_us.csv,numbers_identical_text_differs,0.0
 placebo.csv,identical,0.0
-report_diagnostics.csv,identical,0.0
+report_diagnostics.csv,identical_common_rows,0.0
 ret_distribution.csv,identical,0.0
 ret_extremes.csv,identical,0.0
 ret_influence.csv,identical,0.0

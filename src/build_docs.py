@@ -228,20 +228,29 @@ def uncommitted_text(mod: list[str], new: list[str]) -> str:
             + ("; untracked: " + ", ".join(nl) if nl else ""))
 
 
-# code state that a pytest log refers to: tracked changes against HEAD plus untracked files, code paths only
+# code state that a pytest log refers to: the content of the code paths (tracked and untracked, not ignored)
 CODE_PATHS = ["src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"]
+EMPTY_DIFF16 = hashlib.sha256(b"").hexdigest()[:16]     # legacy logs: "<sha7>+<this>" = a clean checkout of <sha7>
 
 
 def code_state_hash() -> str:
+    """'tree:<sha256[:16]>' over the paths and bytes of every code file in the working tree. It does not depend on
+    HEAD, so a commit that changes no code (e.g. docs only) keeps the hash of the code a test log ran on."""
     h = hashlib.sha256()
-    h.update(subprocess.run(["git", "diff", "HEAD", "--", *CODE_PATHS], cwd=ROOT, capture_output=True).stdout)
-    new = subprocess.run(["git", "ls-files", "--others", "--exclude-standard", "--", *CODE_PATHS], cwd=ROOT,
-                         capture_output=True, text=True).stdout.split()
-    for f in sorted(new):
-        h.update(f.encode())
+    files = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", *CODE_PATHS],
+                           cwd=ROOT, capture_output=True, text=True).stdout.split("\n")
+    for f in sorted({f for f in files if f.strip() and (ROOT / f).is_file()}):
+        h.update(f.encode() + b"\0")
         h.update((ROOT / f).read_bytes())
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    return head[:7] + "+" + h.hexdigest()[:16]
+    return "tree:" + h.hexdigest()[:16]
+
+
+def code_same_as_commit(sha: str) -> bool:
+    """True if the working tree's code paths equal those of commit `sha` (no diff, no untracked code files)."""
+    diff = subprocess.run(["git", "diff", "--quiet", sha, "--", *CODE_PATHS], cwd=ROOT).returncode
+    new = subprocess.run(["git", "ls-files", "--others", "--exclude-standard", "--", *CODE_PATHS], cwd=ROOT,
+                         capture_output=True, text=True).stdout.strip()
+    return diff == 0 and not new
 
 
 def deviation_ranges(path: Path) -> str:
@@ -461,6 +470,7 @@ def sim_values(V: Values, B: dict, R: Path) -> None:
             why = f"rule {r.rule}"
         fails.append(f"world {r.world}, {stat}: {pc(r.value, 1)} ({why})")
     V.put("sim.checks.failed", "; ".join(fails) if fails else "none")
+    V.put("sim.checks.nfail", len(fails))
     # criteria of the form 'share <= x' for signals that should be unpriced: say how loose they are
     rule = chk.rule.astype(str).str.strip()
     loose = chk[rule.str.startswith("<=")]
@@ -881,6 +891,18 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
     crit_res = float(w0r.crit_abs_t_5pct.max())
     V.put("w0.crit_res_min", fx(w0r.crit_abs_t_5pct.min(), 2))
     V.put("w0.crit_res_max", fx(crit_res, 2))
+    # distribution-free 95% CI of the 95% quantile of |t| (order statistics; binomial ranks), from the world-0 runs
+    from scipy.stats import binom
+    w0reps = V.csv(U.parent / "simulations" / "sim_world0_reps.csv")
+    los, his = [], []
+    for st in ["fm3_ResLnA", "fm4_ResLnA"]:
+        x = sorted(w0reps[f"{st}_t"].abs())
+        n = len(x)
+        lo, hi = int(binom.ppf(0.025, n, 0.95)), int(binom.ppf(0.975, n, 0.95)) + 1
+        los.append(x[max(lo, 1) - 1])
+        his.append(x[min(hi, n) - 1])
+    V.put("w0.crit_res_ci", f"{fx(min(los), 2)}–{fx(max(his), 2)}")
+    V.put("w0.reps", len(w0reps))
     res = B["res_rows"]
     res_ps = res[res.paper_t.abs() >= 1.96]
     V.put("sc.res_rep_w0", int(((res_ps.match == "yes") & (res_ps.us_t.abs() >= crit_res)).sum()))
@@ -888,6 +910,8 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
     cal = res_ps[res_ps.id.isin(["FMResLnA", "FMResLnAfour"])]
     V.put("sc.res_cal_n", len(cal))
     V.put("sc.res_cal_w0", int(((cal.match == "yes") & (cal.us_t.abs() >= crit_res)).sum()))
+    V.put("sc.res_cal_above_ci", int(((cal.match == "yes") & (cal.us_t.abs() > max(his))).sum()))
+    V.put("sc.res_cal_rows", "; ".join(f"{r.metric} (t {fx(r.us_t)})" for r in cal.itertuples()) or "none")
     below = res[(res.us_t.abs() >= 1.96) & (res.us_t.abs() < crit_res)]
     V.put("sc.res_below_w0", len(below))
     V.put("sc.res_below_w0_rows", "; ".join(f"{r.metric} (t {fx(r.us_t)})" for r in below.itertuples())
@@ -907,7 +931,11 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
         V.put(f"mde.{k}.ratio", fx(real / paper, 1))
     sim_mde = one(mde, stat="fm2_lnA_C", method="sim_scaled_to_real_crit_1.96").mde
     V.put("mde.fm2.sim", fx(sim_mde, 2))
-    V.put("mde.fm2.sim_ratio", fx(one(mde, stat="fm2_lnA_C", method="real_se_nw_crit_1.96").mde / sim_mde, 2))
+    # an order of magnitude only: real NW-based MDE against a simulation MDE rescaled to our N x T from a coarse
+    # (20-replication) power curve
+    V.put("mde.fm2.sim_ratio", fx(one(mde, stat="fm2_lnA_C", method="real_se_nw_crit_1.96").mde / sim_mde, 0))
+    # the same ratio as robustness/SUMMARY.md prints it (2 decimals), to name that wording in the README
+    V.put("mde.fm2.sim_ratio2", fx(one(mde, stat="fm2_lnA_C", method="real_se_nw_crit_1.96").mde / sim_mde, 2))
     # per-s.d. numbers are each in their own s.d. (ours: mean monthly cs s.d. in the FM sample; paper: 2.53, pp. 13-14),
     # so also give them per log unit of ln A_C and with the paper's slope scaled to our s.d.
     r_real = one(mde, stat="fm2_lnA_C", method="real_se_nw_crit_1.96")
@@ -933,10 +961,12 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
 REPRO_KEYS = ["repro.status", "repro.commit", "repro.steps", "repro.rc", "repro.data_min", "repro.n_files",
               "repro.n_csv", "repro.n_identical", "repro.n_textdiff", "repro.n_numdiff", "repro.daily",
               "repro.verdict", "repro.tests", "repro.groups", "repro.n_png", "repro.n_png_ident", "repro.not_covered",
-              "repro.hf_min", "repro.code_vs", "repro.cover_text"]
-FC_KEYS = ["fc.status", "fc.code", "fc.head", "fc.rc", "fc.min", "fc.tests", "fc.n_man", "fc.n_canon", "fc.clean",
+              "repro.hf_min", "repro.code_vs", "repro.cover_text", "repro.n_other", "repro.other_text",
+              "repro.hf_text", "repro.hf_n", "repro.skip_short", "repro.skip_text"]
+FC_KEYS = ["fc.status", "fc.report_exc", "fc.report_exc_short", "fc.code", "fc.head", "fc.rc", "fc.min", "fc.tests", "fc.n_man", "fc.n_canon", "fc.clean",
            "fc.hist", "fc.prev", "fc.base_n", "fc.base_maxdiff", "fc.base_numdiff", "fc.files", "fc.files_ident",
-           "fc.verdict", "fc.data", "fc.home_n", "fc.home_list", "fc.home_text"]
+           "fc.verdict", "fc.data", "fc.home_n", "fc.home_list", "fc.home_text", "fc.contract", "fc.contract_xfail",
+           "fc.hist_n", "fc.hist_home", "fc.files_diff_text", "fc.base_text"]
 
 
 def repro_values(V: Values, R: Path) -> None:
@@ -950,27 +980,78 @@ def repro_values(V: Values, R: Path) -> None:
         sm = V.json(sj)
         V.put("repro.status", "done")
         V.put("repro.commit", sm["clone_commit"][:7])
-        V.put("repro.steps", " → ".join(x["target"] for x in sm["steps"]))
-        V.put("repro.rc", "every step exited with code 0" if sm["all_steps_rc0"] else "NOT every step exited with code 0")
+        tg = [x["target"] for x in sm["steps"]]
+        # repeated attempts of one target (hf_lambda after network drops) are shown once, with their count
+        V.put("repro.steps", " → ".join(t + (f" ({tg.count(t)} attempts)" if tg.count(t) > 1 else "")
+                                         for t in dict.fromkeys(tg)))
+        hfa = sm.get("hf_attempts") or []
+        bad = [a for a in hfa[:-1] if a["n_failed"]]
+        V.put("repro.rc", ("every step exited with code 0" if sm["all_steps_rc0"] else "NOT every step exited with code 0")
+              + (f", although {len(bad)} of the `upgrade-hf_lambda` attempts had failed downloads" if bad else ""))
         data = [x for x in sm["steps"] if x["target"] == "data"]
         V.put("repro.data_min", fx(data[0]["seconds"] / 60, 0) if data else "n/a")
         hf = [x for x in sm["steps"] if x["target"] == "upgrade-hf_lambda"]
-        V.put("repro.hf_min", fx(hf[0]["seconds"] / 60, 0) if hf else "n/a")
+        V.put("repro.hf_min", fx(sum(x["seconds"] for x in hf) / 60, 0) if hf else "n/a")
+        V.put("repro.hf_n", len(hf))
+        fix = subprocess.run(["git", "log", "--reverse", "--format=%h", "-S", "allow-partial", "--", "src/hf_lambda.py"],
+                             cwd=ROOT, capture_output=True, text=True).stdout.split()
+        if len(hfa) > 1:
+            fails = [f"{a['n_failed']} ({', '.join(f'{n} {k}' for k, n in a['failed_downloads'].items())})"
+                     for a in hfa if a["n_failed"]]
+            V.put("repro.hf_text", (
+                f"`upgrade-hf_lambda` ran {len(hfa)} times because of network drops: the earlier attempts lost "
+                + " and then ".join(fails) + " downloads and still exited with code 0 and wrote results from incomplete "
+                f"data (the code at `{sm['clone_commit'][:7]}` did not fail on failed downloads"
+                + (f"; since `{fix[0]}` it does" if fix else "") + "); the last attempt had "
+                f"{hfa[-1]['n_failed']} failed downloads, and only its outputs were compared; the "
+                f"{len(hfa)} attempts took about {V['repro.hf_min']} min in total"))
+        else:
+            V.put("repro.hf_text", "`upgrade-hf_lambda` ran once")
         V.put("repro.n_files", int(sm["n_files_compared"]))
         V.put("repro.verdict", sm["verdict"])
         V.put("repro.not_covered", ", ".join(f"`{u}`" for u in sm["not_covered"]) if sm["not_covered"] else "none")
         V.put("repro.cover_text", "all seven upgrades were regenerated and compared, including `upgrade-hf_lambda` "
-              f"(about 5 GB of downloads, {V['repro.hf_min']} min)" if not sm["not_covered"] else
+              f"(about 5 GB of downloads, about {V['repro.hf_min']} min over {len(hf)} attempts)" if not sm["not_covered"] else
               "upgrades not regenerated by this clone, so not compared: " + V["repro.not_covered"])
         ck = V.csv(d / "repro_check.csv")
         kind = ck["kind"] if "kind" in ck else pd.Series("csv", index=ck.index).where(ck.group != "data", "parquet")
         cs = ck[kind == "csv"]                       # result CSVs only (data and figures are reported separately)
         V.put("repro.n_identical", int((cs.status == "identical").sum()))
         V.put("repro.n_textdiff", int((cs.status == "numbers_identical_text_differs").sum()))
-        V.put("repro.n_numdiff", int((~cs.status.isin(["identical", "numbers_identical_text_differs"])).sum()))
+        ok_other = {"identical_totals": "a download log whose totals per kind agree (max abs diff {d}; its rows are "
+                                        "split by cache status, which depends on what was already on disk)",
+                    "identical_common_rows": "an id → value table to which a later `src/report.py` added rows; "
+                                             "every value both sides share is identical"}
+        V.put("repro.n_numdiff", int((~cs.status.isin(["identical", "numbers_identical_text_differs",
+                                                       *ok_other])).sum()))
+        oth = cs[cs.status.isin(list(ok_other))]
+        V.put("repro.n_other", len(oth))
+        V.put("repro.other_text", "; ".join(
+            f"`{Path(r.file).name}`, " + ok_other[r.status].format(d=f"{float(r.max_abs_diff):.1e}")
+            for r in oth.itertuples()) or "none")
         dl = ck[ck.group == "data"]
         V.put("repro.daily", f"{dl.status.iloc[0]} ({num(dl.rows_clone.iloc[0])} rows)" if len(dl) else "not compared")
         V.put("repro.n_csv", int(len(cs)))
+        # the comparison leaves out columns named like run-time columns (src/repro_check.py SKIP_COLS); say so
+        if "skipped_cols_rule" in sm:
+            dif_, same_ = sm.get("skipped_cols_differ") or [], sm.get("skipped_cols_identical") or []
+            V.put("repro.skip_short", "timing columns excluded" if not dif_ or all(
+                re.fullmatch(r"sec(_\w+)?|\w*time\w*|runtime", c) for x in dif_ for c in x["cols"].split(";"))
+                  else "some non-timing columns excluded")
+            V.put("repro.skip_text", (
+                "“identical” means identical apart from the columns whose names contain `sec`, `time` or `runtime`, "
+                "which every comparison leaves out (`src/repro_check.py`); "
+                + (f"in {len(dif_)} files these are run-time columns and differ ("
+                   + "; ".join(f"`{Path(x['file']).name}`: {', '.join(f'`{c}`' for c in x['cols'].split(';'))}"
+                               for x in dif_) + ")" if dif_ else "none of them differs")
+                + (f"; the rule also catches {sum(len(x['cols'].split(';')) for x in same_)} columns in {len(same_)} "
+                   "other files that are not timings (" + "; ".join(
+                       f"`{Path(x['file']).name}`: {', '.join(f'`{c}`' for c in x['cols'].split(';'))}" for x in same_)
+                   + "), and these are identical, checked separately" if same_ else "")))
+        else:
+            V.put("repro.skip_short", "columns named like timings excluded, not checked separately")
+            V.put("repro.skip_text", "“identical” means identical apart from the columns whose names contain `sec`, "
+                  "`time` or `runtime`, which every comparison leaves out (`src/repro_check.py`)")
         g = cs.groupby("group", sort=False).size()
         V.put("repro.groups", ", ".join(f"{'base run' if k == 'base' else k} {n}" for k, n in g.items()))
         pg = ck[kind == "png"]
@@ -995,11 +1076,44 @@ def repro_values(V: Values, R: Path) -> None:
     V.put("fc.rc", f"exit code {fc['make_all']['rc']}" if fc["make_all"] else "not logged")
     V.put("fc.min", fx(fc["make_all"]["seconds"] / 60, 0) if fc["make_all"] else "n/a")
     V.put("fc.tests", fc["tests_summary"] or "not logged")
+    V.put("fc.contract", fc.get("tests_contract_summary") or "not logged")
+    hist = fc["historical_runs"]
+    hh = [h for h in hist if h.get("n_home_paths")]
+    V.put("fc.contract_xfail", f"the {len(hh)} historical base runs whose manifests hold home-directory paths"
+          if hh else "none expected")
+    V.put("fc.hist_n", {1: "one", 2: "two", 3: "three", 4: "four"}.get(len(hist), str(len(hist))))
+    # every file under results/ that still holds a home-directory path (history and old logs, never regenerated)
+    leak = sorted(str(q.relative_to(ROOT)) for q in R.rglob("*") if q.is_file() and q.suffix in
+                  (".json", ".md", ".txt", ".csv") and re.search(r"/Users/|/home/", q.read_text(errors="replace")))
+    V.put("fc.hist_home", ", ".join(f"`{x}`" for x in leak) if leak else "none")
+    dif = fc.get("results_files_differing") or []
+    lab = {"numbers_identical_text_differs": "numbers identical, text differs", "differs": "bytes differ",
+           "identical_common_rows": "rows added, shared rows identical"}
+    V.put("fc.files_diff_text", "none" if not dif else
+          "; ".join(f"`{d['file']}` ({lab.get(d['status'], d['status'])})" for d in dif))
+    V.put("fc.base_text", f"{fc.get('base_n_text_or_rows', 0)} of them differ only in text or in rows added later by "
+          "`src/report.py`" if fc.get("base_n_text_or_rows") else "all are identical")
     V.put("fc.n_man", fc["n_manifests"])
     V.put("fc.n_canon", fc["n_canonical"])
     V.put("fc.clean", "all record that commit with `dirty = false`" if fc["canonical_all_same_commit_clean"]
           else "NOT all record one commit with `dirty = false`")
-    V.put("fc.hist", ", ".join(f"`{h['run_id']}` (`{h['git_sha']}`, {'dirty' if h['dirty'] else 'clean'})"
+    # the base run's report stage (report_manifest.json) is not one of the counted run manifests: if `make report`
+    # rewrote it after the clone run, the outputs are not all the clone's, and every provenance sentence says so
+    rpm = R / fc["canonical_base_run"] / "report_manifest.json"
+    rg = V.json(rpm)["git"] if rpm.exists() else None
+    if rg and (rg["sha"][:7] != str(fc["code_commit_run"])[:7] or rg.get("dirty")):
+        rfiles = [Path(d["file"]).relative_to(f"results/{fc['canonical_base_run']}").as_posix() for d in dif
+                  if d["file"].startswith(f"results/{fc['canonical_base_run']}/")]
+        V.put("fc.report_exc", (
+            f", except the base run's report-stage files ({', '.join(f'`{x}`' for x in rfiles) or '`report_manifest.json`'}), "
+            f"which `make report` rewrote afterwards at `{rg['sha'][:7]}`{' (uncommitted changes, dirty = true)' if rg.get('dirty') else ''} "
+            "with reworded explanation texts and added diagnostic rows (no shared number changed; see “Reproducibility”)"))
+        V.put("fc.report_exc_short", f", except {len(rfiles)} report-stage files of the base run, rewritten later by "
+              f"`make report` at `{rg['sha'][:7]}`{' (dirty)' if rg.get('dirty') else ''}: text and added rows only")
+    else:
+        V.put("fc.report_exc", "")
+        V.put("fc.report_exc_short", "")
+    V.put("fc.hist",", ".join(f"`{h['run_id']}` (`{h['git_sha']}`, {'dirty' if h['dirty'] else 'clean'})"
                                for h in fc["historical_runs"]) or "none")
     V.put("fc.prev", fc["base_compared_with"] or "none")
     V.put("fc.base_n", fc["base_n_csv"])
@@ -1009,7 +1123,7 @@ def repro_values(V: Values, R: Path) -> None:
     V.put("fc.files_ident", fc["results_files_identical_to_repo"])
     V.put("fc.verdict", fc["verdict"])
     V.put("fc.data", "linked to the cached downloads of the main working copy" if fc["data_dir_was_link"]
-          else "a directory of the clone")
+          else "a directory of the clone (a copy of the cached downloads)")
     home = mf[(mf.role == "canonical") & (mf.n_home_paths > 0)]
     V.put("fc.home_n", int(len(home)))
     V.put("fc.home_list", ", ".join(f"`{Path(p).parent.name}`" for p in home.manifest) or "none")
@@ -1022,21 +1136,41 @@ def repro_values(V: Values, R: Path) -> None:
 
 
 def tests_log_values(V: Values, R: Path) -> None:
-    """Latest saved pytest log (results/tests_log/) and whether it was run on the code state the docs are built from."""
-    logs = sorted((R / "tests_log").glob("pytest_*.txt"))
+    """Latest saved pytest log (results/tests_log/, latest by its `date:` line, not by file name) and whether it was
+    run on the code these docs are built from (same content hash; for legacy logs of a clean checkout: no code diff
+    between that commit and the working tree)."""
+    keys = ["tests.log", "tests.summary", "tests.date", "tests.code_match", "tests.state"]
+    logs = []
+    for f in (R / "tests_log").glob("pytest_*.txt"):
+        d = re.search(r"^date: (\S+)", V.text(f), re.M)
+        if d:
+            logs.append((d.group(1), f))
     if not logs:
-        for k in ["tests.log", "tests.summary", "tests.date", "tests.code_match"]:
+        for k in keys:
             V.put(k, "n/a")
         return
-    txt = V.text(logs[-1])
-    V.put("tests.log", str(logs[-1].relative_to(ROOT)))
+    date, f = max(logs)
+    txt = V.text(f)
+    V.put("tests.log", str(f.relative_to(ROOT)))
     m = re.findall(r"^(\d+ passed[^\n]*?) in [0-9.]+s", txt, re.M)
     V.put("tests.summary", m[-1] if m else "no pytest summary line")
-    d = re.search(r"^date: (\S+)", txt, re.M)
-    V.put("tests.date", d.group(1) if d else "n/a")
+    V.put("tests.date", date)
+    head = re.search(r"^git HEAD: (\w+)", txt, re.M)
+    dirty = re.search(r"^dirty files: (\d+)", txt, re.M)
     c = re.search(r"^code state: (\S+)", txt, re.M)
-    V.put("tests.code_match", ("matches" if c.group(1) == code_state_hash() else "does NOT match") if c
-          else "cannot be compared with (the log has no code-state line)")
+    sha = head.group(1)[:7] if head else "?"
+    n_dirty = int(dirty.group(1)) if dirty else None
+    V.put("tests.state", f"a clean checkout of `{sha}`" if n_dirty == 0 else
+          f"commit `{sha}` plus {n_dirty} uncommitted code file(s)" if n_dirty else f"commit `{sha}`")
+    if not c:
+        match = "cannot be compared with (the log has no code-state line)"
+    elif c.group(1).startswith("tree:"):
+        match = "matches" if c.group(1) == code_state_hash() else "does NOT match"
+    elif n_dirty == 0 and c.group(1).endswith("+" + EMPTY_DIFF16) and head:
+        match = "matches" if code_same_as_commit(head.group(1)) else "does NOT match"
+    else:
+        match = "cannot be compared with (an older log format of a working tree with uncommitted code)"
+    V.put("tests.code_match", match)
 
 
 # ------------------------------------------------------------------------------------ pre-registration
@@ -1089,9 +1223,10 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         f"`code_sha256` (sha256 of `src/*.py`) records that code state; for the base run (`{V['base.code8']}…`) it "
         f"{V['base.code_commit']}, {V['base.code_checkout']}"
         + (f"; `make all` on a clean clone of `{V['fc.code']}` wrote these outputs ({V['fc.rc']}, "
-           "`results/repro/final_clone/`)" if V["fc.status"] == "done" else "")
-        + (f"; a from-scratch clone of `{V['repro.commit']}` (every download redone) reproduces them numerically "
-           f"(verdict “{V['repro.verdict']}”, `results/repro/`)" if V["repro.status"] == "done" else "")
+           f"`results/repro/final_clone/`){V['fc.report_exc']}" if V["fc.status"] == "done" else "")
+        + (f"; a from-scratch clone of the older commit `{V['repro.commit']}` (every download redone), compared with "
+           f"these outputs, gives the same numbers (verdict “{V['repro.verdict']}”, `results/repro/`)"
+           if V["repro.status"] == "done" else "")
         + " (see “Reproducibility”)._")
 
     # paper vs us: the generated report itself (sections Key findings + Paper vs us)
@@ -1122,9 +1257,13 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         f"{V['sc.res_rep196']} of them at |t| ≥ 1.96 and in {V['sc.res_rep_w0']} at the world-0 empirical 5% "
         f"critical |t| ({V['w0.crit_res_min']}–{V['w0.crit_res_max']}, `results/upgrades/robustness/world0_calibration.csv`); "
         "none pass the HLZ bar of 3. Rows with 1.96 ≤ |t| below the world-0 critical value: "
-        f"{V['sc.res_below_w0_rows']}. World 0 calibrated this threshold only for the full-sample models (3) and "
-        f"(4) at the base N×T ({V['sc.res_cal_w0']} of those {V['sc.res_cal_n']} rows pass it); for the half-sample, "
-        "Table 6 and raw-return rows the same threshold is only an approximation.",
+        f"{V['sc.res_below_w0_rows']}. The cut-off is itself an estimate from {V['w0.reps']} world-0 runs: its "
+        f"distribution-free 95% CI is {V['w0.crit_res_ci']}, so rows near it are at, not clearly above, the cut-off. "
+        "World 0 calibrated this threshold only for the full-sample models (3) and (4), at a similar T but with a "
+        f"larger, balanced cross-section and lighter-tailed noise than ours ({V['sc.res_cal_w0']} of those "
+        f"{V['sc.res_cal_n']} rows pass the point estimate: {V['sc.res_cal_rows']}; {V['sc.res_cal_above_ci']} "
+        "clear the upper end of its CI); for the half-sample, Table 6 and raw-return rows the same threshold is "
+        "only an approximation.",
     ])
     out["paper_vs_us"] = (f"_Below is `{V['base.dir']}/paper_vs_us.md` verbatim (generated by `src/report.py`), "
                           "sections “Key findings” and “Paper vs us”._\n\n#### Key findings\n" + body.strip()
@@ -1219,7 +1358,9 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
          f"{V['hf.b0']}; T10 (3): cost {V['hf.t10.c3']} (paper {V['hf.t10.c3.paper']}), non-cost {V['hf.t10.n3']} "
          f"(paper {V['hf.t10.n3.paper']})",
          f"ln λ is negative over one window of {V['hf.months']} monthly cross-sections; the size of NW(6) at "
-         "this T is not calibrated (world 0 uses the base N×T). It diverges from the paper in Table 9 model (1) and in Table 10 "
+         "this T is not calibrated (world 0 uses the base sample length). The paper's Table 9 regressions control "
+         "for ln ME and B/M and use FF3-adjusted returns; ours cannot (no market caps or book values, D2, D3) and use "
+         "CMKT-adjusted returns, so the sign difference may reflect the missing size control. It diverges from the paper in Table 9 model (1) and in Table 10 "
          "(our cost part is significantly negative where the paper's is zero; in T10 model (3) our non-cost part "
          f"is insignificant, {V['hf.t10.n3']}, where the paper's is significant, {V['hf.t10.n3.paper']}; alone, in "
          f"model (2), it is {V['hf.t10.n2']}, the paper's sign, at 1.96 only, against {V['hf.t10.n2.paper']}). In model (2) the signs agree (ln λ {V['hf.b2lam']} vs "
@@ -1237,13 +1378,17 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         ["4. Sentiment (Table 13)", "Is the premium larger after high Fear & Greed (mispricing)?",
          f"L−S {V['se.ls']} (paper {V['se.ls.paper']}); short {V['se.short']} (paper {V['se.short.paper']}); long "
          f"{V['se.long']} (paper {V['se.long.paper']}); FM slope of ln A_C on sentiment {V['se.fm']}; with "
-         f"CMKT(t−1), post hoc, L−S {V['se.post.ls']}",
+         f"CMKT(t−1), post hoc, L−S {V['se.post.ls']}. Not like for like: the paper sorts on AT_C (turnover) with "
+         "coefficients per unit of its sentiment index; ours sort on A_C with coefficients per 1 s.d. of Fear & Greed, "
+         "so compare sign and t only",
          f"not confirmed: the short leg and L−S have the paper's sign, the long leg does not; {V['se.var_196']} of "
          f"{V['se.var_n']} L−S portfolio variants not labelled post hoc pass 1.96. The FM slope {V['se.fm']} is borderline "
          "at 1.96 and below HLZ (world 0 did not calibrate this time-series statistic)", f"`{U}/sentiment/`"],
         ["5. Market illiquidity (Table 12)", "Is the premium larger when the market is illiquid?",
          f"L−S {V['il.ls']} (paper {V['il.ls.paper']}); log state {V['il.log']}; with CMKT(t−1), post hoc, "
-         f"{V['il.post.ls']}; median split {V['il.split']}",
+         f"{V['il.post.ls']}; median split {V['il.split']}. Not like for like: the paper sorts on AT_C (turnover) with "
+         "coefficients per unit of the Pástor–Stambaugh index; ours sort on A_C with coefficients per 1 s.d. of the "
+         "AR(2) state, so compare sign and t only",
          f"the paper's sign; {V['il.var_3']} of {V['il.var_n']} variants not labelled post hoc pass 3, and the main t "
          f"{V['il.ls.bonf']} Bonferroni over the whole ledger (|t| {V['lg.all.crit']}). The AR(2) state is fitted on the full sample "
          "(look-ahead), and because A contains |r| our state mixes illiquidity with market volatility, so we do not "
@@ -1252,7 +1397,9 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
          f"FM ln A_C (2) {V['mx.fm2']} (paper {V['mx.fm2.paper']}); Res.lnA (4) {V['mx.fm4res']} (paper "
          f"{V['mx.fm4res.paper']}); raw returns ln A_C (2) {V['mx.raw.fm2ac']}, (4) {V['mx.raw.fm4ac']}; H-L A_C {V['mx.hlAC']}, alpha "
          f"{V['mx.hlACalpha']}, SMB loading {V['mx.smb']}; H-L Res.A {V['mx.hlResA']} (paper {V['mx.hlResA.paper']})",
-         f"partial: the positive ln A_C slope repeats at 1.96 (not HLZ; insignificant on raw returns over all their "
+         f"partial: the positive ln A_C slope repeats at 1.96 (model (2) not at HLZ; at the HLZ bar: {V['mx.hlz_list']}, "
+         f"with NW(6) size on MOEX not calibrated; the ln ME control uses today's share count for every month, a "
+         f"look-ahead; insignificant on raw returns over all their "
          f"months, but over the months of the main FM, post hoc, model (4) gives {V['mx.rawsame.fm4ac']}), the paper's "
          f"negative Res.lnA does not; the insignificant sort spread loads on SMB; post hoc: {V['mx.topyear_share']} of the "
          f"cumulative H-L comes from {V['mx.topyear']}", f"`{U}/moex/`"],
@@ -1304,15 +1451,19 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         + f"the {V['lg.all.bonf_hf_n']} hf_lambda rows all come from the one {V['hf.months']}-month λ window "
         f"({V['lg.all.bonf_hf']}); the {V['lg.all.bonf_sent_n']} sentiment row(s): {V['lg.all.bonf_sent']} (the main "
         f"market-illiquidity specification uses controls {V['il.main_controls']}).",
-        f"- **Test size.** In world 0, NW(6) on our N×T gives false |t| > 1.96 in {V['w0.fpr_min']}–{V['w0.fpr_max']} "
-        f"of runs (|t| > 3 in at most {V['w0.fpr3_max']}); the empirical 5% critical |t| is {V['w0.crit_min']}–"
-        f"{V['w0.crit_max']}. Simulation criteria passed: {V['sim.checks.pass']} of {V['sim.checks.n']}; failed: "
+        f"- **Test size.** In world 0 ({V['sim.assets']} coins × {V['sim.months']} months: a T similar to ours, but a "
+        "larger, balanced cross-section with lighter-tailed noise), NW(6) gives false |t| > 1.96 in "
+        f"{V['w0.fpr_min']}–{V['w0.fpr_max']} of runs (|t| > 3 in at most {V['w0.fpr3_max']}): all point estimates are "
+        "above 5%, but only the Res.lnA rates have a 95% CI that excludes 5% at "
+        f"{V['w0.reps']} runs. The empirical 5% critical |t| is {V['w0.crit_min']}–{V['w0.crit_max']} (for Res.lnA "
+        f"{V['w0.crit_res_min']}–{V['w0.crit_res_max']}, 95% CI {V['w0.crit_res_ci']}). Simulation criteria passed: {V['sim.checks.pass']} of {V['sim.checks.n']}; failed: "
         f"{V['sim.checks.failed']}. {V['sim.checks.loose_n']} of the passed criteria use the loose rule "
         f"“share {V['sim.checks.loose_rule']}” for signals that should be unpriced (world P falsely prices ln A_C in "
         f"{V['sim.checks.loose_max']} of runs); with a ≤ 5% rule for those, {V['sim.checks.pass_strict5']} of "
         f"{V['sim.checks.n']} would pass. The P0 item “about 5% in world 0” is therefore not met, which is why we show the "
-        "world-0 empirical threshold and the HLZ bar of 3 next to 1.96. This calibration covers the base N×T only "
-        f"(not the {V['hf.months']}-month λ window or the overlapping 12-month A&N measures).",
+        "world-0 empirical threshold and the HLZ bar of 3 next to 1.96. This calibration covers the base sample "
+        f"length only (not the {V['hf.months']}-month λ window or the overlapping 12-month A&N measures), and its "
+        "balanced, lighter-tailed panel is not our real panel.",
         f"- **Block bootstrap over months** ({V['rb.block']}-month blocks, {V['rb.draws']} draws, plus {V['rb.seeds']} "
         f"seeds): the CI excludes zero for {V['rb.excl']} of {V['rb.n']} statistics, robustly across seeds for "
         f"{V['rb.robust']} (FM Res.lnA (3) {V['rb.ci.fm3_ResLnA']}, (4) {V['rb.ci.fm4_ResLnA']}); FM ln A_C (4) is "
@@ -1337,8 +1488,9 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         f"{V['mde.fm2.paper_slope']} ({V['mde.fm2.slope_ratio']}× larger); per 1 s.d., {V['mde.fm2']} (our s.d. "
         f"{V['mde.fm2.sd']}) against {V['mde.fm2.paper']} for the paper (its s.d. {V['mde.fm2.paper_sd']}, "
         f"pp. 13–14), i.e. {V['mde.fm2.ratio']}×, or {V['mde.fm2.paper_oursd']} if the paper's slope is multiplied by "
-        f"our s.d. The real-data MDE is {V['mde.fm2.sim_ratio']}× the simulation MDE, so the simulations understate "
-        "the noise. Insignificance here does not show that a premium of the paper's size is absent.",
+        f"our s.d. The real-data MDE is roughly {V['mde.fm2.sim_ratio']}× the simulation MDE (an estimate: the real "
+        "Newey–West-based MDE against a simulation MDE rescaled to our sample size from a power curve with 20 "
+        "replications per point), so the simulations understate the noise. Insignificance here does not show that a premium of the paper's size is absent.",
         "- **Survivorship and look-ahead.** The universe includes USDT pairs that were later delisted (they are in "
         "the `data.binance.vision` listing); whether that archive holds every pair ever traded was not checked, the "
         "number of delisted pairs is not recorded in `results/`, and delisting returns are missing (D10). The signal "
@@ -1346,8 +1498,9 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         "IVOL from raw prices for 40 random rows of a synthetic panel, and its mutation tests (signal lag 1 or 0) "
         "show that the check flags a shifted signal. It does not cover Res.A/Res.lnA, |Ret|, DIF, the 12-month "
         "A&N measures or the separate panels of the upgrades (`hf_lambda`, `moex`, `sentiment`). Latest saved test "
-        f"log: `{V['tests.log']}` ({V['tests.summary']}; its code-state hash {V['tests.code_match']} the code these "
-        "docs were built from). Uncommitted work: see “What was not done”.",
+        f"log (by its date line): `{V['tests.log']}` ({V['tests.date']}, {V['tests.state']}: {V['tests.summary']}); "
+        f"its code-state hash {V['tests.code_match']} the code these docs were built from. Uncommitted work: see "
+        "“What was not done”.",
         "- **Post hoc variants** (added after we saw the main result; not pre-registered) are labelled in the "
         "`SUMMARY.md` of each upgrade and are never the main specification. In the CSVs, "
         "`hf_lambda/variants.csv` and `sentiment/panel_b.csv` carry a post hoc column, and "
@@ -1387,7 +1540,12 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     pvu = B["pvu"].set_index("id")
     sel = ["corrAAC", "QratioAC", "corrAabs", "HLArawCoef", "HLACrawCoef", "HLACalphaCoef", "HLResArawCoef",
            "FMlnA", "FMlnAC", "FMResLnA", "FMResLnAfour", "IMLAalpha"]
-    srows = [[pvu.loc[i, "metric"], V[f"pvu.{i}.paper"], V[f"pvu.{i}"], pvu.loc[i, "match"]] for i in sel]
+    # 'yes' with opposite signs (both insignificant) is marked with an asterisk, explained under the table
+    def mark(i):
+        m = pvu.loc[i, "match"]
+        opp = pvu.loc[i, "kind"] == "t" and pvu.loc[i, "us"] * pvu.loc[i, "paper"] < 0
+        return m + "*" if m == "yes" and opp else m
+    srows = [[pvu.loc[i, "metric"], V[f"pvu.{i}.paper"], V[f"pvu.{i}"], mark(i)] for i in sel]
     T = B.setdefault("tables", {})
     T["slide8"] = (["metric", "paper (NYSE/AMEX 1964–2012)", "us (Binance)", "match"], srows)
 

@@ -100,11 +100,11 @@ Res.$\ln A$: the residual of a cross-sectional regression of $\ln A$ on $\ln A_C
 \end{column}
 \end{columns}
 \medskip
-\textbf{First we tested on simulations whether the pipeline tells the hypotheses apart} (\V{sim.assets} coins × \V{sim.months} months; \V{sim.checks.pass} of \V{sim.checks.n} criteria pass, the world-0 size criterion fails):
+\textbf{First we tested on simulations whether the pipeline tells the hypotheses apart} (\V{sim.assets} coins × \V{sim.months} months; \V{sim.checks.nfail} of \V{sim.checks.n} criteria fail: world-0 size for Res.lnA (2), world-P Res.$A$ sort):
 \begin{itemize}
 \item world V (volume premium): $A_C$ significant in \V{sim.V.fm2} of runs, Res.lnA in \V{sim.V.fm3};
 \item world P (price-impact premium): Res.lnA significant in FM in \V{sim.P.fm3}, in the quintile sort only in \V{sim.P.hlResA}; but $\ln A_C$ is also falsely significant in \V{sim.P.fm2}.
-\item Simulated noise is smaller than real noise: the real SE of the $A_C$ spread is \V{d.seRatioHlAC} times the simulated one, so power on real data is much lower.
+\item Simulated noise is smaller than real noise: the real SE of the $A_C$ spread is about \V{d.seRatioHlAC}--\V{d.seRatioHlACnw} times the simulated one (an estimate), so power on real data is much lower.
 \end{itemize}
 \src{results/simulations/sim\_world\_summary.csv; results/upgrades/robustness/}
 \end{frame}
@@ -149,7 +149,7 @@ Res.$A$ & \V{q.ResA.paper} & \V{pvu.HLResArawCoef.paper} \\
 \item FM: $\ln A_C$ \V{pvu.FMlnAC.paper}; Res.lnA \V{pvu.FMResLnA.paper}.
 \item The paper's logic: the part of $A$ beyond volume is priced with a negative sign, so the premium is not for price impact.
 \end{itemize}
-\src{src/paper\_numbers.yaml (transcribed from the PDF with pdftotext; page references in the file; no automated check)}
+\src{src/paper\_numbers.yaml (transcribed with pdftotext, checked against the PDF by hand; page references in the file; no automated check)}
 \end{frame}
 
 % ------------------------------------------------------------------------------------------ 7
@@ -175,18 +175,18 @@ Without March 2021 (altcoin season) the $A_C$ spread is \V{d.exMeanAC} \%/month 
 % ------------------------------------------------------------------------------------------ 8
 \speaker{Ksenia Stepanova}
 \begin{frame}{The paper versus us}
-\msg{Signs agree for \V{sc.samesign} of \V{sc.ls_n}. The paper's significance repeats in \V{sc.rep196} of its \V{sc.paper_sig} significant rows, mostly Res.lnA (\V{sc.res_rep196} of \V{sc.res_paper_sig}; \V{sc.res_rep_w0} at the world-0 cut-off); none at HLZ.}
+\msg{Signs agree for \V{sc.samesign} of \V{sc.ls_n}. The paper's significance repeats in \V{sc.rep196} of its \V{sc.paper_sig} significant rows, mostly Res.lnA (\V{sc.res_rep196} of \V{sc.res_paper_sig}; \V{sc.res_rep_w0} at the world-0 cut-off, CI \V{w0.crit_res_ci}); none at HLZ.}
 {\scriptsize\input{gen/slide8.tex}}
 \par
-{\scriptsize Also repeated: ln|Ret| in Table 2 (\V{pvu.TtwolnAbs}), ln $A_C$ in the first half (\V{pvu.SubAlnAC}). Below the world-0 5\% cut-off (\V{w0.crit_res_min}–\V{w0.crit_res_max}; calibrated for full-sample models (3)/(4) only): Res.lnA with IVOL (\V{pvu.FMResLnAivol}), on raw returns (\V{pvu.RawResLnA}).\\
-\textbf{Why the volume premium may be insignificant:} (1) power (measured): \V{n.months} months against \V{d.paperMonths}, MDE80 of the $A_C$ spread \V{mde.hlAC} \%/month; hypotheses, not tested: (2) another market, where volume rises with volatility; (3) no size or B/M control (CMKT, not FF3).\par}
-\src{all \V{sc.ls_n} rows with explanations: README.md and \V{base.dir}/paper\_vs\_us.md}
+{\scriptsize *\,Both insignificant, opposite signs. Also repeated: ln|Ret| in Table 2 (\V{pvu.TtwolnAbs}), ln $A_C$ in the first half (\V{pvu.SubAlnAC}). World-0 cut-off \V{w0.crit_res_min}–\V{w0.crit_res_max} (models (3)/(4) only); below it: Res.lnA with IVOL (\V{pvu.FMResLnAivol}), on raw returns (\V{pvu.RawResLnA}).\\
+\textbf{Why the volume premium may be insignificant:} (1) power (measured): \V{n.months} vs \V{d.paperMonths} months, MDE80 of the $A_C$ spread \V{mde.hlAC} \%/month; untested hypotheses: (2) another market, where volume rises with volatility; (3) no size or B/M control (CMKT, not FF3).\par}
+\src{All \V{sc.ls_n} rows: README.md, paper\_vs\_us.md}
 \end{frame}
 
 % ------------------------------------------------------------------------------------------ 9
 \speaker{Andrey Tsember}
 \begin{frame}{HF benchmark: λ from 5-minute bars, trade sign from taker volume}
-\msg{$A$ correlates with λ at \V{hf.corr.A} (paper \V{hf.corr.A.paper}). In one \V{hf.months}-month window ln λ has a negative FM slope (\V{hf.b1}; size of NW(6) at this T not calibrated), unlike Table 9 model (1); the $A_C$ premium is absent in this window, so this may be a window effect.}
+\msg{$A$ correlates with λ at \V{hf.corr.A} (paper \V{hf.corr.A.paper}). In one \V{hf.months}-month window ln λ has a negative FM slope (\V{hf.b1}; size of NW(6) at this T not calibrated), unlike Table 9 model (1) (with size and B/M controls that we lack); the $A_C$ premium is absent in this window, so this may be a window effect.}
 {\scriptsize\input{gen/slide9.tex}}
 \par\smallskip
 {\scriptsize
@@ -248,7 +248,7 @@ Res.lnA: \V{an.V3m} with IVOL, \V{an.V5m} with $\ln|Ret|$ + IVOL; R² of Res.lnA
 \item Hypothesis, untested: Lee–Ready errors could attenuate the paper's λ (the paper checks its λ against Hasbrouck's estimates). Our λ is priced negatively, so ``a noisy λ hides a premium'' is not supported by our data.
 \item US before 2012 only: after 2012 the raw OpenAP Illiquidity L$-$S fell (\V{op.ill.pre} → \V{op.ill.post}); its FF3+UMD alpha is insignificant in both periods (\V{op.pre.ff4} → \V{op.post.ff4}) and the SMB loading fell (\V{op.pre.smb} → \V{op.post.smb}): consistent with lower size exposure, not tested formally. OpenAP (NYSE only, price above 5 dollars, annual rebalancing) is not the paper's design (NYSE/AMEX, monthly $A$ at $t-2$, monthly rebalancing).
 \end{enumerate}
-Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\ln A_C$ slope repeats at 1.96 (model (2) \V{mx.fm2}, not HLZ; raw returns: model (2) \V{mx.raw.fm2ac}, model (4) \V{mx.raw.fm4ac}), but the paper's negative Res.lnA does not (\V{mx.fm4res}).
+Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\ln A_C$ slope repeats at 1.96 (model (2) \V{mx.fm2}; (1) and (5) at HLZ, B5; raw returns: model (2) \V{mx.raw.fm2ac}, model (4) \V{mx.raw.fm4ac}), but the paper's negative Res.lnA does not (\V{mx.fm4res}).
 \end{column}
 \end{columns}
 \end{frame}
@@ -262,7 +262,7 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \begin{itemize}
 \item Base specification committed before the first run (git \V{git.prereg}); later changes J1, J2 logged. In that first run no T4 slope reached 1.96 (Res.lnA (3) \V{fr.fm3res}); the J1 audit rules were designed after it, so the Res.lnA significance depends on a post-first-run data fix. Upgrade specifications and verdict rules were not pre-registered in git; post hoc variants are labelled.
 \item Ledger of every t: base family \V{lg.base.n} tests, |t| > 1.96 for \V{lg.base.196} (\V{lg.base.exp}–\V{w0.exp_base} expected under the null; most are correlated variants of the Res.lnA hypothesis, so this is not a formal test); |t| > 3 for \V{lg.base.3}; Bonferroni/BH \V{lg.base.bonf}/\V{lg.base.bh}.
-\item Size in world 0: NW(6) gives \V{w0.fpr_min}–\V{w0.fpr_max} false |t| > 1.96; empirical 5\% cut-off \V{w0.crit_min}–\V{w0.crit_max}. Simulations: \V{sim.checks.pass} of \V{sim.checks.n} criteria pass (\V{sim.checks.loose_n} under a loose ``share \V{sim.checks.loose_rule}'' rule; \V{sim.checks.pass_strict5} with 5\%); failed: {\color{warn}\V{sim.checks.failed}}.
+\item Size in world 0 (a balanced, lighter-tailed panel): NW(6) gives \V{w0.fpr_min}–\V{w0.fpr_max} false |t| > 1.96; empirical 5\% cut-off \V{w0.crit_min}–\V{w0.crit_max}. Simulations: \V{sim.checks.pass} of \V{sim.checks.n} criteria pass (\V{sim.checks.loose_n} under a loose ``share \V{sim.checks.loose_rule}'' rule; \V{sim.checks.pass_strict5} with 5\%); failed: {\color{warn}\V{sim.checks.failed}}.
 \item Month-block bootstrap: a CI excluding zero is stable for only \V{rb.robust} of \V{rb.n} statistics (both Res.lnA). Placebo: shuffling the measures within month (\V{plc.shuffle_reps} permutations) gives |mean t| $\le$ \V{plc.shuffle_maxabs_meant}, s.d. of t \V{plc.shuffle_sd_t_min}–\V{plc.shuffle_sd_t_max}, share |t| > 1.96 $\le$ \V{plc.shuffle_share196_max}; a lag-0 signal (contemporaneous, not a pure leak test) gives |t| up to \V{plc.leak_maxabs_t}.
 \item Survivorship: later-delisted pairs kept (count not recorded), no delisting returns. Costs: break-even \V{ed.breakeven} per side, from an insignificant gross spread. Non-stationarity: $\ln A_C$ \V{pvu.SubAlnAC} in the first half, \V{pvu.SubBlnAC} in the second.
 \item Out of sample: MOEX (variants not pre-registered in git), US after 2012 (ready-made OpenAP portfolios). Robustness, not out of sample: without 2021.
@@ -306,7 +306,7 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 
 \owner{Sofya Shapovalova}
 \begin{frame}{B2. Simulations: worlds V / P / 0}
-\msg{In world V $A_C$ is priced, in world P Res.lnA; in world 0 NW(6) over-rejects noticeably (\V{sim.0.fm3} for Res.lnA instead of 5\%; a P0 criterion fails).}
+\msg{In world V $A_C$ is priced, in world P Res.lnA; in world 0 NW(6) false positives are above 5\%, significantly so only for Res.lnA (\V{sim.0.fm3}; a P0 criterion fails).}
 {\scriptsize\input{gen/sims.tex}}
 \par\medskip
 {\small \V{sim.checks.pass} of \V{sim.checks.n} criteria pass; \V{sim.checks.loose_n} of them use the loose rule ``share \V{sim.checks.loose_rule}'' for unpriced signals (world P falsely prices $\ln A_C$ in \V{sim.checks.loose_max}); with 5\% instead, \V{sim.checks.pass_strict5} pass. Failed: \V{sim.checks.failed}.}
@@ -336,7 +336,7 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \small
 \begin{itemize}
 \item \textbf{EDGE and costs:} H-L $A_C$ gross \V{ed.gross}, net \V{ed.net}; daily EDGE does not measure the spread (gap weight \V{ed.w2}); break-even cost \V{ed.breakeven} per side, computed from an insignificant gross spread that rests on March 2021.
-\item \textbf{MOEX TQBR:} FM $\ln A$ \V{mx.fm1}, $\ln A_C$ \V{mx.fm2}, Res.lnA (4) \V{mx.fm4res} (paper \V{mx.fm4res.paper}); $A_C$ spread \V{mx.hlAC}, Res.$A$ spread \V{mx.hlResA} (paper \V{mx.hlResA.paper}), alpha \V{mx.hlACalpha}, SMB loading \V{mx.smb}; FM with $\ln$ ME keeps $\ln A_C$ (\V{mx.fm4ac}). Post hoc: \V{mx.topyear} gives \V{mx.topyear_share} of the total spread.
+\item \textbf{MOEX TQBR:} FM $\ln A$ \V{mx.fm1} (at the HLZ bar: \V{mx.hlz_list}; NW size on MOEX uncalibrated), $\ln A_C$ \V{mx.fm2}, Res.lnA (4) \V{mx.fm4res} (paper \V{mx.fm4res.paper}); $A_C$ spread \V{mx.hlAC}, Res.$A$ spread \V{mx.hlResA} (paper \V{mx.hlResA.paper}), alpha \V{mx.hlACalpha}, SMB loading \V{mx.smb}; FM with $\ln$ ME keeps $\ln A_C$ (\V{mx.fm4ac}; ME from today's share count, a look-ahead). Post hoc: \V{mx.topyear} gives \V{mx.topyear_share} of the total spread.
 \item \textbf{US (OpenAP):} Illiquidity \V{op.ill.pre} → \V{op.ill.post}, FF3+UMD alpha \V{op.pre.ff4} → \V{op.post.ff4}; DolVol \V{op.dv.pre} → \V{op.dv.post}; t of the raw difference by NW lags \V{op.ill.decay_lags}: \V{op.ill.decay_ts}.
 \item \textbf{Test ledger:} base tests and upgrades together, \V{lg.all.n} unique tests, |t| > 3 for \V{lg.all.3}, \V{lg.all.bonf} after Bonferroni: \V{lg.all.bonf_by_kind}. These are factor loadings, \V{lg.all.bonf_hf_n} rows from the one \V{hf.months}-month λ window (\V{lg.all.bonf_hf_lam_n} λ or cost-part rows, \V{lg.all.bonf_hf_other}) and one non-main market-illiquidity variant, not distinct findings.
 \end{itemize}
@@ -347,10 +347,10 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \begin{frame}{B6. Reproducibility}
 \small
 \begin{itemize}
-\item \texttt{make all} runs data → tests → simulations → base run → report → upgrades → ledger → documents; \texttt{make slides} builds this deck.
-\item \textbf{make all on a clean clone} of commit \V{fc.code} (results/repro/final\_clone/): \V{fc.rc}, about \V{fc.min} min, tests \V{fc.tests}; data/ was linked to the cached downloads. Its outputs are the committed results (\V{fc.n_canon} manifests, all at \V{fc.code} with dirty = false); base CSVs vs the previous base run: max abs diff \V{fc.base_maxdiff}. Verdict: \V{fc.verdict}.
-\item \textbf{From-scratch clone} of the older commit \V{repro.commit} with an empty data/ (every download redone): \V{repro.steps} (\V{repro.rc}). Of \V{repro.n_csv} result CSVs compared, \V{repro.n_numdiff} differ numerically (\V{repro.n_textdiff} differ only in text); daily panel \V{repro.daily}. Verdict: \V{repro.verdict}.
-\item Every run writes \texttt{run\_manifest.json}: run id, git SHA and dirty flag, sha256 of config, code and data, seed, time per stage. The base run's code state \V{base.code_commit}. Open: \V{fc.home_n} canonical manifests fail the path check of tests/test\_manifests.py (paths through the data/ link).
+\item \texttt{make all} runs data → tests → simulations → base run → report → upgrades → ledger → documents → manifest check; \texttt{make slides} builds this deck.
+\item \textbf{make all on a clean clone} of commit \V{fc.code} (results/repro/final\_clone/): \V{fc.rc}, about \V{fc.min} min; code tests \V{fc.tests}, output-manifest contract \V{fc.contract} (xfails: historical runs); data/ \V{fc.data}. Its outputs are the committed results (\V{fc.n_canon} run manifests, all at \V{fc.code} with dirty = false)\V{fc.report_exc_short}; base CSVs vs the previous base run: max abs diff \V{fc.base_maxdiff}. Verdict: \V{fc.verdict}.
+\item \textbf{From-scratch clone} of the older commit \V{repro.commit} with an empty data/ (every download redone): \V{repro.steps}; hf\_lambda needed reruns after network drops; earlier attempts exited 0 despite failed downloads (the code now fails); only the complete last one was compared. Against the current canonical outputs: of \V{repro.n_csv} result CSVs (\V{repro.skip_short}), \V{repro.n_numdiff} differ numerically (\V{repro.n_textdiff} only in text; \V{repro.n_other} agree in totals or shared rows); daily panel \V{repro.daily}. Verdict: \V{repro.verdict}.
+\item Every run writes \texttt{run\_manifest.json} (git SHA, dirty flag, hashes of config, code and data, seed, timings). The base run's code state \V{base.code_commit}. Canonical manifests failing the path check: \V{fc.home_n}; home paths remain only in history files.
 \item Deviations from the paper: DEVIATIONS.md (\V{dev.range}).
 \end{itemize}
 \src{README.md, section ``Reproducibility''; results/repro/ and results/repro/final\_clone/}
@@ -360,12 +360,12 @@ Our side: without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\
 \begin{frame}{B7. What was not done and limitations}
 \footnotesize
 \begin{itemize}
-\item \textbf{Reproducibility:} no single clean-clone run both redid the downloads and ran \texttt{make all} (\texttt{make all} at \V{fc.code} used cached data; the from-scratch clone ran the older \V{repro.commit}); \V{fc.home_n} canonical manifests fail the manifest path check; macOS only.
+\item \textbf{Reproducibility:} no single clean-clone run both redid the downloads and ran \texttt{make all} (\texttt{make all} at \V{fc.code} used cached data; the from-scratch clone ran the older \V{repro.commit}, and its hf\_lambda step needed \V{repro.hf_n} attempts); macOS only.
 \item \textbf{Simulations:} the world-0 size criterion fails for Res.lnA (\V{sim.0.fm3}); \V{sim.checks.loose_n} passes use a loose ``share \V{sim.checks.loose_rule}'' rule.
 \item \textbf{Pre-registration:} the Res.lnA significance appears only after the J1 audit, designed after the first run; verdict rules and upgrade specifications were not pre-registered in git; post hoc diagnostics (λ checks, MOEX same-months check, without the most influential month) are labelled.
-\item \textbf{Unevidenced checks:} no stored announcement sources, no saved cache comparison; the number of delisted pairs is not recorded; no delisting returns; the paper's numbers are transcribed, not tested against the PDF.
+\item \textbf{Unevidenced checks:} no stored announcement sources, no saved cache comparison; the number of delisted pairs is not recorded; no delisting returns; the paper's numbers were checked against the PDF by hand, with no automated test.
 \item \textbf{Not done:} market caps (size control, VW by cap); the t+1 leak placebo; corr($AT_C$, λ); λ from midquotes.
-\item \textbf{Formalities:} the slides were due 24 hours before the defence (16 October, 13:00), but the deck was first committed on \V{git.deck_first}: deadline missed. \V{git.uncommitted_n} files were uncommitted when the docs were built (list in README). Latin spelling of the names not confirmed by the members; no timed rehearsal recorded.
+\item \textbf{Formalities:} the slides were due 24 hours before the defence (16 October, 13:00), but the deck was first committed on \V{git.deck_first}: deadline missed. Uncommitted files when the docs were built: \V{git.uncommitted_n} (list in README). Latin spelling of the names not confirmed by the members; no timed rehearsal recorded.
 \end{itemize}
 \src{README.md, section ``What was not done and limitations''}
 \end{frame}

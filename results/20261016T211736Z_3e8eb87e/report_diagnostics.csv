@@ -77,6 +77,8 @@ subBFmT,-1.0935436775574017,-1.09,"t, FM (2) ln A_C, second half",R_subperiods.c
 subBObs,309.48936170212767,309,"avg coins per FM month, second half",R_subperiods.csv
 paperSubCFour,0.04,0.040,paper A.3 Panel C model (4) ln A_C,paper_numbers.yaml
 paperSubCFourT,0.9,0.90,t of the same,paper_numbers.yaml
+paperSubCRatioMin,3.316176470588235,3.3,paper A.3 Panel C (2) ln A_C / largest other (2) ln A_C slope,paper_numbers.yaml
+paperSubCRatioMax,9.494736842105263,9.5,paper A.3 Panel C (2) ln A_C / smallest other (2) ln A_C slope,paper_numbers.yaml
 corrVolAbs,0.2590796718791841,0.26,"mean cs corr(ln DVol, ln|Ret|)",panel cache (run_manifest.json: panel_cache)
 corrLnAAbs,0.0036125524119838223,0.00,"mean cs corr(ln A, ln|Ret|)",panel cache (run_manifest.json: panel_cache)
 corrLnACAbs,-0.14881258255476582,-0.15,"mean cs corr(ln A_C, ln|Ret|)",panel cache (run_manifest.json: panel_cache)
@@ -132,6 +134,7 @@ critHlA,1.9958841894349777,2.00,"world 0: empirical 5% critical |t|, hl_A",sim_w
 simSeHlAC,0.4510159245144733,0.45,"world 0: s.d. of H-L A_C across runs, %/mo",sim_world0_reps.csv
 realSeHlAC,1.524263102443936,1.52,"our NW s.e. of H-L A_C, %/mo",T3_sorts.csv
 seRatioHlAC,3.379621471425499,3.4,"real s.e. / simulated s.e., H-L A_C",T3_sorts.csv + sims
+seRatioHlACnw,3.5092349784854977,3.5,"real s.e. / mean world-0 NW s.e., H-L A_C",T3_sorts.csv + sims
 simMonths,90.0,90,world 0: months per simulated sample,sim_world0_reps.csv
 simCoins,297.9525,298,world 0: avg coins per month,sim_world0_reps.csv
 simReps,200.0,200,world 0: number of runs,sim_world0_reps.csv

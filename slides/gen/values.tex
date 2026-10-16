@@ -188,6 +188,8 @@
 \expandafter\def\csname v@d.paperMonths\endcsname{588}
 \expandafter\def\csname v@d.paperSubCFour\endcsname{0.040}
 \expandafter\def\csname v@d.paperSubCFourT\endcsname{0.90}
+\expandafter\def\csname v@d.paperSubCRatioMax\endcsname{9.5}
+\expandafter\def\csname v@d.paperSubCRatioMin\endcsname{3.3}
 \expandafter\def\csname v@d.placeboReps\endcsname{20}
 \expandafter\def\csname v@d.placeboShareMax\endcsname{10}
 \expandafter\def\csname v@d.powFmTwoHalf\endcsname{95}
@@ -215,6 +217,7 @@
 \expandafter\def\csname v@d.sdLnAC\endcsname{1.54}
 \expandafter\def\csname v@d.sdPaper\endcsname{2.53}
 \expandafter\def\csname v@d.seRatioHlAC\endcsname{3.4}
+\expandafter\def\csname v@d.seRatioHlACnw\endcsname{3.5}
 \expandafter\def\csname v@d.shareCovNeg\endcsname{98.8}
 \expandafter\def\csname v@d.sharePosA\endcsname{47}
 \expandafter\def\csname v@d.sharePosAC\endcsname{49}
@@ -283,13 +286,19 @@
 \expandafter\def\csname v@fc.base_maxdiff\endcsname{0}
 \expandafter\def\csname v@fc.base_n\endcsname{29}
 \expandafter\def\csname v@fc.base_numdiff\endcsname{0}
+\expandafter\def\csname v@fc.base_text\endcsname{2 of them differ only in text or in rows added later by src/report.py}
 \expandafter\def\csname v@fc.clean\endcsname{all record that commit with dirty = false}
 \expandafter\def\csname v@fc.code\endcsname{f526a1b}
-\expandafter\def\csname v@fc.data\endcsname{a directory of the clone}
+\expandafter\def\csname v@fc.contract\endcsname{11 passed, 3 xfailed}
+\expandafter\def\csname v@fc.contract_xfail\endcsname{the 3 historical base runs whose manifests hold home-directory paths}
+\expandafter\def\csname v@fc.data\endcsname{a directory of the clone (a copy of the cached downloads)}
 \expandafter\def\csname v@fc.files\endcsname{273}
-\expandafter\def\csname v@fc.files_ident\endcsname{273}
+\expandafter\def\csname v@fc.files_diff_text\endcsname{results/20261016T211736Z\_3e8eb87e/paper\_vs\_us.csv (numbers identical, text differs); results/20261016T211736Z\_3e8eb87e/paper\_vs\_us.md (bytes differ); results/20261016T211736Z\_3e8eb87e/report\_diagnostics.csv (rows added, shared rows identical); results/20261016T211736Z\_3e8eb87e/report\_manifest.json (bytes differ); results/20261016T211736Z\_3e8eb87e/tex/numbers.tex (bytes differ)}
+\expandafter\def\csname v@fc.files_ident\endcsname{268}
 \expandafter\def\csname v@fc.head\endcsname{81e501f}
 \expandafter\def\csname v@fc.hist\endcsname{20261016T134056Z\_18099336 (8b60380, dirty), 20261016T135240Z\_3e8eb87e (9ddffbb, dirty), 20261016T181948Z\_3e8eb87e (06ee202, clean)}
+\expandafter\def\csname v@fc.hist_home\endcsname{results/20261016T134056Z\_18099336/paper\_vs\_us.md, results/20261016T134056Z\_18099336/run\_manifest.json, results/20261016T135240Z\_3e8eb87e/report\_manifest.json, results/20261016T135240Z\_3e8eb87e/run\_manifest.json, results/20261016T181948Z\_3e8eb87e/report\_manifest.json, results/20261016T181948Z\_3e8eb87e/run\_manifest.json, results/tests\_log/pytest\_worktree\_20261016T210712.txt}
+\expandafter\def\csname v@fc.hist_n\endcsname{three}
 \expandafter\def\csname v@fc.home_list\endcsname{none}
 \expandafter\def\csname v@fc.home_n\endcsname{0}
 \expandafter\def\csname v@fc.home_text\endcsname{none of the 9 canonical manifests holds an absolute or home-directory path}
@@ -298,8 +307,10 @@
 \expandafter\def\csname v@fc.n_man\endcsname{12}
 \expandafter\def\csname v@fc.prev\endcsname{20261016T181948Z\_3e8eb87e}
 \expandafter\def\csname v@fc.rc\endcsname{exit code 0}
+\expandafter\def\csname v@fc.report_exc\endcsname{, except the base run's report-stage files (paper\_vs\_us.csv, paper\_vs\_us.md, report\_diagnostics.csv, report\_manifest.json, tex/numbers.tex), which make report rewrote afterwards at 01ec574 (uncommitted changes, dirty = true) with reworded explanation texts and added diagnostic rows (no shared number changed; see “Reproducibility”)}
+\expandafter\def\csname v@fc.report_exc_short\endcsname{, except 5 report-stage files of the base run, rewritten later by make report at 01ec574 (dirty): text and added rows only}
 \expandafter\def\csname v@fc.status\endcsname{done}
-\expandafter\def\csname v@fc.tests\endcsname{11 passed, 3 xfailed}
+\expandafter\def\csname v@fc.tests\endcsname{171 passed}
 \expandafter\def\csname v@fc.verdict\endcsname{reproduced}
 \expandafter\def\csname v@fr.fm3res\endcsname{−128.81 (t −1.06)}
 \expandafter\def\csname v@fr.res_tmax\endcsname{1.06}
@@ -312,8 +323,8 @@
 \expandafter\def\csname v@git.prereg.cfgmatch\endcsname{matches}
 \expandafter\def\csname v@git.refine\endcsname{8b60380}
 \expandafter\def\csname v@git.sim_rules\endcsname{The pass rules (src/simulate.py) were committed in the same commit as the first simulation results (8b60380), so git does not show that they came first.}
-\expandafter\def\csname v@git.uncommitted_evidence\endcsname{1 files (0 modified, 1 untracked; by folder: results/ 1); untracked: results/tests\_log/pytest\_20261016T212418Z.txt}
-\expandafter\def\csname v@git.uncommitted_n\endcsname{1}
+\expandafter\def\csname v@git.uncommitted_evidence\endcsname{20 files (19 modified, 1 untracked; by folder: DEVIATIONS.md 1, Makefile 1, results/ 11, slides/ 2, src/ 5); untracked: results/tests\_log/pytest\_20261016T215145Z.txt}
+\expandafter\def\csname v@git.uncommitted_n\endcsname{20}
 \expandafter\def\csname v@hf.b0\endcsname{−0.435 (t −1.56)}
 \expandafter\def\csname v@hf.b1\endcsname{−2.59 (t −4.03)}
 \expandafter\def\csname v@hf.b1.paper\endcsname{−0.034 (t −0.67)}
@@ -424,7 +435,8 @@
 \expandafter\def\csname v@mde.fm2.ratio\endcsname{4.6}
 \expandafter\def\csname v@mde.fm2.sd\endcsname{1.54}
 \expandafter\def\csname v@mde.fm2.sim\endcsname{0.44}
-\expandafter\def\csname v@mde.fm2.sim_ratio\endcsname{4.85}
+\expandafter\def\csname v@mde.fm2.sim_ratio\endcsname{5}
+\expandafter\def\csname v@mde.fm2.sim_ratio2\endcsname{4.85}
 \expandafter\def\csname v@mde.fm2.slope\endcsname{1.39}
 \expandafter\def\csname v@mde.fm2.slope_ratio\endcsname{7.6}
 \expandafter\def\csname v@mde.hlA\endcsname{4.42}
@@ -714,24 +726,30 @@
 \expandafter\def\csname v@rb.seedshare.hl_A_alpha\endcsname{0/20}
 \expandafter\def\csname v@rb.seedshare.hl_ResA\endcsname{0/20}
 \expandafter\def\csname v@rb.seedshare.hl_ResA_alpha\endcsname{0/20}
-\expandafter\def\csname v@repro.code_vs\endcsname{the clone ran commit c631dba; the outputs it is compared with were produced by commit 06ee202}
+\expandafter\def\csname v@repro.code_vs\endcsname{the clone ran commit c631dba; the outputs it is compared with were produced by commit f526a1b}
 \expandafter\def\csname v@repro.commit\endcsname{c631dba}
-\expandafter\def\csname v@repro.cover_text\endcsname{all seven upgrades were regenerated and compared, including upgrade-hf\_lambda (about 5 GB of downloads, 81 min)}
+\expandafter\def\csname v@repro.cover_text\endcsname{all seven upgrades were regenerated and compared, including upgrade-hf\_lambda (about 5 GB of downloads, about 90 min over 3 attempts)}
 \expandafter\def\csname v@repro.daily\endcsname{identical (788 692 rows)}
 \expandafter\def\csname v@repro.data_min\endcsname{39}
 \expandafter\def\csname v@repro.groups\endcsname{base run 29, simulations 7, amihud\_noh 12, edge\_spread 9, hf\_lambda 15, moex 20, openap\_us 8, robustness 10, sentiment 9}
-\expandafter\def\csname v@repro.hf_min\endcsname{81}
+\expandafter\def\csname v@repro.hf_min\endcsname{90}
+\expandafter\def\csname v@repro.hf_n\endcsname{3}
+\expandafter\def\csname v@repro.hf_text\endcsname{upgrade-hf\_lambda ran 3 times because of network drops: the earlier attempts lost 148 (4 aggTrades, 144 klines5m) and then 2 (2 aggTrades) downloads and still exited with code 0 and wrote results from incomplete data (the code at c631dba did not fail on failed downloads; since 7c2c227 it does); the last attempt had 0 failed downloads, and only its outputs were compared; the 3 attempts took about 90 min in total}
 \expandafter\def\csname v@repro.n_csv\endcsname{119}
 \expandafter\def\csname v@repro.n_files\endcsname{126}
 \expandafter\def\csname v@repro.n_identical\endcsname{108}
-\expandafter\def\csname v@repro.n_numdiff\endcsname{1}
+\expandafter\def\csname v@repro.n_numdiff\endcsname{0}
+\expandafter\def\csname v@repro.n_other\endcsname{2}
 \expandafter\def\csname v@repro.n_png\endcsname{6}
 \expandafter\def\csname v@repro.n_png_ident\endcsname{6}
-\expandafter\def\csname v@repro.n_textdiff\endcsname{10}
+\expandafter\def\csname v@repro.n_textdiff\endcsname{9}
 \expandafter\def\csname v@repro.not_covered\endcsname{none}
-\expandafter\def\csname v@repro.rc\endcsname{every step exited with code 0}
+\expandafter\def\csname v@repro.other_text\endcsname{report\_diagnostics.csv, an id → value table to which a later src/report.py added rows; every value both sides share is identical; downloads.csv, a download log whose totals per kind agree (max abs diff 1.1e-16; its rows are split by cache status, which depends on what was already on disk)}
+\expandafter\def\csname v@repro.rc\endcsname{every step exited with code 0, although 2 of the upgrade-hf\_lambda attempts had failed downloads}
+\expandafter\def\csname v@repro.skip_short\endcsname{timing columns excluded}
+\expandafter\def\csname v@repro.skip_text\endcsname{“identical” means identical apart from the columns whose names contain sec, time or runtime, which every comparison leaves out (src/repro\_check.py); in 4 files these are run-time columns and differ (sim\_power\_reps.csv: sec\_simulate, sec\_pipeline; sim\_world0\_reps.csv: sec\_simulate, sec\_pipeline; sim\_world\_reps.csv: sec\_simulate, sec\_pipeline; validation\_lambda.csv: sec); the rule also catches 8 columns in 6 other files that are not timings (paper\_vs\_us.csv: section; data\_flags.csv: secid; dividend\_coverage.csv: secids, secids\_with\_page, secids\_with\_events; dividend\_crosscheck.csv: secids\_both\_pages; dividend\_crosscheck\_events.csv: secid; splits\_used.csv: secid), and these are identical, checked separately}
 \expandafter\def\csname v@repro.status\endcsname{done}
-\expandafter\def\csname v@repro.steps\endcsname{venv → data → tests → p0 → upgrades-light → upgrade-hf\_lambda → upgrade-hf\_lambda → upgrade-hf\_lambda}
+\expandafter\def\csname v@repro.steps\endcsname{venv → data → tests → p0 → upgrades-light → upgrade-hf\_lambda (3 attempts)}
 \expandafter\def\csname v@repro.tests\endcsname{165 passed, 1 skipped}
 \expandafter\def\csname v@repro.verdict\endcsname{reproduced}
 \expandafter\def\csname v@rob.n\endcsname{45}
@@ -763,7 +781,9 @@
 \expandafter\def\csname v@sc.rep196_other_rows\endcsname{FM ln|Ret|, with ln A\_C (Table 2 model 3) (t −2.50); FM ln A\_C (2), first half vs 1964-1988 (t 2.59)}
 \expandafter\def\csname v@sc.res_below_w0\endcsname{2}
 \expandafter\def\csname v@sc.res_below_w0_rows\endcsname{FM Res.lnA, model (5) with ln A\_C + IVOL (t −1.98); FM Res.lnA, raw returns, model (3) (t −2.11)}
+\expandafter\def\csname v@sc.res_cal_above_ci\endcsname{0}
 \expandafter\def\csname v@sc.res_cal_n\endcsname{2}
+\expandafter\def\csname v@sc.res_cal_rows\endcsname{FM Res.lnA, model (3) (t −2.46); FM Res.lnA, model (4) with ln A\_C (t −2.37)}
 \expandafter\def\csname v@sc.res_cal_w0\endcsname{2}
 \expandafter\def\csname v@sc.res_n\endcsname{8}
 \expandafter\def\csname v@sc.res_paper_sig\endcsname{7}
@@ -829,6 +849,7 @@
 \expandafter\def\csname v@sim.checks.loose_n\endcsname{5}
 \expandafter\def\csname v@sim.checks.loose_rule\endcsname{≤ 20\%}
 \expandafter\def\csname v@sim.checks.n\endcsname{17}
+\expandafter\def\csname v@sim.checks.nfail\endcsname{3}
 \expandafter\def\csname v@sim.checks.pass\endcsname{14}
 \expandafter\def\csname v@sim.checks.pass_strict5\endcsname{11}
 \expandafter\def\csname v@sim.git\endcsname{f526a1b}
@@ -851,17 +872,20 @@
 \expandafter\def\csname v@t8.jan_lam.paper\endcsname{0.485 (t 2.15)}
 \expandafter\def\csname v@t8.rest_lam.paper\endcsname{−0.078 (t −1.45)}
 \expandafter\def\csname v@tests.code_match\endcsname{does NOT match}
-\expandafter\def\csname v@tests.date\endcsname{2026-10-16T18:07:13Z}
-\expandafter\def\csname v@tests.log\endcsname{results/tests\_log/pytest\_worktree\_20261016T210712.txt}
-\expandafter\def\csname v@tests.summary\endcsname{177 passed, 4 xfailed}
+\expandafter\def\csname v@tests.date\endcsname{2026-10-16T21:51:45Z}
+\expandafter\def\csname v@tests.log\endcsname{results/tests\_log/pytest\_20261016T215145Z.txt}
+\expandafter\def\csname v@tests.state\endcsname{commit 01ec574 plus 4 uncommitted code file(s)}
+\expandafter\def\csname v@tests.summary\endcsname{182 passed, 3 xfailed}
 \expandafter\def\csname v@w0.crit_max\endcsname{2.22}
 \expandafter\def\csname v@w0.crit_min\endcsname{2.00}
+\expandafter\def\csname v@w0.crit_res_ci\endcsname{2.04–2.96}
 \expandafter\def\csname v@w0.crit_res_max\endcsname{2.16}
 \expandafter\def\csname v@w0.crit_res_min\endcsname{2.15}
 \expandafter\def\csname v@w0.exp_base\endcsname{5.7}
 \expandafter\def\csname v@w0.fpr3_max\endcsname{1.5\%}
 \expandafter\def\csname v@w0.fpr_max\endcsname{9.5\%}
 \expandafter\def\csname v@w0.fpr_min\endcsname{6.5\%}
+\expandafter\def\csname v@w0.reps\endcsname{200}
 \expandafter\def\csname v@x21.fm2\endcsname{0.351 (t 0.97)}
 \expandafter\def\csname v@x21.fm3\endcsname{−4.93 (t −2.54)}
 \expandafter\def\csname v@x21.hlAC\endcsname{0.432 (t 0.42)}

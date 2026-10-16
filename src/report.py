@@ -181,8 +181,9 @@ WHY = {
                 "({subARange}, {subAObs} coins per FM month on average vs {subBObs} in the second half).",
     "SubAResLnA": "Matches at 1.96 (t {us_t}) in the first half.",
     "SubBlnAC": "Opposite sign: in the second half ({subBRange}, {subBObs} coins per FM month) the ln A_C slope "
-                "is {us} (t {us_t}). The paper's 1989-2012 model (2) value is printed as {paper}, ten times its "
-                "other ln A_C slopes, probably a typo; its model (4) slope after 1989 is only {paperSubCFour} "
+                "is {us} (t {us_t}). The paper's 1989-2012 model (2) value is printed as {paper}, "
+                "{paperSubCRatioMin}-{paperSubCRatioMax} times its other model (2) ln A_C slopes (Table 4, "
+                "Table A.3 Panels A and B), probably a typo; its model (4) slope after 1989 is only {paperSubCFour} "
                 "(t {paperSubCFourT}). Both samples show a weaker A_C effect later on.",
     "SubBResLnA": "Same sign, not significant in the second half (t {us_t}).",
     "ANResLnA": "This is the same regression as model (5), set against A&N col. 4. 'no' means the sign is "
@@ -542,6 +543,14 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
     a3c = ls["tableA3"]["panelC_1989_2012"]["(4)"]["lnA_C"]
     D.add("paperSubCFour", a3c["coef"], "paper A.3 Panel C model (4) ln A_C", "paper_numbers.yaml", d=3)
     D.add("paperSubCFourT", a3c["t"], "t of the same", "paper_numbers.yaml")
+    a3t = ls["tableA3"]
+    sub_c = a3t["panelC_1989_2012"]["(2)"]["lnA_C"]["coef"]
+    others = [ls["table4_panelA"]["(2)"]["lnA_C"]["coef"], a3t["panelA_raw"]["(2)"]["lnA_C"]["coef"],
+              a3t["panelB_1964_1988"]["(2)"]["lnA_C"]["coef"]]
+    D.add("paperSubCRatioMin", sub_c / max(others), "paper A.3 Panel C (2) ln A_C / largest other (2) ln A_C slope",
+          "paper_numbers.yaml", d=1)
+    D.add("paperSubCRatioMax", sub_c / min(others), "paper A.3 Panel C (2) ln A_C / smallest other (2) ln A_C slope",
+          "paper_numbers.yaml", d=1)
 
     # panel diagnostics: volume-volatility link, per-s.d. effects, FM leave-one-month-out
     panel = _panel(rd, man)
@@ -613,6 +622,11 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
             D.add("simSeHlAC", sim_se, "world 0: s.d. of H-L A_C across runs, %/mo", "sim_world0_reps.csv")
             D.add("realSeHlAC", real_se, "our NW s.e. of H-L A_C, %/mo", "T3_sorts.csv")
             D.add("seRatioHlAC", real_se / sim_se, "real s.e. / simulated s.e., H-L A_C", "T3_sorts.csv + sims", d=1)
+            if "hl_A_C_t" in w0r:
+                # the same ratio with the mean NW s.e. of the world-0 runs (|coef / t|) in the denominator
+                sim_nw = (w0r["hl_A_C_coef"] / w0r["hl_A_C_t"]).abs().mean()
+                D.add("seRatioHlACnw", real_se / sim_nw, "real s.e. / mean world-0 NW s.e., H-L A_C",
+                      "T3_sorts.csv + sims", d=1)
         if "n_months" in w0r and "avg_coins" in w0r:
             D.add("simMonths", w0r["n_months"].mean(), "world 0: months per simulated sample", "sim_world0_reps.csv", d=0)
             D.add("simCoins", w0r["avg_coins"].mean(), "world 0: avg coins per month", "sim_world0_reps.csv", d=0)
@@ -844,8 +858,10 @@ def key_findings(df: pd.DataFrame, rob: pd.DataFrame, diag: pd.DataFrame) -> lis
         + f" Hypothesis: this is a volatility effect, since corr(Res. A, |Ret|) = {c['corrResAAbs']} and "
         f"ln|Ret| is {f('TtwolnAbs')} in the T2 decomposition.",
         f"- **Power.** Monthly coin returns have s.d. {c['retSd']}%, and the standard error of the A_C spread is "
-        f"{c['seRatioHlAC']} times its value in the world-0 simulation of similar size ({c['simMonths']} months, "
-        f"{c['simCoins']} coins). The 80%-power MDE for "
+        f"about {c['seRatioHlAC']}-{c.get('seRatioHlACnw', c['seRatioHlAC'])} times its value in the world-0 "
+        f"simulation ({c['simMonths']} months, {c['simCoins']} coins, balanced and lighter-tailed); this is an "
+        "estimate that sets our Newey-West s.e. against the s.d. of the spread across world-0 runs or their mean "
+        "Newey-West s.e. The 80%-power MDE for "
         f"the A_C spread is {ffmt(r.loc['HLACrawCoef', 'us_mde80'])}%/mo against the paper's "
         f"{ffmt(r.loc['HLACrawCoef', 'paper'])}, so our insignificant spreads cannot reject a stock-sized premium.",
         f"- **Different market.** Across coins volatility and dollar volume move together (corr(ln DVol, "

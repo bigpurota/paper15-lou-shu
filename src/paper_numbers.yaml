@@ -67,7 +67,7 @@ lou_shu_2017:
       "(2)": {lnA_C: {coef: 0.272, t: 4.71}}
       "(4)": {lnA_C: {coef: 0.217, t: 3.52}, ResLnA: {coef: -0.222, t: -2.24}}
     panelC_1989_2012:
-      # (2) lnA_C is printed as 0.902 (t 1.98), ten times every other ln A_C slope in the table;
+      # (2) lnA_C is printed as 0.902 (t 1.98), 3.3-9.5 times the other model (2) ln A_C slopes (0.095, 0.272);
       # probably a typo for 0.092, kept exactly as printed
       "(2)": {lnA_C: {coef: 0.902, t: 1.98}}
       "(4)": {lnA_C: {coef: 0.040, t: 0.90}, ResLnA: {coef: -0.275, t: -2.21}}
