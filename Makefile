@@ -5,9 +5,8 @@ CONFIG  := config.yaml
 DAILY   := data/cache/daily.parquet
 ZIP     := ../paper15-lou-shu-team12.zip
 
-.PHONY: venv data tests sims run report figures all zip clean
-
-all: data tests sims run report figures
+.PHONY: venv data tests sims run report figures p0 upgrades all zip clean
+.DEFAULT_GOAL := all
 
 STAMP   := .venv/.requirements-installed
 
@@ -50,3 +49,12 @@ zip:
 clean:
 	rm -rf .pytest_cache src/__pycache__ tests/__pycache__ $(ZIP)
 	rm -f data/cache/panel_*.parquet
+
+# upgrade modules register themselves in mk/*.mk via `UPGRADES += upgrade-<name>`
+# (included last so that PY/PYI/CONFIG/STAMP are already defined)
+UPGRADES :=
+-include mk/*.mk
+
+p0: data tests sims run report figures
+upgrades: $(UPGRADES)
+all: p0 upgrades
