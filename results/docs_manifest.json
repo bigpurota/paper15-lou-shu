@@ -11,9 +11,9 @@
     "robustness": "robustness_20261016T222244Z",
     "sentiment": "sentiment_20261016T222253Z"
   },
-  "created_utc": "20261016T222259Z",
+  "created_utc": "20261016T222441Z",
   "git": {
-    "sha": "06cc8d82855ddee0c3f95fa848af49836a7e0d2d",
+    "sha": "dd4b5184376170b3bb3be61587fcfffb53067479",
     "dirty": false,
     "dirty_scope": "code+config (src, tests, config.yaml, Makefile, mk, requirements.txt); generated outputs excluded"
   },
@@ -89,32 +89,31 @@
     "results/upgrades/robustness/stability_loyo_summary.csv": "01ce23bce89e162c438a6d2b7c22e382e94d344580ccbc884df7321d44210fc9",
     "results/20261016T134056Z_18099336/run_manifest.json": "fa993a27b16db4a04757da3cb8464826ec9ead702b0e5d33ef955b675d3aa970",
     "results/20261016T134056Z_18099336/T4_fm.csv": "95409aff2e875f929674c0e3f6eaef6ce2c13560332ba3c24cb71658c37f4f22",
-    "results/repro/repro_summary.json": "d340248f806f4cbd104a614fc6bd2420c5a49eefad89d68b704203385b76d211",
+    "results/repro/repro_summary.json": "e2b075287bf16e871bdbdfc9d90c6efb47d481d2a4ee6e4bfe5f79e90a2e4672",
     "results/repro/repro_check.csv": "2b94013de3c945392d01c518d262f491ed17a1ab1ec118973eae3c01763a2616",
-    "results/20261016T211736Z_3e8eb87e/run_manifest.json": "5ecb4772d9ff2b8f756ee2d1a35e58bf4ced9d80c6e3f8e900cd1ad69960a924",
     "results/repro/clone_logs/make_tests.txt": "0c418b3f8e0f88d086952a532ad1845c73b005501d43962a405eb7d02ef3d5d6",
-    "results/repro/final_clone/summary.json": "20ac0ca8117b65e6069cc0d14b3c04c127045d67d9c72624d2b514f53fbed9da",
-    "results/repro/final_clone/manifests.csv": "84b056455a6206b8454dc3e990be5a1ddf27c6011624e9395f52b3f6b66de6ef",
-    "results/20261016T211736Z_3e8eb87e/report_manifest.json": "ff2308b2d2f68b94c3b0e296c25599f7f4da3bac83458f4281665187b69193d9",
+    "results/repro/final_clone/summary.json": "def7b1e9304e293b9f2b1dee8660211d452ba131b26d026e04653fddbff20ca7",
+    "results/repro/final_clone/manifests.csv": "f90fc2f05b323ad76ee92719ea52b86c32b91480ecb18b6e6300ed0ef09bc087",
+    "results/20261016T221825Z_3e8eb87e/report_manifest.json": "a6a38224da154fc3c4ec7f227a2df21c17a87289e3161d48b7742a2ecd66c8cd",
     "results/tests_log/pytest_worktree_20261016T210712.txt": "fde5b854242da1b4cbabf8785dcab136e587afdc0165eaf0e929def98a323cb4",
     "results/tests_log/pytest_20261016T215145Z.txt": "1ab95e160a4f7a8cc67a45c421bab539abc56a86f97b47848380ba04929f21fc",
     "results/tests_log/pytest_worktree_20261016T200838.txt": "420e545d48205fcae7fdc55dd3513142ba7619250f1c7032972c257eea428793",
     "results/tests_log/pytest_20261016T212418Z.txt": "e0a0a627abc3a333da811043b1acfa915e6bc91838782ee3953f48119f849dc9",
+    "results/tests_log/pytest_20261016T222322Z.txt": "c115c41aa672c828f566c2869ee0fea2a7721a0180dd6f708dcf853e3231d840",
     "slides/meta.yaml": "9b2d0ffcde8bba7b22ff440906c4129ff79f2754ce6a0c0e6c3ee5e1a4ed3487",
     "results/20261016T221825Z_3e8eb87e/paper_vs_us.md": "10819bce7002ff6d2f7838b94655207c0f976a56025cb50bf3e8ef5449fe5fb4",
-    "results/20261016T221825Z_3e8eb87e/report_manifest.json": "a6a38224da154fc3c4ec7f227a2df21c17a87289e3161d48b7742a2ecd66c8cd",
     "slides/deck.tex": "32a15df1821d8e2c55a1a6ffffdb6862543673cf3b7c7ae3275e310d08df29d5"
   },
   "outputs_sha256": {
-    "README.md": "de7c37c1543a00af82eb16322d6e9e0bd6c8b6a3d0b9ff6f148a7e9ea673d634",
-    "slides/PLAN.md": "bc06dcda83647d8e0f041b7b66c1623c9058fa0a9f17f4a42cee995a4f1123c1",
-    "slides/gen/values.tex": "375d42b3743bfb8b10b2422c676f6acdf15e32bdd3eb333de14e46901dbb4ef0",
+    "README.md": "22759d4d8423eaec8bb2b2c1c0df47fd79ca4d8024388c1e40bd483e8465e7e5",
+    "slides/PLAN.md": "a46ea4c9e2dc179d16606256c5d245cc61057407b3d197e0ac6e2083ee024e02",
+    "slides/gen/values.tex": "1b86f3aa2ad432a3a9fdd215c38b51a28adddcfea91fdead1eed33dac6fbd4b0",
     "slides/gen/sims.tex": "3779321e1a67b534625a00085b637fec23a19fd6525eebf5192ef7ffab68eaf0",
     "slides/gen/slide8.tex": "b9b402c9517cfe3eff1723c3642bdc74c543fbaaa11b9535b24328ffa9ab3684",
     "slides/gen/slide9.tex": "0dc8955cea854de91b6082bea3f8c36239453827320aba90a5ce3b8544ef17b6",
     "slides/gen/slide10.tex": "74be83208af1e7af0703044d1872cc981ab5d6d06318602ddbc9b54b760b1a24"
   },
   "timings_sec": {
-    "total": 3.057
+    "total": 2.362
   }
 }

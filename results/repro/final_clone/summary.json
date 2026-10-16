@@ -1,22 +1,22 @@
 {
   "mode": "final_clone_make_all",
-  "clone_dir": "<scratch>/finalC",
-  "clone_head_now": "81e501f",
+  "clone_dir": "<scratch>/finalD",
+  "clone_head_now": "dd4b518",
   "clone_head_note": "the canonical outputs were committed from this clone after the run, so its HEAD is the commit that holds them; the code that ran is the git sha in the manifests",
-  "code_commit_run": "f526a1b",
+  "code_commit_run": "06cc8d8",
   "data_dir_was_link": false,
   "data_note": "data/ was a directory in the clone",
   "make_all": {
     "target": "all",
     "rc": 0,
-    "seconds": 496
+    "seconds": 562
   },
   "tests_summary": "171 passed",
-  "tests_contract_summary": "11 passed, 3 xfailed",
+  "tests_contract_summary": "12 passed, 3 xfailed",
   "tests_note": "make all runs the code tests first (pytest --ignore=tests/test_manifests.py; tests_summary) and the output-manifest contract last (check-outputs: pytest tests/test_manifests.py on the outputs it has just written; tests_contract_summary); the contract's xfails are historical base runs whose manifests hold absolute or home-directory paths",
-  "canonical_base_run": "20261016T211736Z_3e8eb87e",
-  "repo_latest": "20261016T211736Z_3e8eb87e",
-  "n_manifests": 12,
+  "canonical_base_run": "20261016T221825Z_3e8eb87e",
+  "repo_latest": "20261016T221825Z_3e8eb87e",
+  "n_manifests": 13,
   "n_canonical": 9,
   "canonical_all_same_commit_clean": true,
   "historical_runs": [
@@ -37,39 +37,24 @@
       "git_sha": "06ee202",
       "dirty": false,
       "n_home_paths": 2
+    },
+    {
+      "run_id": "20261016T211736Z_3e8eb87e",
+      "git_sha": "f526a1b",
+      "dirty": false,
+      "n_home_paths": 0
     }
   ],
   "n_canonical_with_home_paths": 0,
   "home_path_note": "no canonical manifest holds an absolute or home-directory path; historical base runs with such paths: 20261016T134056Z_18099336, 20261016T135240Z_3e8eb87e, 20261016T181948Z_3e8eb87e",
-  "base_compared_with": "20261016T181948Z_3e8eb87e",
+  "base_compared_with": "20261016T211736Z_3e8eb87e",
   "base_n_csv": 29,
   "base_max_abs_diff": 0.0,
   "base_n_not_identical": 0,
-  "base_n_text_or_rows": 2,
-  "results_files_in_clone": 273,
-  "results_files_identical_to_repo": 268,
-  "results_files_differing": [
-    {
-      "file": "results/20261016T211736Z_3e8eb87e/paper_vs_us.csv",
-      "status": "numbers_identical_text_differs"
-    },
-    {
-      "file": "results/20261016T211736Z_3e8eb87e/paper_vs_us.md",
-      "status": "differs"
-    },
-    {
-      "file": "results/20261016T211736Z_3e8eb87e/report_diagnostics.csv",
-      "status": "identical_common_rows"
-    },
-    {
-      "file": "results/20261016T211736Z_3e8eb87e/report_manifest.json",
-      "status": "differs"
-    },
-    {
-      "file": "results/20261016T211736Z_3e8eb87e/tex/numbers.tex",
-      "status": "differs"
-    }
-  ],
+  "base_n_text_or_rows": 0,
+  "results_files_in_clone": 320,
+  "results_files_identical_to_repo": 320,
+  "results_files_differing": [],
   "identity_note": "bookkeeping, not independent evidence: the canonical outputs were committed from this clone; a file that differs was rewritten in this repository after the clone run",
   "logs": [
     "results/repro/final_clone/final_run.txt",
