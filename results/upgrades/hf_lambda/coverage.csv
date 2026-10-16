@@ -1,0 +1,2 @@
+n_measure_months,n_panel_coin_months,n_with_file,n_missing_on_server,n_not_downloaded_offline,n_download_failed,n_read_errors,n_lambda_ok,n_lambda_nonpos,n_relabelled_ids,n_shared_file,n_bars_extreme_dropped,klines5m_gb,aggtrades_gb
+36,13708,13708,0,0,0,0,13708,3,121,0,319,4.018,0.953

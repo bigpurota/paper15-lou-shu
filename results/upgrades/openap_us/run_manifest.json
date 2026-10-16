@@ -1,0 +1,90 @@
+{
+  "upgrade": "openap_us",
+  "run_id": "20261016T140227Z_openap_us",
+  "base_run_id": "20261016T135240Z_3e8eb87e",
+  "base_run_used_for": "provenance only (US data do not depend on the crypto panel)",
+  "git": {
+    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "dirty": true
+  },
+  "config_path": "/Users/purota/rs3-paper15/impl/config.yaml",
+  "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
+  "code_sha256": {
+    "openap_us.py": "dc9eee96a8534d6097526ab170355983267bc2ca446d0f91ff7be0b553b66ab1",
+    "paper_numbers.yaml": "2a4339f7bd1e9a771d5349b7a12e4b782c81f3314055f1ec0c34bf9b910a33ae"
+  },
+  "input_data": {
+    "openap/PredictorLSretWide.csv": {
+      "file": "/Users/purota/rs3-paper15/impl/data/raw/openap/release_202510/PredictorLSretWide.csv",
+      "url": "https://drive.usercontent.google.com/download?id=10sOryk_ddjkXagaajTKUk1nwJs2ZLRiI&export=download&confirm=t",
+      "downloaded_utc": "2026-10-16T13:56:52.680359+00:00",
+      "sha256": "79aa0896d79924e1efa83f9afe51a3b4ce94137adfd2c5c3fd2d5d350532ee18",
+      "tried_before": [],
+      "cached": true
+    },
+    "openap/SignalDoc.csv": {
+      "file": "/Users/purota/rs3-paper15/impl/data/raw/openap/release_202510/SignalDoc.csv",
+      "url": "https://drive.usercontent.google.com/download?id=1rdi0jTPSA6xtn6TpQAMT5WyEczQ1gK59&export=download&confirm=t",
+      "downloaded_utc": "2026-10-16T13:56:57.190489+00:00",
+      "sha256": "f6c055120bad7afe97c16e23e0f49bce0982269026605a955e8064bd661cf415",
+      "tried_before": [],
+      "cached": true
+    },
+    "french/F-F_Research_Data_Factors_CSV.zip": {
+      "file": "/Users/purota/rs3-paper15/impl/data/raw/french/F-F_Research_Data_Factors_CSV.zip",
+      "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip",
+      "downloaded_utc": "2026-10-16T13:50:48.095834+00:00",
+      "sha256": "593f4fbef03181bc0b22ff6292f217689dd1fb79355049ca905d95b262040a66",
+      "tried_before": [],
+      "cached": true
+    },
+    "french/F-F_Momentum_Factor_CSV.zip": {
+      "file": "/Users/purota/rs3-paper15/impl/data/raw/french/F-F_Momentum_Factor_CSV.zip",
+      "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip",
+      "downloaded_utc": "2026-10-16T13:50:49.190569+00:00",
+      "sha256": "c06d1c2e9a5e4f6985879722f23c6bb585f46b34eaf3fcb681d4de887e353f3e",
+      "tried_before": [],
+      "cached": true
+    }
+  },
+  "openap_release": "202510",
+  "signals": [
+    "Illiquidity",
+    "DolVol",
+    "std_turn",
+    "zerotrade1M",
+    "zerotrade6M",
+    "zerotrade12M"
+  ],
+  "periods": {
+    "LS_1964_2012": [
+      "1964-01",
+      "2012-12"
+    ],
+    "post_2013": [
+      "2013-01",
+      null
+    ]
+  },
+  "nw_lags": 6,
+  "hlz_threshold": 3.0,
+  "seed": 20261017,
+  "seed_used": false,
+  "timings_sec": {
+    "download": 0.006,
+    "load": 0.05,
+    "tests": 0.079,
+    "total": 0.168
+  },
+  "tables": [
+    "correlation.csv",
+    "decay_nw_sensitivity.csv",
+    "ls_series.csv",
+    "means.csv",
+    "paper_comparison.csv",
+    "sign_checks.csv",
+    "signal_meta.csv",
+    "spanning.csv",
+    "SUMMARY.md"
+  ]
+}

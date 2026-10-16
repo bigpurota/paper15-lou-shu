@@ -1,0 +1,117 @@
+{
+  "run_id": "20261016T141015Z_amihud_noh",
+  "upgrade": "amihud_noh",
+  "base_run_id": "20261016T135240Z_3e8eb87e",
+  "created_utc": "20261016T141015Z",
+  "git": {
+    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "dirty": true
+  },
+  "config_path": "/Users/purota/rs3-paper15/impl/config.yaml",
+  "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
+  "code_sha256": {
+    "amihud_noh.py": "0605a5d37699fcdc446db0038cb45e31c0117a0007eb86623869e076d3cbbae7",
+    "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64",
+    "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
+    "run.py": "176039cfbd32cdd3623a7edff76bf9cdd3074d9c9780b93c22ee970211efc790",
+    "data_audit.py": "e01e63fd3ccb2f924e800be1b7dc0de21fee657f47985a9dd020986aba4c5a69",
+    "paper_numbers.yaml": "2a4339f7bd1e9a771d5349b7a12e4b782c81f3314055f1ec0c34bf9b910a33ae"
+  },
+  "inputs": {
+    "daily": {
+      "path": "/Users/purota/rs3-paper15/impl/data/cache/daily.parquet",
+      "sha256": "47d0542600dbce8339e3bfff34a7648f3a37107b1cc86af8c45de1c75f1dca1d"
+    },
+    "base_panel": {
+      "path": "/Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135240Z_3e8eb87e.parquet",
+      "sha256": "3a1397327cc45f1fbf200d262c58df7d55a7c90ccc05b11b5676968255699cd9"
+    },
+    "base_manifest": {
+      "path": "/Users/purota/rs3-paper15/impl/results/20261016T135240Z_3e8eb87e/run_manifest.json",
+      "sha256": "6b9bfbc5d5203a91fd4a671d4d982e8f8597e200b36c408e04de70d8b5629b6f"
+    }
+  },
+  "data_matches_base": true,
+  "audit": {
+    "enabled": true,
+    "daily_rows_raw": 788692,
+    "daily_rows_clean": 788689,
+    "events_by_type": {
+      "redenomination": 8,
+      "long_gap": 4,
+      "zero_volume": 2,
+      "ticker_reuse": 2,
+      "open_mismatch": 1
+    }
+  },
+  "seed": 20261017,
+  "seed_note": "no randomness in this upgrade",
+  "spec": {
+    "window_months": 12,
+    "min_days": 200,
+    "drop_max_day": true,
+    "censor": [
+      0.01,
+      0.99
+    ],
+    "censor_cols": [
+      "ILLIQ",
+      "absR",
+      "IDVOL",
+      "DIF"
+    ],
+    "dvol_scale": 1000000.0,
+    "b_cv2_all_days": true,
+    "dep_vars": [
+      "ret_adj",
+      "ret"
+    ]
+  },
+  "nw_lags": 6,
+  "t_bars": [
+    1.96,
+    3.0
+  ],
+  "versions": {
+    "python": "3.12.13",
+    "platform": "macOS-26.4.1-arm64-arm-64bit",
+    "pandas": "3.0.6",
+    "numpy": "2.5.4",
+    "statsmodels": "0.15.0",
+    "matplotlib": "3.11.2",
+    "scipy": "1.18.1",
+    "PyYAML": "6.0.3",
+    "pyarrow": "26.0.0",
+    "requests": "2.34.2",
+    "pytest": "9.1.1"
+  },
+  "rows": {
+    "panel_coin_months": 24628,
+    "an12_coin_months_in_return_panel": 19633
+  },
+  "tables": [
+    "an12_censoring.csv",
+    "an12_corr.csv",
+    "an12_measures_sample.csv",
+    "an12_moments.csv",
+    "describe.csv",
+    "fm.csv",
+    "ivol_channel.csv",
+    "paper_reference.csv",
+    "sensitivity_min_obs.csv",
+    "sensitivity_min_obs_counts.csv",
+    "verdict.csv",
+    "verdict_counts.csv",
+    "SUMMARY.md"
+  ],
+  "timings_sec": {
+    "load": 5.339,
+    "monthly": 1.725,
+    "an12_measures": 1.004,
+    "an12_fm": 2.367,
+    "ivol_channel": 0.756,
+    "write": 0.128,
+    "total": 14.774
+  },
+  "peak_rss_mb": 761.4
+}

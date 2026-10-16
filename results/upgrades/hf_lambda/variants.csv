@@ -1,0 +1,14 @@
+spec,svol,min_bars,role
+main,sqrt_sides,1000,main
+alt_svol,net_sqrt,1000,robustness
+min_bars_robust,sqrt_sides,100,robustness
+spearman correlations,sqrt_sides,1000,robustness
+log-log correlations,sqrt_sides,1000,robustness
+T10 lambda+EDGE,all,all,main
+T9B_diagnostics: main (same as T9B),sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
+T9B_diagnostics: first half (2023-10..2025-03),sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
+T9B_diagnostics: second half (2025-04..2026-09),sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
+T9B_diagnostics: ex exit month (coin leaves panel),sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
+T9B_diagnostics: raw ret (not CMKT-adjusted),sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
+T9B_diagnostics: ret_adj winsorized 1/99 within month,sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)
+T9B_diagnostics: + ivol control,sqrt_sides,1000,post-hoc diagnostic (added after seeing main result)

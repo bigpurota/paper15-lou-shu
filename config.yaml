@@ -33,6 +33,7 @@ measures:
 returns:
   rf: 0.0                            # see DEVIATIONS.md (D5)
   winsorize_returns: false           # main spec as in the paper; robustness only
+  winsorize_returns_q: [0.01, 0.99]  # added after the first run: robustness R_winsor_returns (within month)
 
 factors:
   # crypto analogue of FF3 adjustment (BCS 1998): CMKT only
@@ -61,3 +62,15 @@ simulation:
   days_per_month: 30
   n_sims_world0: 200
   premium_per_sd: 0.01               # monthly premium per 1 s.d. of the priced signal (worlds V, P)
+
+# Added after the first real-data run (see DEVIATIONS.md, journal): data-quality audit of the
+# Binance klines, applied before any measure is computed (src/data_audit.py documents the rules).
+audit:
+  enabled: true
+  min_factor: 8.0                    # price jump across a halt that cannot be a continuous series
+  round_tol_log10: 0.1               # reopen/prev_close within 10^(+-0.1) of a power of ten = redenomination
+  new_asset_min_gap_days: 14         # halts this long (delist/relist, ticker reuse) start a new asset id
+  volume_window_days: 7              # trading days before/after an event for the volume evidence
+  vol_tol_log10: 1.0                 # base volume must move by the redenomination factor (+- 1 order)
+  dvol_tol_log10: 1.0                # dollar volume must stay continuous (+- 1 order)
+  open_mismatch_ratio: 1.5           # reopen/prev_close without a halt: reported only

@@ -1,9 +1,10 @@
-"""One reproducible run: daily data -> panel -> tests (+ placebos) -> results/<run_id>/.
+"""One reproducible run: daily data -> audit -> panel -> tests (+ placebos) -> results/<run_id>/.
 
 Usage:  python -I src/run.py config.yaml [--daily data/cache/daily.parquet] [--tag TAG]
                                          [--results-dir results] [--cache-dir data/cache]
                                          [--synthetic N] [--no-placebo]
-Writes: results/<run_id>/*.csv, run_manifest.json; results/LATEST (= run_id);
+Writes: results/<run_id>/*.csv (incl. audit_events.csv, audit_summary.csv, ret_distribution.csv,
+        ret_extremes.csv, ret_influence.csv), run_manifest.json; results/LATEST (= run_id);
         the full panel only to <cache-dir>/panel_<run_id>.parquet.
 """
 from __future__ import annotations
@@ -32,6 +33,7 @@ import pandas as pd
 import yaml
 
 import analysis
+import data_audit
 from sorts import portfolio_returns
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,12 +90,18 @@ def peak_rss_mb() -> float:
 
 
 # ---------------------------------------------------------------- data
+OPTIONAL_DAILY = ["open", "high", "low", "volume", "n_trades"]     # used by the data audit
+
+
 def load_daily(path: Path) -> pd.DataFrame:
-    d = pd.read_parquet(path, columns=["symbol", "date", "close", "quote_volume"])
+    import pyarrow.parquet as pq
+    have = set(pq.read_schema(path).names)
+    cols = ["symbol", "date", "close", "quote_volume"] + [c for c in OPTIONAL_DAILY if c in have]
+    d = pd.read_parquet(path, columns=cols)
     d["symbol"] = d["symbol"].astype(str)
     d["date"] = pd.to_datetime(d["date"]).dt.tz_localize(None).dt.normalize()
-    d["close"] = d["close"].astype(float)
-    d["quote_volume"] = d["quote_volume"].astype(float)
+    for c in cols[2:]:
+        d[c] = d[c].astype(float)
     return d.sort_values(["symbol", "date"]).reset_index(drop=True)
 
 
@@ -197,6 +205,7 @@ def main(argv: list[str] | None = None) -> str:
     out = Path(a.results_dir) / run_id
     out.mkdir(parents=True, exist_ok=False)
     timings: dict[str, float] = {}
+    tables: dict[str, pd.DataFrame] = {}
 
     def stage(name):
         class _T:
@@ -215,10 +224,20 @@ def main(argv: list[str] | None = None) -> str:
         else:
             daily = load_daily(Path(a.daily))
             data_src, data_hash = str(Path(a.daily).resolve()), sha256_file(Path(a.daily))
+    audit_info = {"enabled": False}
+    if data_audit.audit_config(cfg)["enabled"]:
+        with stage("audit"):
+            n_raw = len(daily)
+            daily, events, audit_summary = data_audit.audit(daily, cfg)
+            tables["audit_events"], tables["audit_summary"] = events, audit_summary
+            audit_info = {"enabled": True, "rules": data_audit.audit_config(cfg),
+                          "events_by_type": {k: int(v) for k, v in events["type"].value_counts().items()},
+                          "daily_rows_raw": int(n_raw), "daily_rows_clean": int(len(daily))}
     with stage("build_panel"):
         panel, factors = analysis.build_panel(daily, cfg, start, end)
     with stage("run_tests"):
-        tables = analysis.run_tests(panel, factors, cfg)
+        tables.update(analysis.run_tests(panel, factors, cfg))
+        tables.update(data_audit.return_diagnostics(panel, daily, cfg["tests"]["quantiles"]))
         tables["T3_portfolios"] = quintile_portfolios(panel, cfg["tests"]["quantiles"])
         tables["panel_summary"] = panel_summary(panel)
     if not a.no_placebo:
@@ -247,6 +266,7 @@ def main(argv: list[str] | None = None) -> str:
                    "first_panel_month": str(months.min()), "last_panel_month": str(months.max())},
         "versions": versions(),
         "timings_sec": timings | {"total": round(sum(timings.values()), 3)},
+        "audit": audit_info,
         "rows": {"daily_rows": int(len(daily)), "daily_symbols": int(daily["symbol"].nunique()),
                  "panel_coin_months": int(len(panel)), "panel_coins": int(panel["symbol"].nunique()),
                  "panel_months": int(months.nunique())},

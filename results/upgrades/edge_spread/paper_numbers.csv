@@ -1,0 +1,19 @@
+key,value
+source_t9a,"Table 9 Panel A (p. 53): corr(ES, .)"
+corr_ES_A,0.731
+corr_ES_A_C,0.705
+corr_ES_ResA,0.215
+source_t9c,Table 9 Panel C (p. 53)
+source_t10,"Table 10 left panel (p. 54); cost = fit of lnA on ln lambda, QS, ES, RS"
+fm_lnES_alone.coef,-0.248
+fm_lnES_alone.t,-1.94
+fm_lnAC_with_benchmarks.coef,0.21
+fm_lnAC_with_benchmarks.t,3.71
+t10_cost_alone.coef,-0.047
+t10_cost_alone.t,-1.11
+t10_noncost_alone.coef,0.186
+t10_noncost_alone.t,3.04
+t10_both_cost.coef,0.015
+t10_both_cost.t,0.35
+t10_both_noncost.coef,0.191
+t10_both_noncost.t,3.1

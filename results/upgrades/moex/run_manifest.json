@@ -1,0 +1,149 @@
+{
+  "run_id": "moex_20261016T144811Z_b4264d55",
+  "created_utc": "20261016T144811Z",
+  "upgrade": "moex",
+  "base_run_id": "20261016T135240Z_3e8eb87e",
+  "base_run_note": "MOEX data and tests are independent of the Binance base run; its id is recorded for provenance.",
+  "git": {
+    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "dirty": true
+  },
+  "config_path": "/Users/purota/rs3-paper15/impl/config.yaml",
+  "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
+  "spec": {
+    "data": {
+      "board": "TQBR",
+      "universe_first_month": "2014-01",
+      "history_from": "2014-01-01",
+      "history_till": "2026-09-30",
+      "halt": [
+        "2022-02-28",
+        "2022-03-23"
+      ],
+      "t1_from": "2023-07-31",
+      "max_div_yield": 0.5,
+      "split_guard": 8.0,
+      "div_split_adjusted": true,
+      "infer_splits": true,
+      "infer_price_tol": 0.15,
+      "infer_volume_tol": 3.0,
+      "infer_window": 20,
+      "verified_splits": [
+        {
+          "secid": "BELU",
+          "date": "2024-08-22",
+          "before": 1,
+          "after": 8,
+          "source": "MOEX notice on BELU suspension before the share distribution (last trading day 15.08.2024); Novabev 1:8 (7 additional shares per share)"
+        }
+      ],
+      "verified_large_dividends": [
+        {
+          "secid": "LNZL",
+          "registry_date": "2021-07-13",
+          "source": "Board recommendation, 15,219.50 RUB per common share for 2020, registry date 13.07.2021"
+        }
+      ]
+    },
+    "universe": {
+      "types": [
+        "common_share"
+      ],
+      "min_valid_days": 10,
+      "min_mean_value_rub": 100000.0,
+      "robust_min_mean_value_rub": 1000000.0,
+      "min_stocks_first_month": 100
+    },
+    "measures": {
+      "scale_A": 1000000.0,
+      "scale_AT": 1.0,
+      "winsor": [
+        0.01,
+        0.99
+      ],
+      "lag_months": 2
+    },
+    "period": {
+      "return_end": "2026-09"
+    },
+    "factors": {
+      "beta_window": 60,
+      "beta_min_obs": 24,
+      "factor_quantiles": 3
+    },
+    "controls": {
+      "mom_window": [
+        -12,
+        -2
+      ],
+      "ivol_months": 12,
+      "ivol_min_days": 120
+    },
+    "tests": {
+      "quantiles": 5,
+      "robust_quantiles": 3,
+      "nw_lags": 6,
+      "hlz_threshold": 3.0,
+      "t_crit": 1.96
+    }
+  },
+  "spec_sha256": "b4264d55708e84c0c6c39e4e900ddcceb10f9c4cfc9f3e050c9edeb418635af0",
+  "code_sha256": {
+    "data_moex.py": "8ccb3b190523f20a4dacad6d9ec014dbf2c6a1378a56dd239e45e80ad11ab810",
+    "run_moex.py": "b19dac5da806a26310ca6136438136798f69461b818a984f0fa3f0d59de75717",
+    "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64",
+    "factors.py": "ee81e16f6a9e5bf439e0f884f3d4c3ae379276f14e2b8020ee683a02a09dcf9c",
+    "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
+    "sorts.py": "43c75b1a7b5a458f007652fd3ceff3291fe2cee3d53c829a465325c0fe291848",
+    "analysis.py": "91476d46a8e44cd573b3ebad8d7e7d389018f1589b45a279487d45a08909a6da"
+  },
+  "data_sha256": {
+    "moex_daily.parquet": "bcb1cdbd20b304a34c0806b20435cb4162b299822b643000b3d01e67b26502a6",
+    "moex_dividend_pages.parquet": "3487ffb48257f9509f7d93e9c9e799df351ae65570bcc4afc9536346a56f7e5b",
+    "moex_dividends.parquet": "ac871d268c3946ba96bca9b856ef827e4fdad1fbb4b194b75d30c02a19747a8e",
+    "moex_flags.parquet": "e90e08bbe276929e275d318d647cef61345e20269afe890ef4e38f30223eb584",
+    "moex_history.parquet": "f9972768bcb3d1d3cd5e4debe4c822380a296b2980ea4849f80d08b67aa48e45",
+    "moex_info.parquet": "1c835e86afa6c8e3fa3266c930c4ca8fb446999a256b44627c5d0febd8d4724e",
+    "moex_splits.parquet": "2a51554f987517afb7e6a1b0e88e0367c49a91bd66c902f9da15ac8e3328a0d2",
+    "moex_universe.parquet": "20d68ee38723f330bd7b12ce97f73438521a6f26ccf9bf4e0b080392f85f359e"
+  },
+  "raw_cache": "/Users/purota/rs3-paper15/impl/data/raw/moex",
+  "seed": 20261017,
+  "timings_sec": {
+    "data": 0.121,
+    "monthly": 2.44,
+    "main": 10.213,
+    "variants": 16.809,
+    "report": 2.262,
+    "total": 31.845
+  },
+  "rows": {
+    "daily_rows": 571303,
+    "daily_symbols": 332,
+    "panel_stock_months": 23788,
+    "panel_months": 145
+  },
+  "tables": [
+    "T1_corr.csv",
+    "T1_corr_spearman.csv",
+    "T1_describe.csv",
+    "T3_alpha_detail.csv",
+    "T3_sorts.csv",
+    "T3_sorts_terciles.csv",
+    "T4_fm.csv",
+    "data_flags.csv",
+    "deviations.csv",
+    "diag_by_year.csv",
+    "dividend_coverage.csv",
+    "dividend_crosscheck.csv",
+    "dividend_crosscheck_events.csv",
+    "ex_date_check.csv",
+    "factors.csv",
+    "paper_vs_moex.csv",
+    "sample.csv",
+    "splits_used.csv",
+    "universe_counts.csv",
+    "variants_key.csv",
+    "SUMMARY.md"
+  ]
+}

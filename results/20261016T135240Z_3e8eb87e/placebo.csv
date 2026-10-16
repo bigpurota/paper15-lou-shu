@@ -1,0 +1,22 @@
+test,var,coef,t,expectation,n,sd_t,share_abs_t_gt_1.96
+baseline (lag 2),FM(2) lnA_C,0.7603236137340972,1.5291160479092931,reference,1,,
+baseline (lag 2),FM(3) ResLnA,-5.0923426507570895,-2.464137162180754,reference,1,,
+baseline (lag 2),FM(4) lnA_C,1.0220649220298021,1.667605065465194,reference,1,,
+baseline (lag 2),FM(4) ResLnA,-8.103391757569401,-2.372627070507885,reference,1,,
+baseline (lag 2),H-L A,1.5431529625251321,0.9791051237562949,reference,1,,
+baseline (lag 2),H-L A_C,1.7010618789191536,1.1159896714627195,reference,1,,
+baseline (lag 2),H-L ResA,-0.5097568483203541,-0.4882961674673711,reference,1,,
+shuffle within month,FM(2) lnA_C,0.05115405316104883,0.2150086928829363,"coef ~ 0, share |t|>1.96 ~ 5%",20,0.8166718943200106,0.0
+shuffle within month,FM(3) ResLnA,-0.17505209385711423,-0.14958427677179398,"coef ~ 0, share |t|>1.96 ~ 5%",20,0.9155721849408652,0.0
+shuffle within month,FM(4) lnA_C,0.049760676078366414,0.22570125126187163,"coef ~ 0, share |t|>1.96 ~ 5%",20,0.7879855844264965,0.0
+shuffle within month,FM(4) ResLnA,-0.1619363160003746,-0.11086514726327397,"coef ~ 0, share |t|>1.96 ~ 5%",20,0.9444858721458695,0.0
+shuffle within month,H-L A,0.1888045523586748,0.28145633910605644,"coef ~ 0, share |t|>1.96 ~ 5%",20,1.118960028209491,0.1
+shuffle within month,H-L A_C,0.13551200853421477,0.1790698019382516,"coef ~ 0, share |t|>1.96 ~ 5%",20,0.7713187256984347,0.0
+shuffle within month,H-L ResA,0.3034261028459225,0.3231787563124206,"coef ~ 0, share |t|>1.96 ~ 5%",20,1.05580627725602,0.0
+leak (lag 0),FM(2) lnA_C,-1.83085903787514,-4.854030825051335,differs from baseline; strong |t| on real data = leak detectable,1,,
+leak (lag 0),FM(3) ResLnA,22.58695683853645,3.017262849903993,differs from baseline; strong |t| on real data = leak detectable,1,,
+leak (lag 0),FM(4) lnA_C,-2.7990897865774205,-5.573448227247055,differs from baseline; strong |t| on real data = leak detectable,1,,
+leak (lag 0),FM(4) ResLnA,25.63870724971122,3.060483269367602,differs from baseline; strong |t| on real data = leak detectable,1,,
+leak (lag 0),H-L A,-7.025291977542347,-5.133387392220569,differs from baseline; strong |t| on real data = leak detectable,1,,
+leak (lag 0),H-L A_C,-9.440409700631026,-6.023507830303542,differs from baseline; strong |t| on real data = leak detectable,1,,
+leak (lag 0),H-L ResA,6.981075872453826,2.5794539821502718,differs from baseline; strong |t| on real data = leak detectable,1,,

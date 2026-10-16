@@ -3,8 +3,11 @@
 Survivorship: the symbol list comes from the S3 bucket listing, which keeps
 pairs that were delisted, so the universe of every month includes them.
 
-Usage:  python -I src/data_binance.py config.yaml
+Usage:  python -I src/data_binance.py config.yaml [--rebuild]
+        --rebuild: do not download; re-parse the local zips listed in data/cache/symbols.txt
 Writes: data/raw/klines/<SYMBOL>/*.zip  and  data/cache/daily.parquet
+        daily.parquet columns: symbol, base, date, open, high, low, close, volume (base units),
+        quote_volume (USDT), n_trades, taker_buy_quote
 """
 from __future__ import annotations
 
@@ -27,6 +30,8 @@ CACHE = ROOT / "data" / "cache"
 NS = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}
 KLINE_COLS = ["open_time", "open", "high", "low", "close", "volume", "close_time",
               "quote_volume", "n_trades", "taker_buy_base", "taker_buy_quote", "ignore"]
+
+DAILY_NUM_COLS = ["open", "high", "low", "close", "volume", "quote_volume", "n_trades", "taker_buy_quote"]
 
 _session = requests.Session()
 
@@ -136,9 +141,7 @@ def build_daily(symbols: list[str], cfg: dict) -> pd.DataFrame:
             "symbol": sym,
             "base": sym[: -len(cfg["market"]["quote"])],
             "date": pd.to_datetime(t, unit="ms").dt.normalize(),
-            "close": pd.to_numeric(df["close"], errors="coerce"),
-            "quote_volume": pd.to_numeric(df["quote_volume"], errors="coerce"),
-            "n_trades": pd.to_numeric(df["n_trades"], errors="coerce"),
+            **{c: pd.to_numeric(df[c], errors="coerce") for c in DAILY_NUM_COLS},
         })
         frames.append(df)
     daily = pd.concat(frames, ignore_index=True)
@@ -146,14 +149,18 @@ def build_daily(symbols: list[str], cfg: dict) -> pd.DataFrame:
     return daily.reset_index(drop=True)
 
 
-def main(cfg_path: str) -> None:
+def main(cfg_path: str, rebuild: bool = False) -> None:
     cfg = yaml.safe_load(Path(cfg_path).read_text())
-    symbols = list_symbols(cfg)
-    print(f"eligible symbols: {len(symbols)}", flush=True)
-    with ThreadPoolExecutor(max_workers=8) as ex:
-        for i, n in enumerate(ex.map(lambda s: _download_symbol(s, cfg), symbols)):
-            if i % 50 == 0:
-                print(f"  {i}/{len(symbols)} symbols", flush=True)
+    if rebuild:
+        symbols = [s for s in (CACHE / "symbols.txt").read_text().split() if s]
+        print(f"rebuild from local zips: {len(symbols)} symbols", flush=True)
+    else:
+        symbols = list_symbols(cfg)
+        print(f"eligible symbols: {len(symbols)}", flush=True)
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            for i, n in enumerate(ex.map(lambda s: _download_symbol(s, cfg), symbols)):
+                if i % 50 == 0:
+                    print(f"  {i}/{len(symbols)} symbols", flush=True)
     daily = build_daily(symbols, cfg)
     CACHE.mkdir(parents=True, exist_ok=True)
     daily.to_parquet(CACHE / "daily.parquet", index=False)
@@ -162,4 +169,5 @@ def main(cfg_path: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else str(ROOT / "config.yaml"))
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    main(args[0] if args else str(ROOT / "config.yaml"), rebuild="--rebuild" in sys.argv[1:])

@@ -1,0 +1,19 @@
+id,metric,kind,paper,paper_t,us,us_t,match,why
+corrAAC,"corr(A, A_C)",level,0.899,,0.9557797052719312,,yes,Same construction; level depends on the cross-sectional dispersion of |r| vs. DVol (D1). TBD after real data.
+corrAabs,"corr(A, |Ret|)",level,0.489,,-0.1332258294337033,,no,Level and dispersion of crypto |r| differ from NYSE/AMEX stocks (D1). TBD after real data.
+corrACabs,"corr(A_C, |Ret|)",level,0.394,,-0.2475070284782905,,no,As above (D1). TBD after real data.
+QratioAC,Q75/Q25 of A_C,level,116.5967741935484,,9.398443729688612,,sign only,Dispersion of dollar volume across coins vs. stocks; the $10k volume filter cuts the illiquid tail (D8). TBD after real data.
+QratioAbs,Q75/Q25 of |Ret|,level,2.181818181818182,,1.7455519580454832,,yes,Crypto volatility level and dispersion differ from stocks (D1). TBD after real data.
+HLArawCoef,"H-L on A, raw (%/mo)",t,0.56,2.36,3.2859014162948967,1.1421169162351463,sign only,Far fewer months than 588 and fewer assets -> lower power (D1); crypto returns are much more volatile than stock returns. TBD after real data.
+HLAalphaCoef,"H-L on A, alpha (%/mo)",t,0.35,2.31,2.2610589893885433,1.3752386017422542,sign only,Alpha on CMKT+CMOM instead of FF3+UMD (D6); short sample (D1). TBD after real data.
+HLACrawCoef,"H-L on A_C, raw (%/mo)",t,0.61,2.95,57.51519469977429,1.0731498747337422,sign only,"Short sample, fewer assets (D1). TBD after real data."
+HLACalphaCoef,"H-L on A_C, alpha (%/mo)",t,0.44,3.2,2.582542935551793,1.5130627076185297,sign only,CMKT+CMOM alpha (D6); short sample (D1). TBD after real data.
+HLResArawCoef,"H-L on Res.A, raw (%/mo)",t,-0.17,-1.05,-52.842365158465675,-1.0279753852718694,yes,Paper's spread is insignificant; ours tests the same null on a short sample (D1). TBD after real data.
+HLResAalphaCoef,"H-L on Res.A, alpha (%/mo)",t,-0.16,-0.96,0.472605348062775,0.2626426276582326,yes,CMKT+CMOM alpha (D6). TBD after real data.
+FMlnA,"FM ln A, model (1)",t,0.119,3.01,11.480426283856124,1.075310771341912,sign only,"CMKT-adjusted returns, 36m betas (D4); no ln(ME), B/M controls (D2, D3); r_f = 0 (D5, no effect on slopes). TBD after real data."
+FMlnAC,"FM ln A_C, model (2)",t,0.183,4.79,15.4312615594553,1.075994498940556,sign only,As for ln A (D2-D4). TBD after real data.
+FMResLnA,"FM Res.lnA, model (3)",t,-0.383,-5.07,-128.8101089904537,-1.0619465793570029,sign only,As for ln A (D2-D4). TBD after real data.
+FMResLnAivol,"FM Res.lnA, model (5) with ln A_C + IVOL",t,-0.303,-4.65,-169.00650031100847,-1.0551545037157029,sign only,"IVOL vs daily EW CMKT, window ends in t-2 (D7); no size control (D2). TBD after real data."
+ANResLnA,A&N (2021) col. 4: RlnILLIQ with ln A_C + IVOL,t,0.736,4.63,-169.00650031100847,-1.0551545037157029,no,Same regression as the row above; Amihud & Noh use 12-month measures and get the opposite sign to Lou & Shu. TBD after real data.
+ANDIF,A&N (2021) col. 3: DIF with ln A_C + ln|Ret|,t,0.996,3.75,-105.50705396844272,-0.918933960989975,no,"Our measures are monthly (A&N: 12-month windows), no size/B/M controls (D2, D3). A&N col. 2 (with ln LSIlliq) gives 1.219 (t 4.42). TBD after real data."
+IMLAalpha,alpha of H-L(A) on IMLA_C (%/mo),t,-0.04,-0.77,3.191918166766988,1.118233879471062,yes,IMLA_C built from our tercile sorts on A_C; one-factor alpha. TBD after real data.

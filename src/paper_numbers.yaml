@@ -51,6 +51,27 @@ lou_shu_2017:
     imla_one_factor: {alpha: -0.04, t: -0.77}
     imla_five_factor: {alpha: -0.08, t: -1.66}
 
+  table6:                          # FM on FF3-adjusted returns: ln(VOLUME) and Res. ln(A) on ln(VOLUME)
+    source: "Table 6, column (1), monthly measures (p. 48)"
+    "(1)": {lnVOL: {coef: -0.158, t: -3.65}, ResLnA: {coef: -0.167, t: -2.74}}
+
+  tableA3:                         # Table 4 regressions with raw returns (Panel A) and by sub-period (B, C)
+    source: "Internet Appendix Table A.3 (IA p. 4)"
+    panelA_raw:
+      "(1)": {lnA: {coef: 0.081, t: 2.08}}
+      "(2)": {lnA_C: {coef: 0.095, t: 1.93}}
+      "(3)": {ResLnA: {coef: -0.143, t: -1.13}}
+      "(4)": {lnA_C: {coef: 0.089, t: 2.34}, ResLnA: {coef: -0.053, t: -0.45}}
+      "(5)": {lnA_C: {coef: 0.075, t: 1.99}, ResLnA: {coef: -0.185, t: -2.23}, ivol: {coef: 3.386, t: 0.56}}
+    panelB_1964_1988:
+      "(2)": {lnA_C: {coef: 0.272, t: 4.71}}
+      "(4)": {lnA_C: {coef: 0.217, t: 3.52}, ResLnA: {coef: -0.222, t: -2.24}}
+    panelC_1989_2012:
+      # (2) lnA_C is printed as 0.902 (t 1.98), ten times every other ln A_C slope in the table;
+      # probably a typo for 0.092, kept exactly as printed
+      "(2)": {lnA_C: {coef: 0.902, t: 1.98}}
+      "(4)": {lnA_C: {coef: 0.040, t: 0.90}, ResLnA: {coef: -0.275, t: -2.21}}
+
   table9:                          # NYSE/AMEX 1983-2012, 358 months
     source: "Table 9, Panels A and B (p. 52-53)"
     corr_A_lambda: 0.737

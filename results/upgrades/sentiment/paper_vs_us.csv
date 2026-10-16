@@ -1,0 +1,9 @@
+test,row,paper_b,paper_t,ours_b,ours_t,n_months,same_sign,ours_sig_196
+sentiment,Short,-0.25,-2.67,-1.371276692580051,-1.7037939895040644,93,True,False
+sentiment,Long,-0.01,-0.1,1.198057289493853,1.414899269206132,93,False,False
+sentiment,Long-Short,0.24,1.81,2.5693339820739043,1.8426345777176538,93,True,False
+sentiment,L-S High-Low (Panel A),0.36,1.08,3.6378732163436514,1.210793089368148,93,True,False
+illiquidity,Short,0.031,2.18,2.63987433067902,3.777785646082093,88,True,True
+illiquidity,Long,-0.016,-1.11,-1.6602074911630402,-2.593301906438604,88,True,True
+illiquidity,Long-Short,-0.048,-2.38,-4.30008182184206,-3.5753141637930415,88,True,True
+illiquidity,L-S High-Low (Panel A),-0.02,-0.08,-5.59937488681973,-1.445920488053361,88,True,False

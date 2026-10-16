@@ -1,0 +1,85 @@
+{
+  "run_id": "sentiment_20261016T140147Z",
+  "base_run_id": "20261016T135240Z_3e8eb87e",
+  "created_utc": "20261016T140147Z",
+  "git": {
+    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "dirty": true
+  },
+  "config_path": "/Users/purota/rs3-paper15/impl/config.yaml",
+  "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
+  "code_sha256": {
+    "sentiment.py": "d4c3e3bb8685979a25739d0a2d22f9a7d34430da23f807bb1b487310b368cc8a",
+    "run.py": "176039cfbd32cdd3623a7edff76bf9cdd3074d9c9780b93c22ee970211efc790",
+    "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64",
+    "sorts.py": "43c75b1a7b5a458f007652fd3ceff3291fe2cee3d53c829a465325c0fe291848",
+    "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
+    "data_audit.py": "e01e63fd3ccb2f924e800be1b7dc0de21fee657f47985a9dd020986aba4c5a69"
+  },
+  "data": {
+    "fng_json": "/Users/purota/rs3-paper15/impl/data/raw/fng/fng.json",
+    "fng_sha256": "279e78045d2d8ee37d36bd121b45c004472dcbeb4084dba32d26f2f256f102d8",
+    "fng_url": "https://api.alternative.me/fng/?limit=0&format=json",
+    "daily": "/Users/purota/rs3-paper15/impl/data/cache/daily.parquet",
+    "daily_sha256": "47d0542600dbce8339e3bfff34a7648f3a37107b1cc86af8c45de1c75f1dca1d",
+    "panel_cache": "/Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135240Z_3e8eb87e.parquet",
+    "panel_sha256": "3a1397327cc45f1fbf200d262c58df7d55a7c90ccc05b11b5676968255699cd9"
+  },
+  "seed": 20261017,
+  "params": {
+    "nw_lags": 6,
+    "quantiles": 5,
+    "fng_min_days": 20,
+    "illiq_min_coins": 30,
+    "main_controls": "CMKT+CMOM",
+    "post_hoc_controls": [
+      "CMKT+CMOM+CMKT(t-1)"
+    ],
+    "state_vars": {
+      "sent_mean": "Fear&Greed, mean of month t-1",
+      "sent_eom": "Fear&Greed, last day of month t-1",
+      "illiq_ar2": "AR(2) residual of EW mean A, month t-1",
+      "illiq_ar2_log": "AR(2) residual of ln EW mean A, month t-1",
+      "illiq_level_log": "ln EW mean A, month t-1 (level; trending)"
+    }
+  },
+  "checks": {
+    "daily_matches_base_run": true,
+    "daily_audit_applied": true,
+    "max_abs_diff_HL_vs_T3": 3.552713678800501e-15,
+    "abs_diff_FM_lnA_C_vs_T4": 1.1102230246251565e-16
+  },
+  "versions": {
+    "python": "3.12.13",
+    "platform": "macOS-26.4.1-arm64-arm-64bit",
+    "pandas": "3.0.6",
+    "numpy": "2.5.4",
+    "statsmodels": "0.15.0",
+    "matplotlib": "3.11.2",
+    "scipy": "1.18.1",
+    "PyYAML": "6.0.3",
+    "pyarrow": "26.0.0",
+    "requests": "2.34.2",
+    "pytest": "9.1.1"
+  },
+  "timings_sec": {
+    "fng": 0.022,
+    "illiquidity": 5.511,
+    "premium": 0.267,
+    "tests": 0.303,
+    "write": 0.026,
+    "total": 6.129
+  },
+  "outputs": [
+    "SUMMARY.md",
+    "ar2_fit.csv",
+    "fng_monthly.csv",
+    "illiq_monthly.csv",
+    "january_placebo.csv",
+    "panel_a.csv",
+    "panel_b.csv",
+    "paper_vs_us.csv",
+    "premium_series.csv",
+    "states.csv"
+  ]
+}

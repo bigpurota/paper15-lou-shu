@@ -1,0 +1,39 @@
+model,var,coef,t,source
+LS T2(3),lnA_C,0.165,3.92,src/paper_numbers.yaml
+LS T2(3),ln_absret,-0.319,-2.13,src/paper_numbers.yaml
+LS T4(4),lnA_C,0.13,3.31,src/paper_numbers.yaml
+LS T4(4),ResLnA,-0.248,-3.14,src/paper_numbers.yaml
+LS T4(5),lnA_C,0.12,3.11,src/paper_numbers.yaml
+LS T4(5),ResLnA,-0.303,-4.65,src/paper_numbers.yaml
+LS T4(5),ivol,-2.903,-0.57,src/paper_numbers.yaml
+AN col2,lnLSIlliq,0.111,2.64,src/paper_numbers.yaml
+AN col2,DIF,1.219,4.42,src/paper_numbers.yaml
+AN col3,ln_absR,-0.317,-2.1,src/paper_numbers.yaml
+AN col3,lnIDVOL,0.093,2.64,src/paper_numbers.yaml
+AN col3,DIF,0.996,3.75,src/paper_numbers.yaml
+AN col4,lnIDVOL,0.099,3.01,src/paper_numbers.yaml
+AN col4,RlnILLIQ,0.736,4.63,src/paper_numbers.yaml
+AN col4,ivol,-0.663,-8.82,src/paper_numbers.yaml
+AN col1_lnILLIQ,col1_lnILLIQ,0.102,2.45,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN fDIF_int,fDIF_int,1.261,3.29,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN fDIF_noint,fDIF_noint,1.022,3.63,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN fDIF_bcv_int,fDIF_bcv_int,2.236,3.55,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN fDIF_bcv_noint,fDIF_bcv_noint,1.026,3.96,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,mean_DIF,-0.17,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,sd_DIF,0.09,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,corr_DIF_lnILLIQ,-0.37,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,corr_DIF_lnLSIlliq,-0.41,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,corr_DIF_ln_absR,-0.24,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,corr_DIF_lnIDVOL,-0.38,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,sd_ln_absR,0.34,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,sd_lnIDVOL,1.89,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,corr_lnILLIQ_lnIDVOL,0.99,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,share_b_negative,0.011,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,mean_CV2,1.447,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,mean_b,0.043,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,corr_lnb_lnLSIlliq,0.87,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,corr_lnCV2_lnLSIlliq,0.62,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,r2_DIF_on_components_int,0.45,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,r2_DIF_on_components_noint,0.73,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,r2_DIF_on_lnCV2_lnb_int,0.4,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"
+AN descriptive,r2_DIF_on_lnCV2_lnb_noint,0.67,,"Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)"

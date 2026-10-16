@@ -88,6 +88,29 @@ def describe(panel: pd.DataFrame) -> pd.DataFrame:
     return d
 
 
+def winsorize_returns(panel: pd.DataFrame, q: tuple[float, float]) -> pd.DataFrame:
+    """ret and ret_adj winsorized at quantiles q within each month (other columns untouched)."""
+    return winsorize_cs(panel, ["ret", "ret_adj"], "month", tuple(q))
+
+
+def winsorized_returns_block(panel, fac, cfg, t4_models, controls) -> pd.DataFrame:
+    t = cfg["tests"]
+    q = cfg["returns"].get("winsorize_returns_q", [0.01, 0.99])
+    pw = winsorize_returns(panel, q)
+    rows = []
+    for s in ["A", "A_C", "ResA"]:
+        tab = _no_attrs(sort_table(pw, s, "ret", t["quantiles"], fac, t["nw_lags"]).reset_index(names="row"))
+        tab.insert(0, "signal", s)
+        tab.insert(0, "test", "T3")
+        rows.append(tab)
+    fm = _fm_block(pw, "ret_adj", t4_models, t["nw_lags"], controls)
+    fm.insert(0, "test", "T4")
+    rows.append(fm)
+    out = pd.concat(rows, ignore_index=True)
+    out.insert(1, "winsor_q", f"{q[0]:g}-{q[1]:g}")
+    return out
+
+
 def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool = True) -> dict[str, pd.DataFrame]:
     t = cfg["tests"]
     lags, q = t["nw_lags"], t["quantiles"]
@@ -185,6 +208,10 @@ def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool 
             for row in ["raw", "alpha"]:
                 vw_rows.append({"sample": name, "signal": s, "row": row, "H-L": tab.loc[row, "H-L"], "t": tab.loc[row, "t"]})
     out["R_weighting"] = pd.DataFrame(vw_rows)
+
+    # Robustness (pre-registered, returns.winsorize_returns): T3 sorts and T4 FM with the
+    # dependent returns winsorized within each month; factors (CMKT, CMOM) are left unchanged
+    out["R_winsor_returns"] = winsorized_returns_block(panel, fac, cfg, t4_models, controls)
 
     out["sample"] = pd.DataFrame([{
         "n_months": panel["month"].nunique(), "first": str(months[0]), "last": str(months[-1]),

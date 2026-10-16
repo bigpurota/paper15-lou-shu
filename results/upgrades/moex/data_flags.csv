@@ -1,0 +1,8 @@
+secid,date,kind,value
+BELU,2024-08-22,verified_split,0.125
+IRAO,2015-01-20,inferred_split,100.0
+RGSS,2016-04-28,inferred_split,0.1
+GEMA,2022-10-14,dividend_dropped,0.6091954022988506
+LNZL,2021-07-12,verified_large_dividend,0.6512409071459135
+LPSB,2024-12-09,dividend_dropped,0.5460750853242321
+GAZT,2023-11-30,unexplained_jump,19.649717514124294

@@ -1,0 +1,102 @@
+{
+  "run_id": "20261016T135240Z_3e8eb87e",
+  "created_utc": "20261016T135240Z",
+  "tag": "",
+  "git": {
+    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "dirty": true
+  },
+  "config_path": "/Users/purota/rs3-paper15/impl/config.yaml",
+  "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
+  "code_sha256": "2b1546c7642cfa5b88d2c5ad0188408fc5ba6410672ffbaa22810157f8074106",
+  "data_source": "/Users/purota/rs3-paper15/impl/data/cache/daily.parquet",
+  "data_sha256": "47d0542600dbce8339e3bfff34a7648f3a37107b1cc86af8c45de1c75f1dca1d",
+  "seed": 20261017,
+  "period": {
+    "return_start": "2019-01",
+    "return_end": "2026-09",
+    "first_panel_month": "2019-01",
+    "last_panel_month": "2026-09"
+  },
+  "versions": {
+    "python": "3.12.13",
+    "platform": "macOS-26.4.1-arm64-arm-64bit",
+    "pandas": "3.0.6",
+    "numpy": "2.5.4",
+    "statsmodels": "0.15.0",
+    "matplotlib": "3.11.2",
+    "scipy": "1.18.1",
+    "PyYAML": "6.0.3",
+    "pyarrow": "26.0.0",
+    "requests": "2.34.2",
+    "pytest": "9.1.1"
+  },
+  "timings_sec": {
+    "load": 0.167,
+    "audit": 4.988,
+    "build_panel": 2.113,
+    "run_tests": 4.882,
+    "placebo": 12.592,
+    "write": 0.057,
+    "total": 24.799
+  },
+  "audit": {
+    "enabled": true,
+    "rules": {
+      "enabled": true,
+      "min_factor": 8.0,
+      "round_tol_log10": 0.1,
+      "new_asset_min_gap_days": 14,
+      "volume_window_days": 7,
+      "vol_tol_log10": 1.0,
+      "dvol_tol_log10": 1.0,
+      "open_mismatch_ratio": 1.5
+    },
+    "events_by_type": {
+      "redenomination": 8,
+      "long_gap": 4,
+      "zero_volume": 2,
+      "ticker_reuse": 2,
+      "open_mismatch": 1
+    },
+    "daily_rows_raw": 788692,
+    "daily_rows_clean": 788689
+  },
+  "rows": {
+    "daily_rows": 788689,
+    "daily_symbols": 684,
+    "panel_coin_months": 24628,
+    "panel_coins": 626,
+    "panel_months": 93
+  },
+  "peak_rss_mb": 865.2,
+  "tables": [
+    "R_raw_fm.csv",
+    "R_subperiods.csv",
+    "R_weighting.csv",
+    "R_winsor_returns.csv",
+    "T1_corr.csv",
+    "T1_corr_spearman.csv",
+    "T1_describe.csv",
+    "T2_fm.csv",
+    "T3_portfolios.csv",
+    "T3_sorts.csv",
+    "T4_fm.csv",
+    "T5_imla.csv",
+    "T6_fm.csv",
+    "T7_january.csv",
+    "U1_an_describe.csv",
+    "U1_an_fm.csv",
+    "U1_an_sorts.csv",
+    "audit_events.csv",
+    "audit_summary.csv",
+    "factors.csv",
+    "panel_summary.csv",
+    "placebo.csv",
+    "ret_distribution.csv",
+    "ret_extremes.csv",
+    "ret_influence.csv",
+    "sample.csv"
+  ],
+  "panel_cache": "/Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135240Z_3e8eb87e.parquet"
+}

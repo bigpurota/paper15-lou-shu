@@ -1,0 +1,127 @@
+{
+  "run_id": "hf_lambda_20261016T152528Z_3e8eb87e",
+  "created_utc": "20261016T152528Z",
+  "base_run_id": "20261016T135240Z_3e8eb87e",
+  "base_panel": "/Users/purota/rs3-paper15/impl/data/cache/panel_20261016T135240Z_3e8eb87e.parquet",
+  "git": {
+    "sha": "9ddffbbd5b42e91eee413b6e31b7dba87b677b51",
+    "dirty": true
+  },
+  "config_sha256": "3e8eb87e26b6e23e1299620160043ac041a887a52ec0c8d30350a692da791fac",
+  "code_sha256": {
+    "hf_lambda.py": "14a72259c89ea44946b18dc8cbbf5bfcbeb7310227b515d2b3bdd54eebfa56b3",
+    "analysis.py": "91476d46a8e44cd573b3ebad8d7e7d389018f1589b45a279487d45a08909a6da",
+    "fama_macbeth.py": "962ce322ae655bd51bdca18d89add39913559cb863e53ce872999397fe1c0cc3",
+    "measures.py": "009da75506c050939be6700be8eff048f9a9c335ec4ddd0104bb9d69d9adfb64"
+  },
+  "data_sha256": {
+    "base_panel": "3a1397327cc45f1fbf200d262c58df7d55a7c90ccc05b11b5676968255699cd9",
+    "raw_zips": "bd317c137e76b935019ecbea6cc068500e42c632e3bc3bc38e320a3c7daa4ab1",
+    "n_raw_zips": 13779,
+    "edge_monthly": "97455cbcd783c4c8cc85cd8d0d63d20e82ebcbd0281b783de2287f519503b9b5"
+  },
+  "seed": 20261017,
+  "spec": {
+    "measure_start": "2023-08",
+    "measure_end": "2026-07",
+    "svol_main": "sqrt_sides",
+    "svol_alt": "net_sqrt",
+    "min_bars": 1000,
+    "min_bars_robust": 100,
+    "max_abs_r": 0.5,
+    "winsor": [
+      0.01,
+      0.99
+    ],
+    "validation_months": [
+      "2024-06",
+      "2025-06"
+    ],
+    "validation_per_quintile": 7,
+    "aggtrades_max_mb": 300,
+    "download_workers": 24
+  },
+  "offline": false,
+  "paper": {
+    "T9A": {
+      "A": 0.737,
+      "A_C": 0.747,
+      "ResA": 0.149
+    },
+    "T9B": {
+      "(1)": {
+        "lnlam": [
+          -0.034,
+          -0.67
+        ]
+      },
+      "(2)": {
+        "lnlam": [
+          -0.155,
+          -2.51
+        ],
+        "lnA_C": [
+          0.18,
+          3.8
+        ]
+      }
+    },
+    "T10": {
+      "(1)": {
+        "cost": [
+          -0.047,
+          -1.11
+        ]
+      },
+      "(2)": {
+        "noncost": [
+          0.186,
+          3.04
+        ]
+      },
+      "(3)": {
+        "cost": [
+          0.015,
+          0.35
+        ],
+        "noncost": [
+          0.191,
+          3.1
+        ]
+      }
+    },
+    "sample": "NYSE/AMEX, 1983-2012 (Table 9: 358 months, ~1725 stocks); Table 10: 1964-2012"
+  },
+  "edge_status": "used column 'edge' of edge_monthly.parquet (26347 coin-months); main rule 'floor' as in edge_spread, floored share 0.510",
+  "timings_sec": {
+    "load_panel": 0.13,
+    "download": 0.64,
+    "lambda_klines": 66.57,
+    "lambda_aggtrades": 66.23,
+    "tests": 3.82,
+    "hash": 8.71,
+    "total": 146.1
+  },
+  "versions": {
+    "python": "3.12.13",
+    "pandas": "3.0.6",
+    "numpy": "2.5.4"
+  },
+  "tables": [
+    "T10_fm.csv",
+    "T9A_corr.csv",
+    "T9B_diagnostics.csv",
+    "T9B_fm.csv",
+    "coverage.csv",
+    "coverage_by_month.csv",
+    "downloads.csv",
+    "downloads_missing.csv",
+    "fm_slopes_monthly.csv",
+    "lambda_describe.csv",
+    "lambda_monthly.csv",
+    "validation_lambda.csv",
+    "validation_selection.csv",
+    "validation_summary.csv",
+    "variants.csv"
+  ]
+}
