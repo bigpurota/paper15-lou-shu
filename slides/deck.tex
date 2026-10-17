@@ -279,10 +279,9 @@ Its significance needs more than \V{n.months} months.\par
 \begin{frame}[plain]
 \begin{tikzpicture}[remember picture,overlay]
 \node[anchor=north east,inner sep=0] at (current page.north east) {\includegraphics[height=\paperheight]{hse/ornament.png}};
-\node[anchor=center,inner sep=0] at ($(current page.west)+(1.9cm,0.6cm)$) {\includegraphics[height=1.7cm]{hse/logo_full.png}};
-\node[anchor=west,align=left,text=hse,font=\fontsize{19}{22}\selectfont] at ($(current page.west)+(3.4cm,1.0cm)$) {Price Impact or Trading Volume\\(Lou, Shu, 2017)};
-\node[anchor=west,align=left,text=hse,font=\fontsize{9}{11}\selectfont] at ($(current page.west)+(3.4cm,-0.4cm)$) {Thank you! Questions?};
-\node[anchor=west,align=left,text=hse,font=\fontsize{6.5}{8}\selectfont] at ($(current page.west)+(3.4cm,-1.1cm)$) {\ifx\repourl\empty\else\url{\repourl}\fi};
+\node[anchor=north west,inner sep=0] at ($(current page.north west)+(0.75cm,-0.45cm)$) {\includegraphics[height=1.15cm]{hse/logo_full.png}};
+\node[anchor=west,align=left,text=hse,font=\fontsize{14}{16}\selectfont] at ($(current page.north west)+(2.25cm,-1.02cm)$) {Price Impact or Trading Volume (Lou, Shu, 2017)};
+\node[anchor=south,inner sep=0] at ($(current page.south)+(-0.4cm,0.3cm)$) {\includegraphics[height=6.5cm]{hse/meme.png}};
 \end{tikzpicture}
 \end{frame}
 
