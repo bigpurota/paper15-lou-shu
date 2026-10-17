@@ -73,8 +73,10 @@ docs: | $(STAMP)
 DECK    := slides/paper15_team12_LouShu2017.pdf
 slides: docs
 	cd slides && latexmk -xelatex -interaction=nonstopmode -halt-on-error -outdir=build deck.tex
+	cd slides && latexmk -xelatex -interaction=nonstopmode -halt-on-error -outdir=build notes.tex
 	@! grep -q "Missing character" slides/build/deck.log || { grep "Missing character" slides/build/deck.log; exit 1; }
 	cp slides/build/deck.pdf $(DECK)
+	cp slides/build/notes.pdf slides/paper15_team12_notes.pdf
 
 p0: data tests sims run report figures
 UPGRADES_ORDERED := $(filter upgrade-edge_spread,$(UPGRADES)) $(filter-out upgrade-edge_spread,$(UPGRADES))

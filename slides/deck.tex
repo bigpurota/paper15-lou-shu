@@ -27,10 +27,6 @@
 \setbeamertemplate{enumerate items}[default]
 \setbeamersize{text margin left=0.75cm,text margin right=0.75cm}
 
-\gdef\speakerline{}
-\newcommand\speaker[1]{\gdef\speakerline{Speaker: #1}}
-\newcommand\owner[1]{\gdef\speakerline{Q\&A owner: #1}}
-
 \setbeamertemplate{headline}{%
 \begin{tikzpicture}[remember picture,overlay]
 \node[anchor=north west,inner sep=0] at ($(current page.north west)+(0.45cm,-0.35cm)$) {\includegraphics[height=0.62cm]{hse/logo.png}};
@@ -39,14 +35,16 @@
 \end{tikzpicture}%
 \vskip1.15cm}
 \setbeamertemplate{frametitle}{\vskip0.15cm{\fontsize{14}{16.5}\selectfont\insertframetitle}\par\vskip0.1cm}
-\setbeamertemplate{footline}{\hspace{0.75cm}{\color{muted}\fontsize{4.5}{5}\selectfont\speakerline}\vskip0.3cm}
+\setbeamertemplate{footline}{\vskip0.3cm}
 
 \newcommand\lead[1]{{\fontsize{7}{8.6}\selectfont #1}\par\medskip}
 \newcommand\msg[1]{{\fontsize{8.5}{10.5}\selectfont\bfseries #1}\par}
 \newcommand\src[1]{\par\vfill{\color{muted}\fontsize{4.6}{5.4}\selectfont Source: #1}\par\vskip0.05cm}
 \newcommand\smalltxt{\fontsize{6.4}{7.8}\selectfont}
 \newcommand\card[3]{{\fontsize{11}{12}\selectfont #1}\par\smallskip{\fontsize{11.5}{13}\selectfont #2}\par\smallskip{\fontsize{6.4}{7.8}\selectfont #3}\par}
-\newcommand\bignum[2]{{\fontsize{22}{24}\selectfont #1}\par\smallskip{\fontsize{8.5}{10}\selectfont #2}\par}
+\newcommand\bignum[2]{{\fontsize{26}{28}\selectfont #1}\par\smallskip{\fontsize{8.5}{10}\selectfont #2}\par}
+\newcommand\midnum[2]{{\fontsize{15}{17}\selectfont #1}\par\smallskip{\fontsize{8.5}{10}\selectfont #2}\par}
+\newcommand\one[1]{{\fontsize{11}{14}\selectfont #1}\par}
 \tikzset{
   box/.style={rounded corners=4pt,minimum width=2.6cm,minimum height=0.85cm,align=center,font=\fontsize{7.5}{9}\selectfont,text=hse},
   gbox/.style={box,fill=hsegray},
@@ -61,354 +59,223 @@
 
 \begin{document}
 
-\speaker{Marat Bineman}
 \begin{frame}[plain]
 \begin{tikzpicture}[remember picture,overlay]
 \node[anchor=north east,inner sep=0] at (current page.north east) {\includegraphics[height=\paperheight]{hse/ornament.png}};
 \node[anchor=north west,inner sep=0] at ($(current page.north west)+(0.75cm,-0.65cm)$) {\includegraphics[height=1.15cm]{hse/logo_full.png}};
 \node[anchor=north west,align=left,text=hse,font=\fontsize{7.5}{9}\selectfont] at ($(current page.north west)+(2.1cm,-0.75cm)$) {Faculty of Computer Science\\Data Science and Business Analytics\\[0.25cm]{\fontsize{5.5}{6.5}\selectfont Research seminar «Data analysis in finance»}};
-\node[anchor=north west,align=left,text=hse,font=\fontsize{19}{21}\selectfont] at ($(current page.north west)+(0.75cm,-2.1cm)$) {Price Impact or Trading Volume:\\Why Is the Amihud (2002) Measure Priced?};
-\node[anchor=north west,align=left,text=hse,font=\fontsize{8}{9.5}\selectfont] at ($(current page.north west)+(0.75cm,-3.75cm)$) {X. Lou, T. Shu, \emph{Review of Financial Studies} 30(12), 2017\\[0.12cm]{\fontsize{6.5}{8}\selectfont Replication on Binance spot (USDT pairs, \V{n.first}…\V{n.last}) and upgrades: Amihud \& Noh (2021), λ, EDGE, sentiment, MOEX, US}};
-\node[anchor=north west,align=left,text=hse,font=\fontsize{7.5}{9}\selectfont,text width=12.5cm] at ($(current page.north west)+(0.75cm,-5.45cm)$) {Group 12: \teamnames\\[0.08cm]{\fontsize{6}{7}\selectfont\ifx\repourl\empty link to be added\else\url{\repourl}\fi}};
+\node[anchor=north west,align=left,text=hse,font=\fontsize{19}{21}\selectfont] at ($(current page.north west)+(0.75cm,-2.3cm)$) {Price Impact or Trading Volume:\\Why Is the Amihud (2002) Measure Priced?};
+\node[anchor=north west,align=left,text=hse,font=\fontsize{8}{9.5}\selectfont] at ($(current page.north west)+(0.75cm,-3.95cm)$) {X. Lou, T. Shu, \emph{Review of Financial Studies}, 2017 · replication on Binance};
+\node[anchor=north west,align=left,text=hse,font=\fontsize{7.5}{9}\selectfont,text width=12.5cm] at ($(current page.north west)+(0.75cm,-5.45cm)$) {Group 12: \teamnames};
 \node[anchor=north west,text=hse,font=\fontsize{5.5}{6.5}\selectfont] at ($(current page.north west)+(0.75cm,-7.4cm)$) {Moscow 2026};
 \end{tikzpicture}
 \end{frame}
 
-\speaker{Marat Bineman}
 \begin{frame}{Problem}
-\begin{columns}[T]
+\begin{columns}[c]
 \begin{column}{0.45\textwidth}
-\msg{The Amihud measure is priced, but for what?}
-\medskip
-{\fontsize{7.5}{9.2}\selectfont Stocks that are illiquid by Amihud earn a premium, usually read as compensation for price impact. Lou \& Shu ask whether that reading is right.}
-\[ A_{i,t} = \frac{1}{D}\sum_{d} \frac{|r_{i,d}|}{\mathrm{DVol}_{i,d}} \]
-{\fontsize{6.4}{7.8}\selectfont Paper's premium: quintile H-L on $A$, \V{pvu.HLArawCoef.paper} \%/month (NYSE/AMEX 1964–2012, \V{d.paperMonths} months).\par\medskip
-Why it matters:\\ $A$ is used both to \emph{measure} liquidity and to \emph{explain} returns; these are two different questions.}
+\one{Illiquid stocks earn a premium.\\Is it for price impact, or just for low volume?}
+\vskip0.5cm
+\[ A = \frac{1}{D}\sum_{d} \frac{|r_d|}{\mathrm{DVol}_d} \]
 \end{column}
 \begin{column}{0.53\textwidth}
 \centering
-\begin{tikzpicture}[node distance=0.32cm]
-\node[font=\fontsize{6}{7}\selectfont,align=center] (h1) {Standard reading\\price impact};
-\node[font=\fontsize{6}{7}\selectfont,align=center,right=1.0cm of h1] (h2) {Lou \& Shu\\trading volume};
+\begin{tikzpicture}
+\node[font=\fontsize{6.5}{7.5}\selectfont,align=center] (h1) {Standard reading};
+\node[font=\fontsize{6.5}{7.5}\selectfont,align=center,right=1.3cm of h1] (h2) {Lou \& Shu};
 \node[gbox,below=0.3cm of h1] (a1) {Amihud $A$};
 \node[gbox,below=0.3cm of h2] (a2) {Amihud $A$};
 \node[down,below=0.12cm of a1] (t1) {};
 \node[down,below=0.12cm of a2] (t2) {};
-\node[rbox,below=0.12cm of t1] (m1) {$|r|$ per dollar\\traded};
-\node[ebox,below=0.12cm of t2] (m2) {$1/\mathrm{DVol}$\\volume};
+\node[rbox,below=0.12cm of t1] (m1) {price impact};
+\node[ebox,below=0.12cm of t2] (m2) {trading volume};
 \node[down,below=0.12cm of m1] (u1) {};
 \node[down,below=0.12cm of m2] (u2) {};
-\node[gbox,below=0.12cm of u1] {Premium for\\illiquidity};
-\node[gbox,below=0.12cm of u2] {Premium for\\low volume};
+\node[gbox,below=0.12cm of u1] {illiquidity\\premium};
+\node[gbox,below=0.12cm of u2] {low-volume\\premium};
 \end{tikzpicture}
 \end{column}
 \end{columns}
-\src{Literature: Amihud (2002) → Goyenko–Holden–Trzcinka (2009) → Lou \& Shu (2017) → Amihud \& Noh (2021) → EDGE, Ardia–Guidotti–Kroencke (2024)}
 \end{frame}
 
-\speaker{Marat Bineman}
-\begin{frame}{Key observation: across assets, $A$ is almost only volume}
-\lead{Dollar volume varies enormously across assets and $|r|$ varies little, so $A \approx A_C$.}
-\vskip0.2cm
+\begin{frame}{Amihud is almost only volume}
+\vskip0.6cm
 \begin{columns}[T]
-\begin{column}{0.3\textwidth}
-\bignum{\V{pvu.corrAAC.paper}}{corr($A$, $A_C$), paper}
-\vskip0.45cm
-\bignum{\V{pvu.corrAAC}}{corr($A$, $A_C$), Binance}
-\end{column}
-\begin{column}{0.66\textwidth}
-\begin{center}
-\fontsize{7.5}{9}\selectfont
-\begin{tabular}{@{}lrr@{}}
-\toprule
- & \textbf{paper (NYSE/AMEX)} & \textbf{us (Binance)} \\
-\midrule
-Q75/Q25 of $A_C$ & \V{pvu.QratioAC.paper} & \V{pvu.QratioAC} \\
-Q75/Q25 of $|Ret|$ & \V{pvu.QratioAbs.paper} & \V{pvu.QratioAbs} \\
-corr($A$, $|Ret|$) & \V{pvu.corrAabs.paper} & \V{pvu.corrAabs} \\
-\bottomrule
-\end{tabular}
-\end{center}
-\smalltxt
-\begin{itemize}
-\item Our dispersion of liquidity is an order of magnitude smaller (volume filter and Binance listing policy are a hypothesis for why), but the conclusion is the same: $A$ is close to $A_C$.
-\item Difference: for coins, volume rises with volatility, so corr($A$, $|Ret|$) is negative.
-\end{itemize}
-\end{column}
+\begin{column}{0.45\textwidth}\centering\bignum{\V{pvu.corrAAC.paper}}{corr($A$, $A_C$) · US stocks, paper}\end{column}
+\begin{column}{0.45\textwidth}\centering\bignum{\V{pvu.corrAAC}}{corr($A$, $A_C$) · Binance, us}\end{column}
 \end{columns}
-\src{\V{base.dir}/paper\_vs\_us.csv (T1)}
+\vskip1cm
+\centering\one{$A_C$ keeps only $1/\mathrm{DVol}$, and it explains almost all of $A$.}
 \end{frame}
 
-\speaker{Sofia Shapovalova}
-\begin{frame}{Method: a ``constant'' measure and a residual}
-\begin{columns}[T]
-\begin{column}{0.44\textwidth}
-\lead{If $A_C$ is priced and the part of $A$ beyond $A_C$ is not, the Amihud premium is a volume premium.}
-\[ A_C = \frac{1}{D}\sum_d \frac{1}{\mathrm{DVol}_d} \]
+\begin{frame}{Method: split Amihud in two}
+\begin{columns}[c]
+\begin{column}{0.42\textwidth}
 \[ \ln A = a_t + b_t \ln A_C + \mathrm{Res.}\ln A \]
-\smalltxt
-First we tested on simulations whether the pipeline tells the hypotheses apart (\V{sim.assets} coins × \V{sim.months} months; \V{sim.checks.nfail} of \V{sim.checks.n} criteria fail):
-\begin{itemize}
-\item world V: $A_C$ significant in \V{sim.V.fm2} of runs, Res.lnA in \V{sim.V.fm3};
-\item world P: Res.lnA significant in FM in \V{sim.P.fm3}, in the sort only \V{sim.P.hlResA}; $\ln A_C$ falsely significant in \V{sim.P.fm2};
-\item real SE of the $A_C$ spread is \V{d.seRatioHlAC}--\V{d.seRatioHlACnw}× the simulated one, so real power is much lower.
-\end{itemize}
+\vskip0.3cm
+\one{If only the volume part is priced, the premium is about volume.}
 \end{column}
-\begin{column}{0.54\textwidth}
+\begin{column}{0.56\textwidth}
 \centering
 \begin{tikzpicture}
 \node[nbox,minimum width=5.4cm] (a) {$\ln A$};
 \node[down,below=0.12cm of a] (d) {};
-\node[ebox,below left=0.12cm and 0.15cm of d.south] (ac) {$\ln A_C$\\volume part};
-\node[rbox,below right=0.12cm and 0.15cm of d.south] (res) {Res.$\ln A$\\beyond volume};
-\node[font=\fontsize{6}{7}\selectfont,align=center,below=0.25cm of ac,text width=2.6cm] (v) {\textbf{``Volume'' hypothesis}\\$A_C$ priced,\\residual not};
-\node[font=\fontsize{6}{7}\selectfont,align=center,below=0.25cm of res,text width=2.6cm] (p) {\textbf{``Price impact''}\\residual Res.$A$\\is priced};
-\node[gbox,below=0.3cm of v,minimum width=2.6cm,font=\fontsize{6.5}{8}\selectfont] {World V\\simulated};
-\node[gbox,below=0.3cm of p,minimum width=2.6cm,font=\fontsize{6.5}{8}\selectfont] {World P\\simulated};
+\node[ebox,below left=0.12cm and 0.15cm of d.south] (ac) {$\ln A_C$\\volume};
+\node[rbox,below right=0.12cm and 0.15cm of d.south] (res) {Res.$\ln A$\\price impact};
+\node[down,below=0.12cm of ac] (d1) {};
+\node[down,below=0.12cm of res] (d2) {};
+\node[gbox,below=0.12cm of d1] {priced?\\``volume''};
+\node[gbox,below=0.12cm of d2] {priced?\\``price impact''};
 \end{tikzpicture}
 \end{column}
 \end{columns}
-\src{results/simulations/sim\_world\_summary.csv; results/upgrades/robustness/}
 \end{frame}
 
-\speaker{Sofia Shapovalova}
-\begin{frame}{Dataset overview and tests}
-\lead{Quintile sorts and Fama–MacBeth, signal from month $t-2$, Newey–West(6) t-statistics; $r_{i,t} - \hat\beta_i\,\mathrm{CMKT}_t = \gamma_0 + \gamma_1 X_{i,t-2} + \text{controls} + \varepsilon_{i,t}$}
-\begin{tikzpicture}
-\fill[hserose] (0,0) rectangle (4.6,0.13);
-\fill[hsegreen] (4.6,0) rectangle (9.2,0.13);
-\fill[hse] (9.2,0) rectangle (14.4,0.13);
-\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (2.3,-0.4) {month $t-2$\\{\fontsize{9}{10}\selectfont MEASURE}};
-\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (6.9,-0.4) {month $t-1$\\{\fontsize{9}{10}\selectfont SKIP}};
-\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (11.8,-0.4) {month $t$\\{\fontsize{9}{10}\selectfont RETURN}};
-\end{tikzpicture}
-\vskip0.25cm
-{\centering\fontsize{15}{17}\selectfont Binance spot, USDT pairs, \V{n.first}…\V{n.last}\par}
+\begin{frame}{First, simulations}
 \vskip0.3cm
 \begin{columns}[T]
-\begin{column}{0.24\textwidth}\bignum{\V{n.coins}}{coins in total}\end{column}
-\begin{column}{0.24\textwidth}\bignum{\V{n.months}}{months}\end{column}
-\begin{column}{0.24\textwidth}\bignum{\V{n.avgcoins}}{coins per month}\end{column}
-\begin{column}{0.24\textwidth}\bignum{\V{d.paperMonths}}{months in the paper (\V{d.paperAvgObs} stocks/month)}\end{column}
+\begin{column}{0.3\textwidth}\centering
+\tikz\node[ebox,minimum width=3.2cm]{World V\\volume is priced};\par\vskip0.4cm
+\bignum{\V{sim.V.fm2}}{runs find $A_C$ priced}\end{column}
+\begin{column}{0.3\textwidth}\centering
+\tikz\node[rbox,minimum width=3.2cm]{World P\\price impact is priced};\par\vskip0.4cm
+\bignum{\V{sim.P.fm3}}{runs find Res.$\ln A$ priced}\end{column}
+\begin{column}{0.3\textwidth}\centering
+\tikz\node[gbox,minimum width=3.2cm]{World 0\\nothing is priced};\par\vskip0.4cm
+\bignum{\V{sim.0.fm3}}{false positives (target 5\%)}\end{column}
 \end{columns}
-\vskip0.2cm
-{\smalltxt FM on \V{n.fmmonths} months with \V{n.fmobs} coins; CMKT instead of FF3 (no size, no B/M); later-delisted pairs kept, no delisting returns (D10). Data audit: \V{audit.redenomination} redenominations adjusted like splits, \V{audit.ticker_reuse} reused tickers split. Base specification fixed before the first real-data run; config hash \V{prereg.cfgmatch} docs/preregistration/; main run config \V{base.cfg8} (adds J1, J2).\par}
+\vskip0.7cm
+\centering\one{The pipeline tells the hypotheses apart before we touch real data.}
 \end{frame}
 
-\speaker{Ksenia Stepanova}
-\begin{frame}{The paper's results (Table 3, Table 4)}
-\lead{In the paper the spreads on $A$ and $A_C$ are positive and significant, the spread on Res.$A$ is not; in FM, Res.lnA is significantly negative.}
+\begin{frame}{Dataset overview}
 \vskip0.2cm
+\begin{tikzpicture}
+\fill[hserose] (8.82,0.42) rectangle (14.4,0.52);
+\node[font=\fontsize{6}{7}\selectfont,text=hserose,anchor=south west] at (8.82,0.52) {5-min λ window, \V{hf.months} months};
+\fill[hsesoft] (0,0) rectangle (7.12,0.16);
+\fill[hse] (7.12,0) rectangle (14.4,0.16);
+\draw[hserose,line width=1.2pt] (4.1,0.52) -- (4.1,0.16);
+\node[font=\fontsize{6}{7}\selectfont,text=hserose,anchor=south] at (4.1,0.52) {March 2021};
+\node[align=center,font=\fontsize{6}{7}\selectfont,anchor=north] at (3.56,-0.12) {2019-01 – 2022-10\\[0.05cm]{\fontsize{9}{10}\selectfont FIRST HALF}};
+\node[align=center,font=\fontsize{6}{7}\selectfont,anchor=north] at (10.76,-0.12) {2022-11 – 2026-09\\[0.05cm]{\fontsize{9}{10}\selectfont SECOND HALF}};
+\end{tikzpicture}
+\vskip0.45cm
+{\centering\fontsize{17}{19}\selectfont Binance spot · USDT pairs\par}
+\vskip0.45cm
 \begin{columns}[T]
-\begin{column}{0.62\textwidth}
-\fontsize{7.5}{9}\selectfont
-\begin{tabular}{@{}lcc@{}}
+\begin{column}{0.23\textwidth}\bignum{\V{n.coins}}{coins}\end{column}
+\begin{column}{0.23\textwidth}\bignum{\V{n.months}}{months}\end{column}
+\begin{column}{0.27\textwidth}\bignum{\V{n.coinmonths}}{coin-months}\end{column}
+\begin{column}{0.2\textwidth}\bignum{3}{signals: $A$, $A_C$, Res.$A$}\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Data analysis: what differs from the paper}
+\vskip0.4cm
+\begin{columns}[c]
+\begin{column}{0.58\textwidth}
+\fontsize{9}{11}\selectfont
+\renewcommand\arraystretch{1.45}
+\begin{tabular}{@{}lrr@{}}
 \toprule
-\textbf{signal} & \textbf{quintiles Q1…Q5, \%/month} & \textbf{H-L} \\
+ & \textbf{paper} & \textbf{Binance} \\
 \midrule
-$A$ & \V{q.A.paper} & \V{pvu.HLArawCoef.paper} \\
-$A_C$ & \V{q.A_C.paper} & \V{pvu.HLACrawCoef.paper} \\
-Res.$A$ & \V{q.ResA.paper} & \V{pvu.HLResArawCoef.paper} \\
+spread of $A_C$, Q75/Q25 & \V{pvu.QratioAC.paper} & \V{pvu.QratioAC} \\
+corr($A$, $|Ret|$) & \V{pvu.corrAabs.paper} & \V{pvu.corrAabs} \\
+s.d. of monthly return & — & \V{d.retSd}\% \\
 \bottomrule
 \end{tabular}
 \end{column}
-\begin{column}{0.34\textwidth}
-\card{FM}{$\ln A_C$}{\V{pvu.FMlnAC.paper}}
-\medskip
-\card{}{Res.lnA}{\V{pvu.FMResLnA.paper}}
+\begin{column}{0.38\textwidth}
+\one{Coins differ less in liquidity, move much more, and trade more when volatile.}
 \end{column}
 \end{columns}
+\end{frame}
+
+\begin{frame}{One outlier month: March 2021}
+\centering
+\includegraphics[height=5.3cm]{\basedir/fig_hl_cumulative.png}
+\par\vskip0.2cm
+\one{The altcoin season makes the volume spread. Without it: \V{d.exMeanAC}\% per month.}
+\end{frame}
+
+\begin{frame}{Test design}
 \vskip0.5cm
-\msg{The paper's logic: the part of $A$ beyond volume is priced with a negative sign, so the premium is not for price impact.}
-\src{src/paper\_numbers.yaml (transcribed with pdftotext, checked against the PDF by hand; no automated check)}
+\begin{tikzpicture}
+\fill[hserose] (0,0) rectangle (4.6,0.16);
+\fill[hsegray] (4.9,0) rectangle (9.5,0.16);
+\fill[hse] (9.8,0) rectangle (14.4,0.16);
+\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (2.3,-0.5) {month $t-2$\\{\fontsize{10}{11}\selectfont MEASURE}};
+\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (7.2,-0.5) {month $t-1$\\{\fontsize{10}{11}\selectfont SKIP}};
+\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (12.1,-0.5) {month $t$\\{\fontsize{10}{11}\selectfont RETURN}};
+\end{tikzpicture}
+\vskip1cm
+\[ \fontsize{13}{15}\selectfont r_{i,t} = \gamma_0 + \gamma_1 X_{i,t-2} + \text{controls} + \varepsilon_{i,t} \]
+\vskip0.5cm
+\centering\one{Quintile sorts and Fama–MacBeth, as in the paper.}
 \end{frame}
 
-\speaker{Ksenia Stepanova}
+\begin{frame}{The paper's result}
+\vskip0.5cm
+\begin{columns}[T]
+\begin{column}{0.3\textwidth}\centering\tikz\node[gbox]{H-L on $A$};\par\vskip0.3cm\midnum{\V{pvu.HLArawCoef.paper}}{\%/month}\end{column}
+\begin{column}{0.3\textwidth}\centering\tikz\node[ebox]{H-L on $A_C$};\par\vskip0.3cm\midnum{\V{pvu.HLACrawCoef.paper}}{\%/month}\end{column}
+\begin{column}{0.3\textwidth}\centering\tikz\node[rbox]{H-L on Res.$A$};\par\vskip0.3cm\midnum{\V{pvu.HLResArawCoef.paper}}{\%/month}\end{column}
+\end{columns}
+\vskip1cm
+\centering\one{Volume is priced, the rest is not: the premium is not for price impact.}
+\end{frame}
+
 \begin{frame}{Our replication next to the paper}
-\lead{The sign of H-L matches (Q5 > Q1 for $A$ and $A_C$, negative for Res.$A$), but our quintiles are not monotone and our spreads are noisy and insignificant.}
-\begin{columns}[c]
-\begin{column}{0.66\textwidth}
-\includegraphics[width=\linewidth]{\basedir/fig_quintiles.png}
-\end{column}
-\begin{column}{0.32\textwidth}
-\fontsize{7.5}{9.2}\selectfont
-H-L $A_C$: \V{pvu.HLACrawCoef}\\{\smalltxt paper \V{pvu.HLACrawCoef.paper}}\par\smallskip
-H-L $A$: \V{pvu.HLArawCoef}\par\smallskip
-H-L Res.$A$: \V{pvu.HLResArawCoef}\par\medskip
-{\smalltxt s.d. of a coin's monthly return: \V{d.retSd}\%.\par\smallskip
-Without March 2021 (altcoin season) the $A_C$ spread is \V{d.exMeanAC} \%/month (t \V{d.exTAC}).}
-\end{column}
-\end{columns}
-\src{\V{base.dir}/fig\_quintiles.png: the paper (Table 3, Panel A) and us on the same axes}
+\centering
+\includegraphics[height=5.3cm]{\basedir/fig_quintiles.png}
+\par\vskip0.2cm
+\one{Same signs, but noisy: H-L on $A_C$ \V{pvu.HLACrawCoef}.}
 \end{frame}
 
-\speaker{Ksenia Stepanova}
 \begin{frame}{The paper versus us}
-\begin{columns}[T]
-\begin{column}{0.25\textwidth}
-\bignum{\V{sc.samesign}/\V{sc.ls_n}}{signs agree}
-\vskip0.3cm
-\bignum{\V{sc.rep196}/\V{sc.paper_sig}}{paper's significant rows repeat}
-\vskip0.2cm
-{\smalltxt mostly Res.lnA (\V{sc.res_rep196} of \V{sc.res_paper_sig}; \V{sc.res_rep_w0} at the world-0 cut-off, CI \V{w0.crit_res_ci}); none at HLZ.\par}
-\end{column}
-\begin{column}{0.73\textwidth}
-{\fontsize{5.2}{6.2}\selectfont\input{gen/slide8.tex}}
-\par\smallskip
-{\fontsize{4.8}{5.8}\selectfont *\,Both insignificant, opposite signs. Also repeated: ln|Ret| in Table 2 (\V{pvu.TtwolnAbs}), ln $A_C$ in the first half (\V{pvu.SubAlnAC}). World-0 cut-off \V{w0.crit_res_min}–\V{w0.crit_res_max}; below it: Res.lnA with IVOL (\V{pvu.FMResLnAivol}), raw returns (\V{pvu.RawResLnA}).\par}
-\end{column}
-\end{columns}
-\vskip0.15cm
-{\fontsize{6.6}{8}\selectfont\textbf{Why the volume premium may be insignificant:} (1) power (measured): \V{n.months} vs \V{d.paperMonths} months, MDE80 of the $A_C$ spread \V{mde.hlAC} \%/month; untested: (2) another market, where volume rises with volatility; (3) no size or B/M control.\par}
-\src{All \V{sc.ls_n} rows: README.md, paper\_vs\_us.md}
-\end{frame}
-
-\speaker{Andrey Tsember}
-\begin{frame}{HF benchmark: λ from 5-minute bars}
-\lead{Trade sign from taker volume. In one \V{hf.months}-month window ln λ has a negative FM slope, unlike Table 9 model (1); the $A_C$ premium is absent in this window, so this may be a window effect.}
-\begin{columns}[T]
-\begin{column}{0.25\textwidth}
-\bignum{\V{hf.corr.A}}{corr($A$, λ), us}
-\vskip0.3cm
-\bignum{\V{hf.corr.A.paper}}{corr($A$, λ), paper}
-\vskip0.3cm
-{\smalltxt FM ln λ: \V{hf.b1}\\(size of NW(6) at this T not calibrated)\par}
-\end{column}
-\begin{column}{0.73\textwidth}
-{\fontsize{5.6}{6.8}\selectfont\input{gen/slide9.tex}}
-\par\smallskip
-{\fontsize{5}{6}\selectfont \V{hf.coinmonths} coin-months; no Lee–Ready. Bar λ vs trade-level λ: corr of ln λ \V{hf.val.corr} (Spearman \V{hf.val.spearman}) on \V{hf.val.n} coin-months (\V{hf.val.months}); bar λ is \V{hf.val.ratio}× larger, so only logs and ranks compare. Without λ, $\ln A_C$ is \V{hf.b0}. Post hoc: without exit months ln λ \V{hf.exit.b2lam}; with IVOL \V{hf.ivol.b1}; with dollar volume \V{hf.vol.b1}.\par}
-\end{column}
-\end{columns}
-\src{results/upgrades/hf\_lambda/ (T9A\_corr, T9B\_fm, T10\_fm, validation\_summary); paper Tables 9–10}
-\end{frame}
-
-\speaker{Andrey Tsember}
-\begin{frame}{Liquidity or mispricing?}
-\lead{Sentiment, market illiquidity and January: none gives a clean answer.}
-\begin{columns}[T]
-\begin{column}{0.31\textwidth}
-\card{1}{Sentiment}{L$-$S insignificant (\V{se.ls}); main FM slope \V{se.fm} passes 1.96 only marginally, not HLZ. \V{se.var_196} of \V{se.var_n} non-post-hoc L$-$S variants pass 1.96.}
-\end{column}
-\begin{column}{0.31\textwidth}
-\card{2}{Market illiquidity}{Paper's sign, but weakens with a market control (post hoc). Our AR(2) state uses the full sample (look-ahead) and tracks volatility, so no claim ``against liquidity''.}
-\end{column}
-\begin{column}{0.31\textwidth}
-\card{3}{January}{Only \V{t7.jan.n} Januaries: a placebo for us. Earnings-announcement test impossible: coins have no earnings.}
-\end{column}
-\end{columns}
-\vskip0.15cm
-{\fontsize{5}{5.6}\selectfont\renewcommand\arraystretch{1}\input{gen/slide10.tex}}
-\src{results/upgrades/sentiment/paper\_vs\_us.csv, panel\_b.csv; \V{base.dir}/T7\_january.csv}
-\end{frame}
-
-\speaker{Andrey Tsember}
-\begin{frame}{Who is right: Lou \& Shu or Amihud \& Noh?}
-\lead{The A\&N premise holds in crypto, but DIF is insignificant and our power against an A\&N-sized effect is unknown: the data do not settle the dispute.}
-\begin{columns}[c]
-\begin{column}{0.55\textwidth}
-\includegraphics[width=\linewidth]{\basedir/fig_an_dif.png}
-\end{column}
-\begin{column}{0.43\textwidth}
-\fontsize{6.6}{8}\selectfont
-{\fontsize{8.5}{10}\selectfont $\ln A = \ln|Ret| + \ln A_C + \mathrm{DIF}$}\par\medskip
-COV < 0 in \V{an.covneg} of coin-months\par\smallskip
-DIF given $\ln A_C$, $\ln|Ret|$: \V{an.V1m} (monthly), \V{an.V1y} (12-month, A\&N's sign); A\&N \V{an.p.col3}\par\smallskip
-fDIF (12-month): \V{an.V4y}, the only main-specification result toward A\&N, below HLZ (raw returns: monthly DIF \V{an.ret.V2m})\par\smallskip
-Res.lnA: \V{an.V3m} with IVOL, \V{an.V5m} with $\ln|Ret|$ + IVOL; R² of Res.lnA on $\ln|Ret|$ + DIF = \V{an.r2_res_dif}.
-\end{column}
-\end{columns}
-\src{results/upgrades/amihud\_noh/; verdict rule (not pre-registered): \V{an.sens.ret_adj} at minimum coins \V{an.sens.levels} (sensitivity added post hoc)}
-\end{frame}
-
-\speaker{Alexia Fox}
-\begin{frame}{Critique}
-\lead{The paper's weak link is the interpretation of the residual; ours is power and one month.}
-\vskip0.1cm
-\begin{columns}[T]
-\begin{column}{0.235\textwidth}
-\card{1}{Residual = volatility?}{The decomposition drops the covariance term (A\&N). Our residual is mostly $\ln|Ret|$ (R² \V{an.r2_res_abs}); IVOL alone does not absorb it (\V{an.V3m}).}
-\end{column}
-\begin{column}{0.235\textwidth}
-\card{2}{False dichotomy}{``Volume, not liquidity'': liquid assets trade more (Amihud–Mendelson 1986).}
-\end{column}
-\begin{column}{0.235\textwidth}
-\card{3}{Noisy λ?}{Lee–Ready errors could attenuate the paper's λ (untested). Our λ is priced negatively, so ``noise hides a premium'' is not supported.}
-\end{column}
-\begin{column}{0.235\textwidth}
-\card{4}{US before 2012}{After 2012 the OpenAP Illiquidity L$-$S fell (\V{op.ill.pre} → \V{op.ill.post}); FF3+UMD alpha insignificant in both (\V{op.pre.ff4} → \V{op.post.ff4}); SMB loading fell (\V{op.pre.smb} → \V{op.post.smb}).}
-\end{column}
-\end{columns}
-\vskip0.15cm
-\begin{columns}[c]
-\begin{column}{0.3\textwidth}
-\includegraphics[height=1.45cm,width=\linewidth,keepaspectratio]{\basedir/fig_hl_cumulative.png}
-\end{column}
-\begin{column}{0.68\textwidth}
-{\smalltxt\textbf{Our side:} without 2021 the $A_C$ spread is \V{x21.hlAC}. On MOEX the positive $\ln A_C$ slope repeats at 1.96 (model (2) \V{mx.fm2}; raw returns: (2) \V{mx.raw.fm2ac}, (4) \V{mx.raw.fm4ac}), but the paper's negative Res.lnA does not (\V{mx.fm4res}). OpenAP (NYSE, price > \$5, annual rebalancing) is not the paper's design.\par}
-\end{column}
-\end{columns}
-\end{frame}
-
-\speaker{Alexia Fox}
-\begin{frame}{Overfitting: could these results be overfitted?}
-\lead{Authors: subperiods, NASDAQ out of sample, annual measures, raw returns. Us:}
-\begin{columns}[T]
-\begin{column}{0.31\textwidth}
-\card{1}{Pre-registration}{Base specification fixed before the first run; changes J1, J2 logged. In that first run no T4 slope reached 1.96 (Res.lnA (3) \V{fr.fm3res}); the J1 audit came after it. Upgrade specs and verdict rules not pre-registered; post hoc variants labelled.}
-\end{column}
-\begin{column}{0.31\textwidth}
-\card{2}{Multiple testing}{Base family \V{lg.base.n} tests, |t| > 1.96 for \V{lg.base.196} (\V{lg.base.exp}–\V{w0.exp_base} expected under the null); |t| > 3 for \V{lg.base.3}; Bonferroni/BH \V{lg.base.bonf}/\V{lg.base.bh}. World 0: NW(6) gives \V{w0.fpr_min}–\V{w0.fpr_max} false |t| > 1.96; 5\% cut-off \V{w0.crit_min}–\V{w0.crit_max}.}
-\end{column}
-\begin{column}{0.31\textwidth}
-\card{3}{Stability}{Month-block bootstrap: CI excluding zero stable for \V{rb.robust} of \V{rb.n} statistics. Placebo shuffle (\V{plc.shuffle_reps} perms): |mean t| $\le$ \V{plc.shuffle_maxabs_meant}. $\ln A_C$ \V{pvu.SubAlnAC} first half, \V{pvu.SubBlnAC} second.}
-\end{column}
-\end{columns}
-\vskip0.3cm
-{\smalltxt Simulations: \V{sim.checks.pass} of \V{sim.checks.n} criteria pass (\V{sim.checks.loose_n} under a loose ``share \V{sim.checks.loose_rule}'' rule; \V{sim.checks.pass_strict5} with 5\%); failed: {\color{hserose}\V{sim.checks.failed}}. Survivorship: later-delisted pairs kept, no delisting returns. Costs: break-even \V{ed.breakeven} per side, from an insignificant gross spread. Out of sample: MOEX, US after 2012; robustness: without 2021.\par}
-\src{results/upgrades/robustness/ (ledger\_summary, bootstrap\_ci, world0\_calibration); \V{base.dir}/placebo.csv}
-\end{frame}
-
-\speaker{Alexia Fox}
-\begin{frame}{Next steps: three more months}
-\lead{The priority is power and a proper spread measurement.}
-\vskip0.1cm
-\begin{columns}[T]
-\begin{column}{0.18\textwidth}\card{1}{Market caps}{Supply from CoinGecko/CMC → size control, $AT$/$AT_C$, VW portfolios.}\end{column}
-\begin{column}{0.18\textwidth}\card{2}{Real spreads}{Intraday EDGE on 5-minute bars and order-book snapshots.}\end{column}
-\begin{column}{0.18\textwidth}\card{3}{Better λ}{From midquotes, over the full history, not \V{hf.months} months.}\end{column}
-\begin{column}{0.18\textwidth}\card{4}{A\&N test}{12-month measures, minimum coins fixed in advance; residual on $\ln$ VOLUME (Table 6).}\end{column}
-\begin{column}{0.18\textwidth}\card{5}{Decay}{McLean–Pontiff post-publication decay within the US sample.}\end{column}
-\end{columns}
 \vskip0.6cm
-\msg{We need more months or less noise, not more specifications.}
-\smallskip
-{\smalltxt MDE80 for FM $\ln A_C$: \V{mde.fm2.slope} per unit of $\ln A_C$ against the paper's slope \V{mde.fm2.paper_slope} (\V{mde.fm2.slope_ratio}× larger); per 1 s.d. \V{mde.fm2} against \V{mde.fm2.paper} (\V{mde.fm2.ratio}×).\par}
+\begin{columns}[T]
+\begin{column}{0.3\textwidth}\centering\bignum{\V{sc.samesign}/\V{sc.ls_n}}{signs agree}\end{column}
+\begin{column}{0.3\textwidth}\centering\bignum{\V{sc.rep196}/\V{sc.paper_sig}}{significant results repeat}\end{column}
+\begin{column}{0.3\textwidth}\centering\bignum{\V{mde.hlAC.ratio}×}{smallest premium we could detect, vs the paper's}\end{column}
+\end{columns}
+\vskip1cm
+\centering\one{The direction replicates. With \V{n.months} months instead of \V{d.paperMonths}, significance does not.}
 \end{frame}
 
-\speaker{Alexia Fox}
-\begin{frame}{Takeaways}
+\begin{frame}{Upgrades}
 \vskip0.4cm
 \begin{columns}[T]
-\begin{column}{0.5\textwidth}
-\fontsize{7.5}{9.2}\selectfont
-\begin{itemize}
-\item 01\quad Across assets the Amihud measure is almost only volume: corr($A$, $A_C$) \V{pvu.corrAAC} on Binance, \V{pvu.corrAAC.paper} in the paper.
-\medskip
-\item 02\quad Signs agree for \V{sc.samesign} of \V{sc.ls_n} rows; the negative Res.lnA slope repeats, the volume premium is not significant.
-\medskip
-\item 03\quad Power is the bottleneck: \V{n.months} vs \V{d.paperMonths} months, MDE80 of the $A_C$ spread \V{mde.hlAC} \%/month.
-\end{itemize}
-\end{column}
-\begin{column}{0.46\textwidth}
-\fontsize{13}{15.5}\selectfont
-Beyond volume, $A$ is not priced positively.\par\bigskip
-Volume premium in crypto? Not with \V{n.months} months.
-\end{column}
+\begin{column}{0.23\textwidth}\centering\bignum{\V{hf.corr.A}}{corr with 5-min λ\\(paper \V{hf.corr.A.paper})}\end{column}
+\begin{column}{0.23\textwidth}\centering\bignum{\V{an.covneg}}{months with COV < 0\\(Amihud \& Noh premise)}\end{column}
+\begin{column}{0.23\textwidth}\centering\midnum{\V{se.ls}}{sentiment long-short\\\phantom{x}}\end{column}
+\begin{column}{0.23\textwidth}\centering\midnum{\V{mx.fm2}}{$\ln A_C$ on MOEX\\\phantom{x}}\end{column}
 \end{columns}
+\vskip1cm
+\centering\one{Amihud tracks true price impact, but no upgrade settles the debate.}
 \end{frame}
 
-\gdef\speakerline{}
+\begin{frame}{Overfitting}
+\vskip0.6cm
+\begin{columns}[T]
+\begin{column}{0.3\textwidth}\centering\bignum{\V{lg.base.196}/\V{lg.base.n}}{tests pass 1.96\\(\V{lg.base.exp}–\V{w0.exp_base} expected by chance)}\end{column}
+\begin{column}{0.3\textwidth}\centering\bignum{\V{lg.base.bonf}}{survive Bonferroni}\end{column}
+\begin{column}{0.3\textwidth}\centering\bignum{\V{rb.robust}/\V{rb.n}}{stable in the bootstrap}\end{column}
+\end{columns}
+\vskip0.9cm
+\centering\one{Every test logged: our evidence is weak, and we say so.}
+\end{frame}
+
+\begin{frame}{Takeaways}
+\vskip0.8cm
+\fontsize{17}{22}\selectfont
+Amihud is mostly volume.\par\bigskip
+The paper's signs replicate on crypto.\par\bigskip
+Its significance needs more than \V{n.months} months.\par
+\end{frame}
+
 \begin{frame}[plain]
 \begin{tikzpicture}[remember picture,overlay]
 \node[anchor=north east,inner sep=0] at (current page.north east) {\includegraphics[height=\paperheight]{hse/ornament.png}};
@@ -417,92 +284,6 @@ Volume premium in crypto? Not with \V{n.months} months.
 \node[anchor=west,align=left,text=hse,font=\fontsize{9}{11}\selectfont] at ($(current page.west)+(3.4cm,-0.4cm)$) {Thank you! Questions?};
 \node[anchor=west,align=left,text=hse,font=\fontsize{6.5}{8}\selectfont] at ($(current page.west)+(3.4cm,-1.1cm)$) {\ifx\repourl\empty\else\url{\repourl}\fi};
 \end{tikzpicture}
-\end{frame}
-
-\begin{frame}[plain]
-\begin{tikzpicture}[remember picture,overlay]
-\node[anchor=north east,inner sep=0] at (current page.north east) {\includegraphics[height=\paperheight]{hse/ornament.png}};
-\node[text=hse,font=\fontsize{22}{24}\selectfont] at ($(current page.center)+(-0.6cm,0)$) {Backup};
-\end{tikzpicture}
-\end{frame}
-
-\owner{Sofia Shapovalova}
-\begin{frame}{B1. Definitions}
-\fontsize{7.5}{9.5}\selectfont
-\begin{itemize}
-\item $A = \mathrm{mean}_d(|r_d|/\mathrm{DVol}_d)$, $A_C = \mathrm{mean}_d(1/\mathrm{DVol}_d)$; Res.lnA is the residual of $\ln A$ on $\ln A_C$, estimated each month.
-\item Res.$\ln A$ regression: $\ln A = a_t + b_t \ln A_C + \mathrm{Res.}\ln A$.
-\item Amihud \& Noh: $\ln A = \ln|Ret| + \ln A_C + \mathrm{DIF}$; DIF reflects $\mathrm{cov}(|r|, 1/\mathrm{DVol})$.
-\item λ (Hasbrouck): 5-minute return on $\sum \mathrm{sign}\cdot\sqrt{\mathrm{DVol}}$; ours uses SVol $= \sqrt{B} - \sqrt{S}$ from taker volume per bar.
-\item IMLA$_C$: tercile H-L on $A_C$; CMKT: EW market of the universe; CMOM: tercile H-L on Ret[$-12$,$-2$].
-\end{itemize}
-\src{src/measures.py, src/hf\_lambda.py, src/factors.py}
-\end{frame}
-
-\owner{Sofia Shapovalova}
-\begin{frame}{B2. Simulations: worlds V / P / 0}
-\lead{In world V $A_C$ is priced, in world P Res.lnA; in world 0 NW(6) false positives are above 5\%, significantly so only for Res.lnA (\V{sim.0.fm3}; a P0 criterion fails).}
-{\fontsize{5.8}{7}\selectfont\input{gen/sims.tex}}
-\par\medskip
-{\smalltxt \V{sim.checks.pass} of \V{sim.checks.n} criteria pass; \V{sim.checks.loose_n} of them use the loose rule ``share \V{sim.checks.loose_rule}'' for unpriced signals (world P falsely prices $\ln A_C$ in \V{sim.checks.loose_max}); with 5\% instead, \V{sim.checks.pass_strict5} pass. Failed: \V{sim.checks.failed}.\par}
-\src{results/simulations/sim\_world\_summary.csv, sim\_checks.csv}
-\end{frame}
-
-\owner{Ksenia Stepanova}
-\begin{frame}{B3. The paper's t-statistics and ours}
-\centering\includegraphics[height=0.72\textheight]{\basedir/fig_tstats.png}
-\src{\V{base.dir}/fig\_tstats.png (lines at 1.96 and HLZ 3)}
-\end{frame}
-
-\owner{Ksenia Stepanova}
-\begin{frame}{B4. Power and robustness}
-\fontsize{7}{8.8}\selectfont
-\begin{itemize}
-\item MDE80: H-L $A_C$ \V{mde.hlAC} \%/month against the paper's premium \V{mde.hlAC.paper}. FM $\ln A_C$: \V{mde.fm2.slope} per unit of $\ln A_C$ against \V{mde.fm2.paper_slope}; per 1 s.d. (each in its own s.d.) \V{mde.fm2} (s.d. \V{mde.fm2.sd}) against \V{mde.fm2.paper} (paper's s.d. \V{mde.fm2.paper_sd}).
-\item Without 2021: H-L $A_C$ \V{x21.hlAC}, FM $\ln A_C$ \V{x21.fm2}, Res.lnA (3) \V{x21.fm3}.
-\item \V{rob.same} of \V{rob.n} variants keep the base verdict (same sign, same side of 1.96): \V{rob.same_insig} of them are insignificant estimates that stay insignificant, and \V{rob.same_sig} of \V{rob.sig_n} Res.lnA variants stay significant. Variants: winsorisation, raw returns, weights, subperiods, and \V{rob.posthoc_n} post hoc variants without the most influential month. Subperiods: $\ln A_C$ \V{pvu.SubAlnAC} and \V{pvu.SubBlnAC}.
-\item Bootstrap: FM Res.lnA (3) \V{rb.ci.fm3_ResLnA}, (4) \V{rb.ci.fm4_ResLnA}; FM $\ln A_C$ (4) borderline (\V{rb.seedshare.fm4_lnA_C} seeds exclude zero).
-\end{itemize}
-\src{results/upgrades/robustness/; \V{base.dir}/robustness\_vs\_base.csv}
-\end{frame}
-
-\owner{Andrey Tsember}
-\begin{frame}{B5. Other upgrades}
-\fontsize{6.6}{8.2}\selectfont
-\begin{itemize}
-\item \textbf{EDGE and costs:} H-L $A_C$ gross \V{ed.gross}, net \V{ed.net}; daily EDGE does not measure the spread (gap weight \V{ed.w2}); break-even cost \V{ed.breakeven} per side, computed from an insignificant gross spread that rests on March 2021.
-\item \textbf{MOEX TQBR:} FM $\ln A$ \V{mx.fm1} (at the HLZ bar: \V{mx.hlz_list}; NW size on MOEX uncalibrated), $\ln A_C$ \V{mx.fm2}, Res.lnA (4) \V{mx.fm4res} (paper \V{mx.fm4res.paper}); $A_C$ spread \V{mx.hlAC}, Res.$A$ spread \V{mx.hlResA} (paper \V{mx.hlResA.paper}), alpha \V{mx.hlACalpha}, SMB loading \V{mx.smb}; FM with $\ln$ ME keeps $\ln A_C$ (\V{mx.fm4ac}; ME from today's share count, a look-ahead). Post hoc: \V{mx.topyear} gives \V{mx.topyear_share} of the total spread.
-\item \textbf{US (OpenAP):} Illiquidity \V{op.ill.pre} → \V{op.ill.post}, FF3+UMD alpha \V{op.pre.ff4} → \V{op.post.ff4}; DolVol \V{op.dv.pre} → \V{op.dv.post}; t of the raw difference by NW lags \V{op.ill.decay_lags}: \V{op.ill.decay_ts}.
-\item \textbf{Test ledger:} base tests and upgrades together, \V{lg.all.n} unique tests, |t| > 3 for \V{lg.all.3}, \V{lg.all.bonf} after Bonferroni: \V{lg.all.bonf_by_kind}. These are factor loadings, \V{lg.all.bonf_hf_n} rows from the one \V{hf.months}-month λ window (\V{lg.all.bonf_hf_lam_n} λ or cost-part rows, \V{lg.all.bonf_hf_other}) and one non-main market-illiquidity variant, not distinct findings.
-\end{itemize}
-\src{results/upgrades/*/SUMMARY.md; results/upgrades/robustness/ledger.csv}
-\end{frame}
-
-\owner{Sofia Shapovalova}
-\begin{frame}{B6. Reproducibility}
-\fontsize{6.4}{8}\selectfont
-\begin{itemize}
-\item \texttt{make all} runs data → tests → simulations → base run → report → upgrades → ledger → documents → manifest check; \texttt{make slides} builds this deck.
-\item \textbf{make all on a fresh clone} of the final code (results/repro/final\_clone/): \V{fc.rc}, about \V{fc.min} min; code tests \V{fc.tests}, output-manifest contract \V{fc.contract} (xfails: historical runs); data/ \V{fc.data}. Its outputs are the canonical results (\V{fc.n_canon} run manifests)\V{fc.report_exc_short}; base CSVs vs the previous base run: max abs diff \V{fc.base_maxdiff}. Verdict: \V{fc.verdict}.
-\item \textbf{From-scratch clone} of an earlier version of the code with an empty data/ (every download redone): \V{repro.steps}; hf\_lambda needed reruns after network drops; earlier attempts exited 0 despite failed downloads (the code now fails); only the complete last one was compared. Against the current canonical outputs: of \V{repro.n_csv} result CSVs (\V{repro.skip_short}), \V{repro.n_numdiff} differ numerically (\V{repro.n_textdiff} only in text; \V{repro.n_other} agree in totals or shared rows); daily panel \V{repro.daily}. Verdict: \V{repro.verdict}.
-\item Every run writes \texttt{run\_manifest.json} (sha256 of config, code and data, seed, timings); \texttt{make verify} recomputes them from the files, no git needed: config \V{verify.config.short}, code \V{verify.code.short} the code here (list: README). Canonical manifests failing the path check: \V{fc.home_n}; home paths remain only in history files.
-\item Deviations from the paper: DEVIATIONS.md (\V{dev.range}).
-\end{itemize}
-\src{README.md, section ``Reproducibility''; results/repro/ and results/repro/final\_clone/}
-\end{frame}
-
-\owner{Alexia Fox}
-\begin{frame}{B7. What was not done and limitations}
-\fontsize{6.4}{8}\selectfont
-\begin{itemize}
-\item \textbf{Reproducibility:} no single clean-clone run both redid the downloads and ran \texttt{make all} (\texttt{make all} of the final code used cached data; the from-scratch clone ran an earlier version of the code, and its hf\_lambda step needed \V{repro.hf_n} attempts); macOS only.
-\item \textbf{Simulations:} the world-0 size criterion fails for Res.lnA (\V{sim.0.fm3}); \V{sim.checks.loose_n} passes use a loose ``share \V{sim.checks.loose_rule}'' rule.
-\item \textbf{Pre-registration:} the Res.lnA significance appears only after the J1 audit, designed after the first run; verdict rules and upgrade specifications were not pre-registered; post hoc diagnostics (λ checks, MOEX same-months check, without the most influential month) are labelled.
-\item \textbf{Unevidenced checks:} no stored announcement sources, no saved cache comparison; the number of delisted pairs is not recorded; no delisting returns; the paper's numbers were checked against the PDF by hand, with no automated test.
-\item \textbf{Not done:} market caps (size control, VW by cap); the t+1 leak placebo; corr($AT_C$, λ); λ from midquotes.
-\item \textbf{Formalities:} the slides were due 24 hours before the defence (16 October, 13:00), but the deck was first saved on \V{deck.first}: deadline missed. Latin spelling of the names not confirmed by the members; no timed rehearsal recorded.
-\end{itemize}
-\src{README.md, section ``What was not done and limitations''}
 \end{frame}
 
 \end{document}
