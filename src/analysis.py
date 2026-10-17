@@ -27,7 +27,6 @@ def build_panel(daily: pd.DataFrame, cfg: dict, start: str, end: str) -> tuple[p
     monthly = monthly_measures(daily, scale=float(mcfg["scale_A"]))
     eligible = (monthly["n_days"] >= ucfg["min_valid_days"]) & (monthly["dvol"] >= ucfg["min_mean_dvol_usd"])
 
-    # signals (estimation month), winsorized and residualised within the estimation cross-section
     ivol = ivol_monthly(daily, ccfg["ivol_months"], ccfg["ivol_min_days"])
     sig = monthly.loc[eligible].drop(columns=["ret"]).merge(ivol, on=["symbol", "month"], how="left")
     sig = winsorize_cs(sig, WINSOR_COLS, "month", tuple(mcfg["winsor"]))
@@ -38,7 +37,6 @@ def build_panel(daily: pd.DataFrame, cfg: dict, start: str, end: str) -> tuple[p
     sig["ResLnA"] = cs_residual(sig, "lnA", "lnA_C", "month")
     sig["month"] = sig["month"] + int(mcfg["lag_months"])
 
-    # returns, controls, risk adjustment
     cmkt = cmkt_monthly(monthly, eligible)
     betas = rolling_betas(monthly, cmkt, fcfg["beta_window"], fcfg["beta_min_obs"])
     R = monthly.pivot(index="month", columns="symbol", values="ret")
@@ -53,7 +51,7 @@ def build_panel(daily: pd.DataFrame, cfg: dict, start: str, end: str) -> tuple[p
     p = p.merge(ctrl, on=["symbol", "month"], how="left").merge(betas, on=["symbol", "month"], how="left")
     p["CMKT"] = p["month"].map(cmkt)
     p["ret_adj"] = p["ret"] - float(cfg["returns"]["rf"]) - p["beta"] * p["CMKT"]
-    for c in ["ret", "ret_adj"]:          # dependent variables in %; controls stay fractions
+    for c in ["ret", "ret_adj"]:
         p[c] = 100.0 * p[c]
     p = p[(p["month"] >= pd.Period(start, "M")) & (p["month"] <= pd.Period(end, "M"))]
     p = p.dropna(subset=["ret"]).reset_index(drop=True)
@@ -118,7 +116,6 @@ def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool 
     fac = factors[["CMKT", "CMOM"]]
     out: dict[str, pd.DataFrame] = {}
 
-    # T3: quintile sorts on A, A_C, Res.A (raw EW and CMKT+CMOM alpha)
     t3 = []
     for s in ["A", "A_C", "ResA"]:
         tab = sort_table(panel, s, "ret", q, fac, lags)
@@ -126,23 +123,19 @@ def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool 
         t3.append(_no_attrs(tab.reset_index(names="row")))
     out["T3_sorts"] = pd.concat(t3, ignore_index=True)
 
-    # T4: FM on CMKT-adjusted returns
     t4_models = {"(1)": ["lnA"], "(2)": ["lnA_C"], "(3)": ["ResLnA"],
                  "(4)": ["lnA_C", "ResLnA"], "(5)": ["lnA_C", "ResLnA", "ivol"]}
     out["T4_fm"] = _fm_block(panel, "ret_adj", t4_models, lags, controls)
     if not full:
         return out
 
-    # T1: descriptive stats and average cross-sectional correlations
     out["T1_describe"] = describe(panel).reset_index(names="measure")
     corr_cols = ["A", "A_C", "absret", "ResA", "COV"]
     out["T1_corr"] = mean_cs_corr(panel, corr_cols, "month").reset_index(names="measure")
     out["T1_corr_spearman"] = mean_cs_corr(panel, corr_cols, "month", "spearman").reset_index(names="measure")
 
-    # T2: decomposition
     out["T2_fm"] = _fm_block(panel, "ret_adj", {"(1)": ["lnA"], "(3)": ["lnA_C", "ln_absret"]}, lags, controls)
 
-    # T5: IMLA_C factor test (Table A.1)
     imla = hl_factor(panel, "A_C", "ret", t["imla_quantiles"]).rename("IMLA_C")
     hlA = sort_table(panel, "A", "ret", q, None, lags).attrs["portfolios"]
     hlA = (hlA[q] - hlA[1]).rename("HL_A")
@@ -155,10 +148,8 @@ def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool 
     out["T5_imla"] = pd.DataFrame(t5)
     out["factors"] = pd.concat([fac, imla], axis=1).reset_index(names="month")
 
-    # T6: trading volume directly
     out["T6_fm"] = _fm_block(panel, "ret_adj", {"(1)": ["lnVOL"], "(2)": ["lnVOL", "ResLnA"]}, lags, controls)
 
-    # T7: January placebo for ln A_C
     fm = fama_macbeth(panel, "ret_adj", ["lnA_C"] + controls, lags=lags)
     cs = fm.attrs["coef_series"]["lnA_C"]
     jan = cs[[m.month == 1 for m in cs.index]]
@@ -167,7 +158,6 @@ def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool 
         {"subset": "January", "coef": jan.mean(), "t": jan.mean() / (jan.std(ddof=1) / np.sqrt(len(jan))), "n": len(jan)},
         {"subset": "Feb-Dec", "coef": nw_mean(non, lags)[0], "t": nw_mean(non, lags)[2], "n": len(non)}])
 
-    # Upgrade 1: Amihud & Noh (2021) missing covariance term
     an_models = {"LS: lnA_C+ln|Ret|": ["lnA_C", "ln_absret"],
                  "AN: lnA_C+ln|Ret|+DIF": ["lnA_C", "ln_absret", "DIF"],
                  "AN: ResLnA+lnA_C+ivol": ["lnA_C", "ResLnA", "ivol"]}
@@ -185,7 +175,6 @@ def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool 
         "corr_DIF_lnA": float(mean_cs_corr(panel, ["DIF", "lnA"], "month").iloc[0, 1]),
         "corr_DIF_ResLnA": float(mean_cs_corr(panel, ["DIF", "ResLnA"], "month").iloc[0, 1])}])
 
-    # Robustness: raw returns (Table A.3 Panel A), subperiods, liquid half, DVol-weighted sorts
     out["R_raw_fm"] = _fm_block(panel, "ret", t4_models, lags, controls)
     months = np.sort(panel["month"].unique())
     half = months[len(months) // 2]
@@ -209,8 +198,6 @@ def run_tests(panel: pd.DataFrame, factors: pd.DataFrame, cfg: dict, full: bool 
                 vw_rows.append({"sample": name, "signal": s, "row": row, "H-L": tab.loc[row, "H-L"], "t": tab.loc[row, "t"]})
     out["R_weighting"] = pd.DataFrame(vw_rows)
 
-    # Robustness (pre-registered, returns.winsorize_returns): T3 sorts and T4 FM with the
-    # dependent returns winsorized within each month; factors (CMKT, CMOM) are left unchanged
     out["R_winsor_returns"] = winsorized_returns_block(panel, fac, cfg, t4_models, controls)
 
     out["sample"] = pd.DataFrame([{

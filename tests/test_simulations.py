@@ -22,7 +22,7 @@ def test_daily_format_and_realism():
     assert list(d.columns) == ["symbol", "date", "close", "quote_volume"]
     assert (d["close"] > 0).all() and (d["quote_volume"] > 0).all()
     r = d.groupby("symbol")["close"].pct_change().dropna()
-    assert 0.02 < r.std() < 0.08                       # crypto-like daily volatility
+    assert 0.02 < r.std() < 0.08
 
 
 @pytest.mark.parametrize("rep", [0])
@@ -30,7 +30,7 @@ def test_world_V_prices_lnA_C_not_ResLnA(rep):
     s = run_world("V", CFG, rep, **FAST)
     assert s["fm2_lnA_C_coef"] > 0 and s["fm2_lnA_C_t"] > 2
     assert s["fm4_lnA_C_t"] > 2
-    assert abs(s["fm3_ResLnA_t"]) < 2.5                 # unpriced (loose bound: one draw)
+    assert abs(s["fm3_ResLnA_t"]) < 2.5
     assert s["AC_q75_q25"] > 10 and s["corr_A_AC"] > 0.8
 
 
@@ -54,7 +54,6 @@ def test_placebos_kill_premium_and_run_leak():
     start, end = str(m.min() + 14), str(m.max())
     panel, factors = build_panel(d, CFG, start, end)
     sh = shuffle_signals(panel, np.random.default_rng(0))
-    # block shuffle: each month holds the same signal ROWS (joint structure kept), reassigned to coins
     cols = ["lnA", "lnA_C", "ResLnA"]
     for (_, a), (_, b) in zip(panel.groupby("month"), sh.groupby("month")):
         ka = a[cols].round(12).fillna(-999).sort_values(cols).to_numpy()

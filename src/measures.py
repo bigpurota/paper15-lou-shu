@@ -48,7 +48,7 @@ def monthly_measures(daily: pd.DataFrame, scale: float = 1e6) -> pd.DataFrame:
               dvol=("quote_volume", "mean"), dv2=("dv2", "mean"), ar_dv=("ar_dv", "mean"))
     for c in ["A", "A_C", "AN", "AP"]:
         m[c] *= scale
-    m["COV"] = m["A"] - m["absret"] * m["A_C"]          # same units as A
+    m["COV"] = m["A"] - m["absret"] * m["A_C"]
     var_dv = m["dv2"] - m["dvol"] ** 2
     m["b"] = (m["ar_dv"] - m["absret"] * m["dvol"]) / var_dv.where(var_dv > 0)
     m["CV2"] = var_dv / m["dvol"] ** 2
@@ -56,7 +56,6 @@ def monthly_measures(daily: pd.DataFrame, scale: float = 1e6) -> pd.DataFrame:
         m["DIF"] = np.log(m["A"]) - np.log(m["absret"]) - np.log(m["A_C"])
     m = m.drop(columns=["dv2", "ar_dv"])
 
-    # monthly return from month-end closes (uses all days, valid or not)
     last = d.groupby(["symbol", "month"], sort=True)["close"].last().rename("close_end").reset_index()
     last["prev_close"] = last.groupby("symbol")["close_end"].shift(1)
     prev_month = last.groupby("symbol")["month"].shift(1)
@@ -79,7 +78,6 @@ def winsorize_cs(df: pd.DataFrame, cols: list[str], by: str, q: tuple[float, flo
 
 def cs_residual(df: pd.DataFrame, y: str, x: str, by: str) -> pd.Series:
     """Residual of y on [1, x] estimated separately in each cross-section `by`."""
-    # explicit loop: groupby.apply returns a DataFrame when there is a single cross-section
     res = pd.Series(np.nan, index=df.index, dtype=float)
     for _, g in df[[y, x]].groupby(df[by], sort=False):
         g = g.dropna()

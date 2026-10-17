@@ -120,7 +120,7 @@ def _read_zip(path: Path) -> pd.DataFrame:
         name = zf.namelist()[0]
         raw = zf.read(name)
     df = pd.read_csv(io.BytesIO(raw), header=None)
-    if isinstance(df.iloc[0, 0], str):          # some files carry a header row
+    if isinstance(df.iloc[0, 0], str):
         df = df.iloc[1:]
     df = df.iloc[:, :12]
     df.columns = KLINE_COLS
@@ -135,7 +135,6 @@ def build_daily(symbols: list[str], cfg: dict) -> pd.DataFrame:
             continue
         df = pd.concat([_read_zip(f) for f in files], ignore_index=True)
         t = pd.to_numeric(df["open_time"])
-        # Binance switched spot timestamps from ms to us in 2025
         t = t.where(t < 1e14, t // 1000)
         df = pd.DataFrame({
             "symbol": sym,

@@ -26,7 +26,6 @@ import yaml
 
 from report import PAPER, ROOT, T_CRIT, _hlz, build, resolve_run, sample_label
 
-# validated categorical palette (dataviz reference instance, light mode), fixed order
 C_PAPER, C_US, C_THIRD = "#2a78d6", "#eb6834", "#1baf7a"
 INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 SIGNALS = [("A", "A", "A"), ("A_C", "AC", r"$A_C$"), ("ResA", "ResA", "Res. A")]
@@ -95,7 +94,7 @@ def quintile_figure(paper: dict, us: dict, hl: dict, us_label: str, note: str, d
                 bbox=dict(boxstyle="round,pad=0.3", fc=SURFACE, ec=GRID))
         _style(ax)
     lo, hi = axes[0].get_ylim()
-    axes[0].set_ylim(lo, hi + 0.35 * (hi - lo))          # room for the H-L box
+    axes[0].set_ylim(lo, hi + 0.35 * (hi - lo))
     axes[0].set_ylabel(ylabel)
     h, l = axes[0].get_legend_handles_labels()
     fig.suptitle(title, fontsize=17)
@@ -122,7 +121,7 @@ def hl_ci_figure(rd: Path, note: str):
                 ax.annotate(f"{c:.2f} (t {t:.2f})", (c, y[k] + dy), xytext=(0, 9), textcoords="offset points",
                             ha="center", fontsize=10.5, color=INK)
         ax.axvline(0, color=INK2, linewidth=1.0)
-        ax.set_ylim(y[-1] - 0.5, y[0] + 0.6)               # room for the value labels under the title
+        ax.set_ylim(y[-1] - 0.5, y[0] + 0.6)
         ax.set_yticks(y, [n for _, _, n in SIGNALS])
         ax.set_title(titles[row], fontsize=14)
         ax.set_xlabel("Quintile 5 − quintile 1, % per month (95% CI)")
@@ -184,7 +183,6 @@ def hl_cumulative(rd: Path, us_label: str):
         ax.plot(g["date"], cum, color=c, linewidth=2.2, label=f"H–L on {name}")
         ax.annotate(name, (g["date"].iloc[-1], cum.iloc[-1]), xytext=(6, 0), textcoords="offset points",
                     va="center", color=INK, fontsize=13)
-    # mark the most influential month of the A_C spread
     g = pr[pr["signal"] == "A_C"].set_index("month")["HL"].dropna()
     top = (g - g.mean()).abs().idxmax()
     gg = pr[pr["signal"] == "A_C"].sort_values("date")

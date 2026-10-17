@@ -22,7 +22,6 @@ def _ref(df: pd.DataFrame) -> float:
                        df["close"].to_numpy(), sign=True)
 
 
-# ------------------------------------------------------------------ reference implementation
 def test_matches_bidask_on_simulated_months():
     rng = np.random.default_rng(1)
     for k in range(50):
@@ -36,8 +35,8 @@ def test_gap_handling_equals_bidask_with_nan_rows():
     rng = np.random.default_rng(2)
     df = _sim_ohlc(31, 0.01, 0.04, 50, rng)
     df["date"] = pd.date_range("2024-01-01", periods=31, freq="D")
-    df.loc[[5, 17], ["open", "high", "low", "close"]] = np.nan          # reference: NaN rows
-    obs = df.dropna()                                                    # rows absent in the data
+    df.loc[[5, 17], ["open", "high", "low", "close"]] = np.nan
+    obs = df.dropna()
     full = se.calendar_month(obs)
     assert full["open"].isna().sum() == 2
     ours = se.edge_from_ohlc(full["open"], full["high"], full["low"], full["close"])
@@ -68,7 +67,6 @@ def test_matches_bidask_on_real_coin_months():
     assert chk["abs_diff"].max() < 1e-8
 
 
-# ------------------------------------------------------------------ known answer
 @pytest.mark.parametrize("spread", [0.0, 0.005, 0.02])
 def test_recovers_known_spread(spread):
     """Mean s2 over many simulated coin-months recovers spread^2 (EDGE is unbiased in s2)."""
@@ -81,7 +79,7 @@ def test_recovers_known_spread(spread):
     se_mean = s2.std(ddof=1) / np.sqrt(len(s2))
     assert abs(s2.mean() - spread ** 2) < 3.5 * se_mean + 0.1 * spread ** 2
     if spread == 0.0:
-        assert 0.25 < (s2 < 0).mean() < 0.75                       # negative estimates are pure noise
+        assert 0.25 < (s2 < 0).mean() < 0.75
     else:
         assert np.sqrt(max(s2.mean(), 0)) == pytest.approx(spread, rel=0.15)
 
@@ -89,7 +87,7 @@ def test_recovers_known_spread(spread):
 def test_edge_monthly_uses_only_within_month_consecutive_pairs():
     rng = np.random.default_rng(4)
     df = _sim_ohlc(62, 0.01, 0.03, 50, rng)
-    df["date"] = pd.date_range("2024-01-01", periods=62, freq="D")      # Jan (31) + Feb (29) + 2 Mar
+    df["date"] = pd.date_range("2024-01-01", periods=62, freq="D")
     df["symbol"] = "XUSDT"
     em = se.edge_monthly(df, min_pairs=10).set_index("month")
     assert em.loc["2024-01", "n_pairs"] == 30 and em.loc["2024-02", "n_pairs"] == 28
@@ -104,12 +102,11 @@ def test_edge_window_mean_s2():
                        "s2": np.r_[np.full(6, 4e-4), np.full(6, -2e-4)]})
     em["edge"] = np.sign(em["s2"]) * np.sqrt(em["s2"].abs())
     w = se.edge_window(em, 12).set_index("month")
-    assert np.isnan(w.loc["2024-05", "edge"])                            # < 6 months
+    assert np.isnan(w.loc["2024-05", "edge"])
     assert w.loc["2024-12", "s2"] == pytest.approx(1e-4)
     assert w.loc["2024-12", "edge"] == pytest.approx(0.01)
 
 
-# ------------------------------------------------------------------ rules and costs
 def test_nonpositive_rules():
     e = pd.Series([0.02, -0.01, 0.0, 0.005, np.nan, 0.03])
     m = pd.Series(["a", "a", "a", "a", "a", "b"])
@@ -135,7 +132,7 @@ def _toy_panel(replace_all: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
 def test_costs_no_change_means_no_turnover():
     p, em = _toy_panel(replace_all=False)
     ts, row = se.costs(p, em, "A_C", 5, "floor", 1, None)
-    assert ts.loc[0, "turnover_long"] == pytest.approx(1.0)            # first month: build
+    assert ts.loc[0, "turnover_long"] == pytest.approx(1.0)
     assert ts.loc[1:, ["turnover_long", "turnover_short"]].abs().max().max() < 1e-12
     assert row.iloc[0]["cost_ls_pct"] == pytest.approx(0.0)
 
@@ -145,8 +142,6 @@ def test_costs_full_replacement():
     ts, row = se.costs(p, em, "A_C", 5, "floor", 1, None)
     s = ts.iloc[1:]
     assert np.allclose(s["turnover_long"], 2.0) and np.allclose(s["turnover_short"], 2.0)
-    # each leg sells 2 coins and buys 2 others (1/2 each); half-spread = edge/2 of the coin traded
-    # long leg holds {C8,C9} or {C0,C1}; short leg the other pair -> both legs trade all four coins
     hs = np.array([0.01, 0.02, 0.09, 0.10]) / 2
     assert np.allclose(s["cost_long"], 100 * 0.5 * hs.sum())
     assert np.allclose(s["cost_ls"], 2 * 100 * 0.5 * hs.sum())
@@ -157,7 +152,6 @@ def test_costs_pooled_rule_uses_root_mean_s2():
     p, em = _toy_panel(replace_all=True)
     ts, _ = se.costs(p, em, "A_C", 5, "pooled", 1, None)
     s = ts.iloc[1:]
-    # month t uses EDGE of t-1; e.g. long leg {C8,C9}: sqrt(mean(0.09^2, 0.10^2))/2
     hi = np.sqrt((0.09 ** 2 + 0.10 ** 2) / 2) / 2 * 100
     lo = np.sqrt((0.01 ** 2 + 0.02 ** 2) / 2) / 2 * 100
     assert set(np.round(s["hs_long"], 10)) <= {round(hi, 10), round(lo, 10)}
@@ -174,7 +168,6 @@ def test_drift_of_weights_creates_turnover():
     em = pd.DataFrame([{"symbol": f"C{i}", "month": m, "edge": 0.02, "s2": 4e-4}
                        for i in range(10) for m in ["2023-11", "2023-12", "2024-01"]])
     ts, _ = se.costs(p, em, "A_C", 5, "floor", 1, None)
-    # long leg {C8, C9}: after +100% on C9 weights are 1/3, 2/3 -> back to 1/2, 1/2: turnover 1/3
     assert ts.loc[1, "turnover_long"] == pytest.approx(1 / 3)
     assert ts.loc[1, "turnover_short"] == pytest.approx(0.0)
     assert ts.loc[1, "cost_long"] == pytest.approx(100 * (1 / 3) * 0.01)
@@ -183,10 +176,10 @@ def test_drift_of_weights_creates_turnover():
 def test_fee_and_breakeven_columns():
     """Fee = (turnover_long + turnover_short) x fee per side; break-even per-side cost = gross / turnover."""
     p, em = _toy_panel(replace_all=True)
-    p["ret"] = np.where(p["A_C"] >= 8, 3.0, 0.0)                         # long leg earns 3%/month
+    p["ret"] = np.where(p["A_C"] >= 8, 3.0, 0.0)
     ts, row = se.costs(p, em, "A_C", 5, "floor", 1, None)
     s = ts.iloc[1:]
-    assert np.allclose(s["fee_ls"], 4.0 * se.FEE_PER_SIDE * 100)        # turnover 2 + 2
+    assert np.allclose(s["fee_ls"], 4.0 * se.FEE_PER_SIDE * 100)
     assert np.allclose(s["hl_net_fee"], s["hl_net"] - s["fee_ls"])
     r = row.iloc[0]
     assert r["breakeven_cost_per_side_pct"] == pytest.approx(r["hl_gross_pct"] / 4.0)

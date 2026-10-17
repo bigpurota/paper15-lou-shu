@@ -15,17 +15,15 @@ from sorts import alpha, assign_quantiles, hl_factor, portfolio_returns, sort_ta
 ROOT = Path(__file__).resolve().parents[1]
 
 
-# ---------------------------------------------------------------- Newey-West, Fama-MacBeth
 def test_nw_mean_equals_statsmodels_hac():
     rng = np.random.default_rng(10)
     e = rng.normal(size=300)
-    x = 0.2 + e + 0.6 * np.r_[0, e[:-1]]                 # MA(1): autocorrelated
+    x = 0.2 + e + 0.6 * np.r_[0, e[:-1]]
     m, se, t = nw_mean(pd.Series(x), lags=6)
     ref = sm.OLS(x, np.ones((len(x), 1))).fit(cov_type="HAC", cov_kwds={"maxlags": 6})
     assert m == pytest.approx(x.mean())
     assert se == pytest.approx(ref.bse[0])
     assert t == pytest.approx(ref.tvalues[0])
-    # hand-computed Bartlett HAC (statsmodels default: no small-sample correction)
     u = x - x.mean()
     T = len(u)
     s = (u @ u) / T + 2 * sum((1 - L / 7) * (u[L:] @ u[:-L]) / T for L in range(1, 7))
@@ -53,7 +51,6 @@ def test_fama_macbeth_recovers_slopes():
     assert res.loc["z", "coef"] == pytest.approx(-0.5, abs=0.01)
     assert res.loc["x", "t"] > 100
     assert res.attrs["n_months"] == T and res.attrs["avg_obs"] == N
-    # mean of the per-month OLS slopes, exactly
     cs = res.attrs["coef_series"]
     g0 = df[df.month == 0]
     b0 = np.linalg.lstsq(np.column_stack([np.ones(N), g0[["x", "z"]]]), g0["y"], rcond=None)[0]
@@ -68,14 +65,13 @@ def test_fama_macbeth_exact_and_min_obs():
         x = np.arange(15.0) + t
         rows.append(pd.DataFrame({"month": t, "x": x, "y": 3.0 + (t % 2 + 1) * x}))
     df = pd.concat(rows, ignore_index=True)
-    df.loc[df.month == 9, "y"] = np.nan                     # month 9 has no observations
+    df.loc[df.month == 9, "y"] = np.nan
     res = fama_macbeth(df, "y", ["x"], lags=2)
     assert res.attrs["n_months"] == 9
     assert res["coef"].iloc[0] == pytest.approx(np.mean([1, 2, 1, 2, 1, 2, 1, 2, 1]))
     assert res.attrs["avg_adj_r2"] == pytest.approx(1.0)
 
 
-# ---------------------------------------------------------------- sorts
 def _sort_panel(seed=20, T=60, N=50):
     rng = np.random.default_rng(seed)
     p = pd.DataFrame({"month": np.repeat(pd.period_range("2015-01", periods=T, freq="M"), N),
@@ -96,7 +92,6 @@ def test_assign_quantiles_equal_sizes():
         assert list(counts.index) == [1, 2, 3, 4, 5]
         assert counts.max() - counts.min() <= 1
         ok = g.dropna(subset=["s"])
-        # monotone: every Q1 signal below every Q5 signal
         assert ok.loc[ok.q == 1, "s"].max() < ok.loc[ok.q == 2, "s"].min()
         assert ok.loc[ok.q == 4, "s"].max() < ok.loc[ok.q == 5, "s"].min()
 
@@ -133,7 +128,7 @@ def test_sort_table_hl_and_alpha():
     assert tab.loc["alpha", "H-L"] == pytest.approx(a_ref.params[0])
     assert tab.loc["alpha", "t"] == pytest.approx(a_ref.tvalues[0])
     assert tab.loc["raw", "n_months"] == 60
-    assert tab.loc["raw", "H-L"] > 0                     # ret increasing in signal
+    assert tab.loc["raw", "H-L"] > 0
     hf = hl_factor(p, "s", "ret", 5)
     np.testing.assert_allclose(hf.to_numpy(), hl.to_numpy())
 
@@ -149,13 +144,11 @@ def test_alpha_exact_intercept():
     assert a0 == pytest.approx(y.mean())
 
 
-# ---------------------------------------------------------------- factors
 def _monthly_beta_panel():
     months = pd.period_range("2015-01", periods=60, freq="M")
     rng = np.random.default_rng(30)
     f = pd.Series(rng.normal(0, 0.1, 60), index=months)
     a = pd.DataFrame({"symbol": "A", "month": months, "ret": 0.5 + 1.7 * f.to_numpy()})
-    # B starts later: only months 40.. exist
     b = pd.DataFrame({"symbol": "B", "month": months[40:], "ret": -0.1 + 0.8 * f.to_numpy()[40:]})
     return pd.concat([a, b], ignore_index=True), f
 
@@ -164,24 +157,19 @@ def test_rolling_betas_exact_and_no_lookahead():
     monthly, f = _monthly_beta_panel()
     b = rolling_betas(monthly, f, window=36, min_obs=12).set_index(["symbol", "month"])["beta"]
     months = f.index
-    # A: beta(t) defined from month index 12 (12 prior months) onward and equals 1.7
     assert np.isnan(b.get(("A", months[11]), np.nan))
     for t in months[12:]:
         assert b[("A", t)] == pytest.approx(1.7, rel=1e-9)
-    # B: first month 40; needs 12 prior obs -> NaN through month 51, defined from 52
     for t in months[40:52]:
         assert np.isnan(b.get(("B", t), np.nan))
     assert b[("B", months[52])] == pytest.approx(0.8, rel=1e-9)
 
-    # no use of month t: perturb month t's return of A, beta(t) unchanged; beta(t+1) changes
     t = months[45]
     m2 = monthly.copy()
     m2.loc[(m2.symbol == "A") & (m2.month == t), "ret"] += 5.0
     b2 = rolling_betas(m2, f, 36, 12).set_index(["symbol", "month"])["beta"]
     assert b2[("A", t)] == pytest.approx(b[("A", t)], rel=1e-12)
     assert abs(b2[("A", months[46])] - 1.7) > 1e-3
-    # window: perturbation at month 45 drops out after 36 months (month 82 is outside the sample),
-    # check with month 10: affects beta(11..46), not beta(47)
     m3 = monthly.copy()
     m3.loc[(m3.symbol == "A") & (m3.month == months[10]), "ret"] += 5.0
     b3 = rolling_betas(m3, f, 36, 12).set_index(["symbol", "month"])["beta"]
@@ -193,7 +181,7 @@ def test_rolling_betas_matches_numpy_ols_with_noise():
     monthly, f = _monthly_beta_panel()
     rng = np.random.default_rng(31)
     monthly["ret"] = monthly["ret"] + rng.normal(0, 0.05, len(monthly))
-    monthly.loc[5, "ret"] = np.nan                         # a missing month inside the window
+    monthly.loc[5, "ret"] = np.nan
     b = rolling_betas(monthly, f, 36, 12).set_index(["symbol", "month"])["beta"]
     A = monthly[monthly.symbol == "A"].set_index("month")["ret"]
     for i in [20, 36, 50, 59]:
@@ -209,10 +197,10 @@ def test_cmkt_monthly_uses_lagged_eligibility():
     months = pd.period_range("2020-01", periods=3, freq="M")
     monthly = pd.DataFrame({"symbol": ["A"] * 3 + ["B"] * 3, "month": list(months) * 2,
                             "ret": [np.nan, 0.1, 0.2, np.nan, 0.3, 0.5]})
-    elig = pd.Series([True, True, True, True, False, True])   # B not eligible in Feb
+    elig = pd.Series([True, True, True, True, False, True])
     c = cmkt_monthly(monthly, elig)
-    assert c[months[1]] == pytest.approx(0.2)                  # Jan eligibility: A and B
-    assert c[months[2]] == pytest.approx(0.2)                  # Feb eligibility: A only
+    assert c[months[1]] == pytest.approx(0.2)
+    assert c[months[2]] == pytest.approx(0.2)
 
 
 def _ivol_daily(seed=40, n_sym=4, start="2019-01-01", end="2020-03-31"):
@@ -225,7 +213,6 @@ def _ivol_daily(seed=40, n_sym=4, start="2019-01-01", end="2020-03-31"):
         frames.append(pd.DataFrame({"symbol": f"S{k}", "date": dates, "close": 100 * np.cumprod(1 + r),
                                     "quote_volume": rng.lognormal(12, 1, len(dates))}))
     daily = pd.concat(frames, ignore_index=True)
-    # S0 has a 20-day hole in 2019-06 and some zero-volume days
     daily = daily[~((daily.symbol == "S0") & daily.date.between("2019-06-05", "2019-06-24"))]
     daily.loc[daily.sample(frac=0.03, random_state=1).index, "quote_volume"] = 0.0
     return daily_returns(daily.reset_index(drop=True))
@@ -244,33 +231,29 @@ def test_ivol_matches_direct_ols():
             X = np.column_stack([np.ones(len(x)), x])
             beta, *_ = np.linalg.lstsq(X, y, rcond=None)
             resid = y - X @ beta
-            ref = np.sqrt(resid @ resid / (len(y) - 2))      # residual std, ddof = 2
+            ref = np.sqrt(resid @ resid / (len(y) - 2))
             assert iv[(sym, e)] == pytest.approx(ref, rel=1e-7), (sym, end)
-    # fewer than min_days valid days in the window -> NaN
-    assert np.isnan(iv[("S0", pd.Period("2019-03", "M"))])     # ~ 89 valid days
-    assert np.isfinite(iv[("S1", pd.Period("2019-05", "M"))])  # ~146 valid days
+    assert np.isnan(iv[("S0", pd.Period("2019-03", "M"))])
+    assert np.isfinite(iv[("S1", pd.Period("2019-05", "M"))])
 
 
-# ---------------------------------------------------------------- pandas-3 smoke test of the pipeline
 def _random_daily(n_sym=60, start="2019-01-01", end="2022-12-31", seed=50):
     rng = np.random.default_rng(seed)
     dates = pd.date_range(start, end, freq="D")
     m = rng.normal(0, 0.03, len(dates))
     frames = []
     for k in range(n_sym):
-        beg = rng.integers(0, 400) if k % 3 == 0 else 0          # staggered listings
+        beg = rng.integers(0, 400) if k % 3 == 0 else 0
         dd = dates[beg:]
         r = (0.5 + rng.uniform()) * m[beg:] + rng.normal(0, rng.uniform(0.02, 0.08), len(dd))
         qv = np.exp(rng.normal(np.log(10 ** rng.uniform(4.5, 8)), 1.0, len(dd)))
         df = pd.DataFrame({"symbol": f"C{k:02d}USDT", "date": dd, "close": 10 * np.cumprod(1 + np.clip(r, -0.9, None)),
                            "quote_volume": qv})
-        frames.append(df.sample(frac=0.995, random_state=k).sort_values("date"))   # random gaps
+        frames.append(df.sample(frac=0.995, random_state=k).sort_values("date"))
     return pd.concat(frames, ignore_index=True)
 
 
 def test_pipeline_smoke_pandas3():
-    # regression guard: pd.concat of sort_table outputs used to fail in pandas 3 because
-    # tab.attrs['portfolios'] is a DataFrame (fixed by analysis._no_attrs)
     import analysis
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text())
     daily = _random_daily()

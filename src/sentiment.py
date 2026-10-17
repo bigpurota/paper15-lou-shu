@@ -47,12 +47,11 @@ from sorts import portfolio_returns
 ROOT = Path(__file__).resolve().parents[1]
 FNG_URL = "https://api.alternative.me/fng/?limit=0&format=json"
 FNG_PATH = ROOT / "data" / "raw" / "fng" / "fng.json"
-FNG_MIN_DAYS = 20             # a month's Sent needs >= 20 daily values
-ILLIQ_MIN_COINS = 30          # AR(2) estimation starts at the first month with >= 30 eligible coins
+FNG_MIN_DAYS = 20
+ILLIQ_MIN_COINS = 30
 PORTS = ["Short", "2", "3", "4", "Long", "Long-Short", "FM_lnA_C"]
 log = logging.getLogger("sentiment")
 
-# Variants not labelled post hoc (all reported; not pre-registered). Main rows are flagged main=True.
 STATE_VARS = {
     "sent_mean": ("Fear&Greed, mean of month t-1", True),
     "sent_eom": ("Fear&Greed, last day of month t-1", False),
@@ -63,11 +62,8 @@ STATE_VARS = {
 CONTROLS = {"CMKT+CMOM": ["CMKT", "CMOM"], "CMKT": ["CMKT"],
             "CMKT+CMOM+CMKT(t-1)": ["CMKT", "CMOM", "CMKT_l1"]}
 MAIN_CONTROLS = "CMKT+CMOM"
-# Added at verification (post hoc): both states correlate with the market return of their own
-# month t-1, so a lagged-market control separates the state effect from plain market reversal. Reported, never main.
 POST_HOC_CONTROLS = {"CMKT+CMOM+CMKT(t-1)"}
 
-# Paper, AT_C sorts (Tables 12-13). Panel B: b and t; Panel A: High-Low difference of Long-Short.
 PAPER = {
     ("sentiment", "Short"): (-0.25, -2.67), ("sentiment", "Long"): (-0.01, -0.10),
     ("sentiment", "Long-Short"): (0.24, 1.81), ("sentiment", "L-S High-Low (Panel A)"): (0.36, 1.08),
@@ -76,7 +72,6 @@ PAPER = {
 }
 
 
-# ---------------------------------------------------------------- Fear & Greed
 def download_fng(path: Path = FNG_PATH, url: str = FNG_URL) -> Path:
     """Download the full F&G history once (idempotent: skipped when the file exists)."""
     if path.exists() and path.stat().st_size > 0:
@@ -117,7 +112,6 @@ def fng_monthly(daily: pd.DataFrame, min_days: int = FNG_MIN_DAYS) -> pd.DataFra
     return m
 
 
-# ---------------------------------------------------------------- market illiquidity
 def market_illiquidity(daily: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     """EW cross-sectional mean of A per calendar month over the base run's eligible universe
     (same filters and winsorization as analysis.build_panel), plus the number of coins."""
@@ -162,7 +156,6 @@ def illiq_states(illiq: pd.DataFrame, min_coins: int = ILLIQ_MIN_COINS) -> tuple
     return out, fits
 
 
-# ---------------------------------------------------------------- portfolios and regressions
 def lag_state(state: pd.Series, months: pd.Index) -> pd.Series:
     """Value for return month t = state of calendar month t-1."""
     s = state.copy()
@@ -274,7 +267,6 @@ def paper_vs_us(panel_b: pd.DataFrame, panel_a: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------- summary (generated from the CSVs)
 def _f(x, d=2):
     return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x:.{d}f}"
 
@@ -386,7 +378,6 @@ def write_summary(out: Path, base_id: str, pvu: pd.DataFrame, pb: pd.DataFrame, 
     (out / "SUMMARY.md").write_text("\n".join(L))
 
 
-# ---------------------------------------------------------------- entry point
 def _csv(df: pd.DataFrame, path: Path) -> None:
     df = df.copy()
     df.attrs = {}
@@ -404,7 +395,7 @@ def _to_period(df: pd.DataFrame, col: str = "month") -> pd.DataFrame:
 
 
 def main(argv: list[str] | None = None) -> None:
-    import run as base   # provenance helpers (sha256_file, git_info, versions, load_daily)
+    import run as base
     import data_audit
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -449,7 +440,7 @@ def main(argv: list[str] | None = None) -> None:
         raise RuntimeError(f"daily data {daily_path} changed since base run {base_id} (sha mismatch)")
     daily = base.load_daily(daily_path)
     audit_on = bool(data_audit.audit_config(cfg)["enabled"])
-    if audit_on:                       # same cleaning as the base run before build_panel
+    if audit_on:
         daily = data_audit.audit(daily, cfg)[0]
     illiq = market_illiquidity(daily, cfg)
     ill_states, ar2_fits = illiq_states(illiq)
@@ -459,7 +450,6 @@ def main(argv: list[str] | None = None) -> None:
     panel = _to_period(pd.read_parquet(panel_path))
     prem = premium_series(panel, q)
     factors = _to_period(pd.read_csv(bdir / "factors.csv")).set_index("month")[["CMKT", "CMOM"]]
-    # cross-checks against the base run
     t3 = pd.read_csv(bdir / "T3_portfolios.csv")
     t3 = _to_period(t3[t3["signal"] == "A_C"]).set_index("month")
     chk_hl = float((t3["HL"] - prem["Long-Short"]).abs().max())

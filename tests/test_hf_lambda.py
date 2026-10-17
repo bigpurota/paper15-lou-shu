@@ -13,7 +13,6 @@ import hf_lambda as H
 BAR = H.BAR_MS
 
 
-# ------------------------------------------------------------------ helpers
 def _zip(path, name, text):
     with zipfile.ZipFile(path, "w") as zf:
         zf.writestr(name, text)
@@ -28,11 +27,10 @@ def _simulate_trades(lam, n_bars=3000, rate=6.0, noise=2e-4, seed=0, t0_ms=1_717
     for n in range(n_bars):
         k = rng.poisson(rate)
         signs = rng.choice([-1.0, 1.0], size=k)
-        dv = np.exp(rng.normal(6.0, 1.0, size=k))                      # dollar volume per trade
+        dv = np.exp(rng.normal(6.0, 1.0, size=k))
         sv = float((signs * np.sqrt(dv)).sum())
         r = lam * sv + noise * rng.standard_normal()
         start = t0_ms + n * BAR
-        # all trades of the bar print at the end-of-bar price except the last, which defines the close
         p_end = price * np.exp(r)
         for j in range(k):
             ts = start + 1 + j * (BAR - 2) // max(k, 1)
@@ -68,19 +66,16 @@ def _klines_csv(bars: pd.DataFrame, us: bool = False, header: bool = False) -> s
     return "\n".join(lines) + "\n"
 
 
-# ------------------------------------------------------------------ estimators
 def test_svol_bar_known_values():
     B, Q = np.array([4.0, 9.0, 0.0, 5.0]), np.array([13.0, 9.0, 16.0, 10.0])
     np.testing.assert_allclose(H.svol_bar(B, Q, "sqrt_sides"), [2 - 3, 3, -4, 0])
     np.testing.assert_allclose(H.svol_bar(B, Q, "net_sqrt"), [-np.sqrt(5), 3, -4, 0])
-    # one trade per side or one-sided bars: sqrt_sides equals the trade-level sum exactly
     np.testing.assert_allclose(H.svol_bar([9.0], [9.0], "sqrt_sides"), [3.0])
     with pytest.raises(ValueError):
         H.svol_bar(B, Q, "bogus")
 
 
 def test_svol_bar_clips_inconsistent_taker_volume():
-    # B > Q (bad print) -> S clipped at 0, no NaN from sqrt of negative
     out = H.svol_bar([12.0], [10.0], "sqrt_sides")
     assert np.isfinite(out).all() and out[0] == pytest.approx(np.sqrt(12.0))
 
@@ -96,12 +91,11 @@ def test_estimate_lambda_no_intercept_exact_and_noisy():
     x = rng.normal(0, 30, 5000)
     e = H.estimate_lambda(2e-5 * x, x)
     assert e["lam"] == pytest.approx(2e-5, rel=1e-12) and e["n"] == 5000
-    # eq. (11) has no intercept: a pure drift does not enter the slope formula sum(xr)/sum(x^2)
     r = 3e-5 * x + 1e-4 * rng.standard_normal(5000)
     e = H.estimate_lambda(r, x)
     assert e["lam"] == pytest.approx(float((x * r).sum() / (x * x).sum()))
     assert abs(e["lam"] - 3e-5) < 4 * e["se"] and e["t"] > 50
-    assert np.isnan(H.estimate_lambda(np.array([1.0, 2.0]), np.array([0.0, 0.0]))["lam"])   # no variation in x
+    assert np.isnan(H.estimate_lambda(np.array([1.0, 2.0]), np.array([0.0, 0.0]))["lam"])
 
 
 def test_usable_bars_filters():
@@ -117,7 +111,6 @@ def test_month_bar_range():
     assert hi - lo + 1 == 29 * 288
 
 
-# ------------------------------------------------------------------ readers
 def test_read_kline_zip_header_and_microseconds(tmp_path):
     _, bars = _simulate_trades(1e-5, n_bars=50, seed=2)
     ms = H.read_kline_zip(_zip(tmp_path / "a.zip", "a.csv", _klines_csv(bars)))
@@ -128,11 +121,10 @@ def test_read_kline_zip_header_and_microseconds(tmp_path):
 
 
 def test_read_aggtrades_signs_and_bars(tmp_path):
-    # two bars; isBuyerMaker=True means the taker SOLD -> negative sign
     t0 = 1_717_200_000_000
-    rows = [(1, 10.0, 1.0, 1, 1, t0 + 1, False, True),     # buy  $10
-            (2, 10.0, 0.4, 2, 2, t0 + 2, True, True),      # sell $4
-            (3, 11.0, 1.0, 3, 3, t0 + BAR + 5, True, True)]  # sell $11 in the next bar
+    rows = [(1, 10.0, 1.0, 1, 1, t0 + 1, False, True),
+            (2, 10.0, 0.4, 2, 2, t0 + 2, True, True),
+            (3, 11.0, 1.0, 3, 3, t0 + BAR + 5, True, True)]
     tr = pd.DataFrame(rows, columns=["id", "p", "q", "f", "l", "ts", "bm", "best"])
     b = H.read_aggtrades_zip(_zip(tmp_path / "t.zip", "t.csv", _trades_csv(tr)))
     assert list(b["bar"]) == [t0 // BAR, t0 // BAR + 1]
@@ -159,7 +151,6 @@ def test_complete_grid_fills_no_trade_bars():
     np.testing.assert_allclose(g["Q"], [3, 0, 0, 4, 0])
 
 
-# ------------------------------------------------------------------ known answer: exact vs bar lambda
 def test_exact_lambda_recovers_truth_and_kline_proxy_matches_aggtrades(tmp_path):
     lam = 2e-5
     trades, bars = _simulate_trades(lam, n_bars=4000, seed=4)
@@ -172,13 +163,10 @@ def test_exact_lambda_recovers_truth_and_kline_proxy_matches_aggtrades(tmp_path)
     ap = _zip(sym / f"XUSDT-aggTrades-{month}.zip", "a.csv", _trades_csv(trades))
     kp = _zip(sym / f"XUSDT-5m-{month}.zip", "k.csv", _klines_csv(bars))
     res = H.aggtrades_month_lambda(str(ap), str(kp), 0.5)
-    # exact trade-level lambda recovers the true slope
     assert res["agg_lam_exact"] == pytest.approx(lam, rel=0.03)
-    # kline bars and aggTrades bars are the same data -> identical proxies
     assert res["kl_lam_sqrt_sides"] == pytest.approx(res["agg_lam_sqrt_sides"], rel=1e-9)
     assert res["integrity_med_absrel_Q"] == pytest.approx(0.0, abs=1e-9)
     assert res["integrity_share_close_equal"] == pytest.approx(1.0)
-    # the worker on the kline file alone gives the same as the kline part of the validation worker
     kw = H.kline_month_lambda(str(kp), 0.5)
     assert kw["error"] == "" and kw["lam_sqrt_sides"] == pytest.approx(res["kl_lam_sqrt_sides"])
     assert kw["symbol"] == "XUSDT" and kw["measure_month"] == month
@@ -205,7 +193,6 @@ def test_kline_worker_records_errors(tmp_path):
     assert res["error"].startswith("BadZipFile")
 
 
-# ------------------------------------------------------------------ panel-level tests
 def _toy_panel(n_months=30, n=80, seed=5, priced="noncost"):
     """Panel with lnA = a*lnlam + noncost; returns load only on the named component."""
     rng = np.random.default_rng(seed)
@@ -236,11 +223,11 @@ def _lam_table(panel, lag=2):
 def test_attach_lambda_lag_alignment_and_min_bars():
     panel = _toy_panel(n_months=4, n=20)
     lam = _lam_table(panel)
-    lam.loc[0, "n_bars"] = 10                                   # one coin-month below min_bars
+    lam.loc[0, "n_bars"] = 10
     p = H.attach_lambda(panel.drop(columns="_lam"), lam, H.SPEC, 2, "sqrt_sides", 1000, (0.0, 1.0))
     assert len(p) == len(panel) - 1
     m = p.merge(panel[["symbol", "month", "_lam"]], on=["symbol", "month"])
-    np.testing.assert_allclose(m["lam"], m["_lam"])            # measure month t-2 -> panel month t
+    np.testing.assert_allclose(m["lam"], m["_lam"])
     np.testing.assert_allclose(p["lnlam"], np.log(p["lam"]))
 
 
@@ -272,7 +259,7 @@ def test_table10_identifies_priced_component(priced):
     assert abs(t10.loc[("(3)", other), "t"]) < 3
     t9b = out["T9B"].set_index(["model", "var"])
     assert set(out["T9B"]["model"]) == {"(0) same sample", "(1)", "(2)"}
-    if priced == "cost":                                       # cost part = function of ln lambda
+    if priced == "cost":
         assert t9b.loc[("(1)", "lnlam"), "coef"] > 0.5
     t9a = out["T9A"]
     assert set(t9a["corr"]) == {"levels_pearson", "levels_spearman", "logs_pearson"}
@@ -284,7 +271,7 @@ def test_table10_with_edge_adds_variant_and_floor_rule():
     rng = np.random.default_rng(0)
     edge = pd.DataFrame({"symbol": panel["symbol"], "measure_month": (panel["month"] - 2).astype(str),
                          "edge": np.exp(rng.normal(-6, 1, len(panel)))})
-    edge.loc[:9, "edge"] = -0.001                              # non-positive estimates -> floored
+    edge.loc[:9, "edge"] = -0.001
     pe, share = H.attach_edge(panel.drop(columns="_lam"), edge, 2, (0.0, 1.0))
     assert share == pytest.approx(10 / len(panel))
     m0 = (panel["month"] == panel.loc[0, "month"]).to_numpy()
@@ -308,7 +295,7 @@ def test_load_edge(tmp_path):
 
 def test_select_validation_cap_and_strata():
     panel = _toy_panel(n_months=1, n=50)
-    panel["month"] = pd.Period("2024-08", "M")                 # = validation month 2024-06 + lag 2
+    panel["month"] = pd.Period("2024-08", "M")
     spec = H.SPEC | {"validation_months": ["2024-06", "2025-06"], "validation_per_quintile": 3, "aggtrades_max_mb": 300}
     sizes = {}
     for i, s in enumerate(panel["symbol"]):
@@ -321,13 +308,13 @@ def test_select_validation_cap_and_strata():
     assert not chosen["symbol"].isin([f"C{i:03d}USDT" for i in range(0, 50, 4)] + ["C001USDT"]).any()
     assert set(sel["status"]) <= {"selected", "skipped_over_cap", "skipped_missing_file"}
     again = H.select_validation(panel, spec, 2, 7, sizes)
-    pd.testing.assert_frame_equal(sel, again)                  # seeded, deterministic
+    pd.testing.assert_frame_equal(sel, again)
 
 
 def test_needed_coin_months_window():
     panel = _toy_panel(n_months=6, n=3)
     spec = H.SPEC | {"measure_start": "2023-09", "measure_end": "2023-10"}
-    need = H.needed_coin_months(panel, spec, 2)                # panel months 2023-11, 2023-12
+    need = H.needed_coin_months(panel, spec, 2)
     assert sorted(need["measure_month"].unique()) == ["2023-09", "2023-10"]
     assert len(need) == 6
 
@@ -345,9 +332,9 @@ def test_aggtrades_listing_is_cached(tmp_path, monkeypatch):
     a = H.aggtrades_listing(["AUSDT", "BUSDT"], ["2024-06", "2025-06"], 2)
     assert len(a) == 4 and len(calls) == 2 and H.agg_key("AUSDT", "2023-01") not in a
     b = H.aggtrades_listing(["AUSDT", "BUSDT"], ["2024-06", "2025-06"], 2)
-    assert a == b and len(calls) == 2                           # second call served from listing.json
+    assert a == b and len(calls) == 2
     H.aggtrades_listing(["AUSDT", "CUSDT"], ["2024-06"], 2)
-    assert len(calls) == 3                                      # only the new symbol is listed
+    assert len(calls) == 3
 
 
 def test_relabelled_asset_ids_use_the_binance_symbol_files():
@@ -362,7 +349,7 @@ def test_diagnostics_variants_and_exit_rows():
     panel["lnVOL"] = np.random.default_rng(2).normal(15, 2, len(panel))
     last_m = panel["month"].max()
     exit_month = panel["month"].min() + 9
-    panel = panel[~((panel["symbol"] == "C000USDT") & (panel["month"] > exit_month))]   # C000 leaves the panel
+    panel = panel[~((panel["symbol"] == "C000USDT") & (panel["month"] > exit_month))]
     base = panel.drop(columns="_lam")
     p = H.attach_lambda(base, _lam_table(panel), H.SPEC, 2, "sqrt_sides", 1000, (0.0, 1.0))
     tab, slopes = H.diagnostics(p, base, 6)
@@ -373,11 +360,11 @@ def test_diagnostics_variants_and_exit_rows():
     halves = [x for x in v if "half" in x]
     assert sum(t.loc[(h, "(1)", "lnlam"), "n_months"] for h in halves) == main_n
     ex = [x for x in v if x.startswith("ex exit")][0]
-    assert (tab.loc[tab["variant"] == ex, "n_rows_dropped_vs_main"] == 1).all()   # only C000 at its exit month
+    assert (tab.loc[tab["variant"] == ex, "n_rows_dropped_vs_main"] == 1).all()
     assert last_m != exit_month
     assert ("+ ivol control", "(1)", "ivol") in t.index
     assert ("+ lnVOL control (size proxy; verify stage)", "(2)", "lnVOL") in t.index
-    assert (tab.loc[tab["var"] == "lnlam", "coef"] > 0.5).all()                   # returns load on ln lambda
+    assert (tab.loc[tab["var"] == "lnlam", "coef"] > 0.5).all()
     r = tab[tab["var"] == "lnlam"]
     np.testing.assert_allclose(r["coef_per_cs_sd"], r["coef"] * r["cs_sd_lnlam"])
     assert set(slopes["model"]) == {"(0)", "(1)"} and slopes.groupby("model").size().eq(main_n).all()

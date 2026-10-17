@@ -48,7 +48,7 @@ import pandas as pd
 import yaml
 
 import data_moex
-from run import rel_path   # repo-relative paths in manifests
+from run import rel_path
 from analysis import _fm_block, _no_attrs
 from factors import cmkt_monthly, ivol_monthly, rolling_betas
 from fama_macbeth import fama_macbeth, nw_mean
@@ -71,8 +71,6 @@ MOEX_SPEC = {
     "tests": {"quantiles": 5, "robust_quantiles": 3, "nw_lags": 6, "hlz_threshold": 3.0, "t_crit": 1.96},
 }
 
-# Lou & Shu (2017) turnover-based numbers (Panel B of Tables 3 and 4; Table 1). The dollar-volume
-# numbers are read from src/paper_numbers.yaml.
 PAPER_AT = {
     "source": "Lou & Shu (2017): Table 1 (p. 43), Table 3 Panel B (p. 45), Table 4 Panel B (p. 46)",
     "table1": {"AT": {"q25": 5.68, "q50": 14.46, "q75": 35.87}, "AT_C": {"q25": 423.06, "q50": 1169.49, "q75": 2989.59},
@@ -87,7 +85,6 @@ PAPER_AT = {
     "table4A_lnME": {"(1)": (0.080, 2.04), "(2)": (0.144, 3.14), "(3)": (-0.067, -2.48), "(4)": (0.069, 1.82), "(5)": (0.062, 1.74)},
 }
 
-# MOEX-specific deviations from the paper (written to deviations.csv; proposed for DEVIATIONS.md).
 DEVIATIONS_MOEX = [
     ("M1", "NYSE/AMEX 1964-2012, CRSP", "MOEX TQBR, common shares, measures from mid-2014, returns to 2026-09",
      "Second market (upgrade 6); TQBR became the main T+ board only in mid-2014 (EQBR before)",
@@ -122,7 +119,6 @@ LOGS = [("A", "lnA"), ("A_C", "lnA_C"), ("absret", "ln_absret"), ("dvol", "lnVOL
         ("AT", "lnAT"), ("AT_C", "lnAT_C"), ("TO", "lnTO")]
 
 
-# ---------------------------------------------------------------- helpers
 def deep_update(base: dict, upd: dict) -> dict:
     out = copy.deepcopy(base)
     for k, v in (upd or {}).items():
@@ -158,7 +154,6 @@ def csv_ready(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ---------------------------------------------------------------- panel
 def _as_period(s: pd.Series) -> pd.Series:
     return s if isinstance(s.dtype, pd.PeriodDtype) else pd.PeriodIndex(s.astype(str), freq="M").to_series(index=s.index)
 
@@ -170,7 +165,7 @@ def monthly_frames(daily: pd.DataFrame, info: pd.DataFrame, spec: dict) -> pd.Da
     d["date"] = pd.to_datetime(d["date"])
     iss = info.set_index("secid")["issuesize"]
     d["issuesize"] = d["symbol"].map(iss)
-    d["close_adj"] = d["close"] / d["vol_mult"]                     # price in today's share units
+    d["close_adj"] = d["close"] / d["vol_mult"]
     mcfg = spec["measures"]
 
     dA = d.assign(quote_volume=d["value"], close=d["tri"])
@@ -183,11 +178,10 @@ def monthly_frames(daily: pd.DataFrame, info: pd.DataFrame, spec: dict) -> pd.Da
     m = ret.merge(mA, on=["symbol", "month"], how="left").merge(mT, on=["symbol", "month"], how="left")
     m["n_days"] = m["n_days"].fillna(0).astype(int)
 
-    # ME at the end of the previous calendar year: last December close (split-adjusted) x ISSUESIZE
     dec = d[d["date"].dt.month == 12].sort_values("date").groupby(["symbol", d["date"].dt.year])["close_adj"].last()
     me = (dec * dec.index.get_level_values(0).map(iss).to_numpy() / 1e6).rename("ME").reset_index()
-    me.columns = ["symbol", "year", "ME"]                                  # million RUB
-    me["year"] = me["year"] + 1                                            # applies to returns of year+1
+    me.columns = ["symbol", "year", "ME"]
+    me["year"] = me["year"] + 1
     m["year"] = m["month"].dt.year
     m = m.merge(me, on=["symbol", "year"], how="left").drop(columns=["year"])
     return m
@@ -256,14 +250,13 @@ def build_moex_panel(monthly: pd.DataFrame, daily: pd.DataFrame, info: pd.DataFr
 
     q = fcfg["factor_quantiles"]
     cmom = hl_factor(p, "mom", "ret", q).rename("CMOM")
-    csmb = (-hl_factor(p, "lnME", "ret", q)).rename("CSMB")               # small minus big
+    csmb = (-hl_factor(p, "lnME", "ret", q)).rename("CSMB")
     factors = pd.concat([(100.0 * cmkt).rename("CMKT"), csmb, cmom], axis=1).loc[np.sort(p["month"].unique())]
     meta = {"first_measure_month": str(first_meas), "return_start": str(start), "return_end": str(end),
             "min_mean_value_rub": min_value}
     return p, factors, meta
 
 
-# ---------------------------------------------------------------- tests
 FM_A = {"(1)": ["lnA"], "(2)": ["lnA_C"], "(3)": ["ResLnA"], "(4)": ["lnA_C", "ResLnA"],
         "(5)": ["lnA_C", "ResLnA", "ivol"]}
 FM_AT = {"(1)": ["lnAT"], "(2)": ["lnAT_C"], "(3)": ["ResLnAT"], "(4)": ["lnAT_C", "ResLnAT"],
@@ -361,12 +354,11 @@ def diag_by_year(panel, q, lags) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------- data diagnostics
 def ex_date_check(daily: pd.DataFrame) -> pd.DataFrame:
     """Price drop on ex-dates vs dividend yield: slope ~ 1 if ex-dates are right, ~ 0 on the day before."""
     d = daily.sort_values(["symbol", "date"]).copy()
     d["prev_close"] = d.groupby("symbol")["close"].shift(1)
-    d["pr"] = d["close"] * d["split"] / d["prev_close"] - 1.0                 # price-only return
+    d["pr"] = d["close"] * d["split"] / d["prev_close"] - 1.0
     d["y"] = d["div"] / d["prev_close"]
     d["y_next"] = d.groupby("symbol")["y"].shift(-1)
     rows = []
@@ -394,7 +386,6 @@ def universe_counts(universe, info, monthly, spec) -> pd.DataFrame:
     return pd.concat([listed, com, e1, e2], axis=1).reset_index(names="month")
 
 
-# ---------------------------------------------------------------- paper vs MOEX
 def _pick(df, **kw):
     q = df
     for k, v in kw.items():
@@ -453,7 +444,6 @@ def paper_vs_moex(t1d, t1c, t3, t4, paper: dict, tcrit: float, hlz: float) -> pd
     return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------- SUMMARY.md (generated from CSVs)
 def _f(x, nd=2):
     return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x:.{nd}f}"
 
@@ -493,7 +483,6 @@ def summary_md(out: Path, base_run_id: str, run_id: str) -> str:
         L.append(f"| {k} | {_f(r['paper'], 3)} | {_f(r['paper_t'])} | {_f(r['moex'], 3)} | {_f(r['moex_t'])} |")
     L.append("")
 
-    # interpretation strictly from the numbers; thresholds and data-spec values from the run manifest
     man = json.loads((out / "run_manifest.json").read_text())
     spec = man["spec"]
     tc, hz = float(spec["tests"]["t_crit"]), float(spec["tests"]["hlz_threshold"])
@@ -669,7 +658,6 @@ def variants_key(t3q, t3t, t4_all) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------- main
 def main(argv: list[str] | None = None) -> str:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("config")
@@ -720,8 +708,6 @@ def main(argv: list[str] | None = None) -> str:
         raw = fm(panel, "ret", spec["tests"]["nw_lags"])
         raw.insert(0, "variant", "main, raw returns")
         t4s.append(raw)
-        # post-hoc diagnostic (not pre-registered): raw returns restricted to the months of the ret_adj FM,
-        # to separate the effect of the shorter sample (betas need >= 24 months) from the beta adjustment
         adj_months = panel.loc[panel["beta"].notna(), "month"].unique()
         raw2 = fm(panel[panel["month"].isin(adj_months)], "ret", spec["tests"]["nw_lags"])
         raw2.insert(0, "variant", "diagnostic: raw returns, months of ret_adj FM")
@@ -733,12 +719,10 @@ def main(argv: list[str] | None = None) -> str:
     with stage("variants"):
         r2, _, _, m2 = run_variant("filter 1M RUB", monthly, daily, info, spec, spec["universe"]["robust_min_mean_value_rub"], fm0)
         t3s.append(r2["T3"]); t3ts.append(r2["T3_terciles"]); t4s.append(r2["T4"]); metas.append(m2)
-        # price returns without dividends: same daily data, dividends set to zero
         dn = data_moex.build_daily(fr["history"], fr["splits"], fr["dividends"].iloc[0:0], spec["data"])[0]
         mn = monthly_frames(dn, info, spec)
         r3, _, _, m3 = run_variant("no dividends (price returns)", mn, dn, info, spec, spec["universe"]["min_mean_value_rub"], fm0)
         t3s.append(r3["T3"]); t3ts.append(r3["T3_terciles"]); t4s.append(r3["T4"]); metas.append(m3)
-        # main specification without the verified manual corrections (M9), to show their effect
         spec_nc = copy.deepcopy(spec)
         spec_nc["data"]["verified_splits"], spec_nc["data"]["verified_large_dividends"] = [], []
         dc = data_moex.build_daily(fr["history"], fr["splits"], fr["dividends"], spec_nc["data"])[0]

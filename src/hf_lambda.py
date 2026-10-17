@@ -54,7 +54,7 @@ import pandas as pd
 import requests
 import yaml
 
-from run import rel_path, resolve_panel_cache   # repo-relative paths in manifests
+from run import rel_path, resolve_panel_cache
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW_K5 = ROOT / "data" / "raw" / "klines5m"
@@ -67,40 +67,32 @@ NS = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}
 BAR_MS = 300_000
 log = logging.getLogger("hf_lambda")
 
-# ------------------------------------------------------------------ main specification (not pre-registered)
-# Fixed BEFORE looking at any lambda-based result.  Window: the 36 most recent measure months, ending
-# at the last month whose t+2 return exists (2026-07).  Listing sizes (`--plan`, base run
-# 20261016T134056Z_18099336): 13.7k coin-months, 4.02 GB of 5m klines (the ~3 GB guideline would allow
-# only 26 months, 2024-06..2026-07; we take 36 for power and log the overshoot).  Validation months:
-# one in each of 2024 and 2025.  config.yaml may override any key via an `hf_lambda:` section.
 SPEC = {
-    "measure_start": "2023-08",          # first measure month (signal month t-2)
-    "measure_end": "2026-07",            # last measure month -> returns up to 2026-09
-    "svol_main": "sqrt_sides",           # sqrt(B) - sqrt(S)
-    "svol_alt": "net_sqrt",              # sign(B-S) sqrt|B-S|
-    "min_bars": 1000,                    # valid 5m bars per coin-month (paper: 10)
-    "min_bars_robust": 100,              # robustness variant
-    "max_abs_r": 0.5,                    # |ln return| over 5 minutes above this -> bar dropped
-    "winsor": [0.01, 0.99],              # lambda, cross-sectional (as the paper's HF benchmarks)
+    "measure_start": "2023-08",
+    "measure_end": "2026-07",
+    "svol_main": "sqrt_sides",
+    "svol_alt": "net_sqrt",
+    "min_bars": 1000,
+    "min_bars_robust": 100,
+    "max_abs_r": 0.5,
+    "winsor": [0.01, 0.99],
     "validation_months": ["2024-06", "2025-06"],
-    "validation_per_quintile": 7,        # 7 coins x 5 A_C quintiles x 2 months
-    "aggtrades_max_mb": 300,             # skip larger aggTrades files (logged)
-    "download_workers": 24,            # network-bound (~100 KB/s per connection); no effect on results
+    "validation_per_quintile": 7,
+    "aggtrades_max_mb": 300,
+    "download_workers": 24,
 }
 
-# Lou & Shu (2017) numbers, transcribed from ../docs/papers/15_LouShu_2017.pdf (pdftotext -layout)
 PAPER = {
-    "T9A": {"A": 0.737, "A_C": 0.747, "ResA": 0.149},               # Table 9 Panel A, lambda column (p. 53)
-    "T9B": {"(1)": {"lnlam": (-0.034, -0.67)},                      # Table 9 Panel B (p. 53)
+    "T9A": {"A": 0.737, "A_C": 0.747, "ResA": 0.149},
+    "T9B": {"(1)": {"lnlam": (-0.034, -0.67)},
             "(2)": {"lnlam": (-0.155, -2.51), "lnA_C": (0.180, 3.80)}},
-    "T10": {"(1)": {"cost": (-0.047, -1.11)},                       # Table 10, original Amihud (p. 54)
+    "T10": {"(1)": {"cost": (-0.047, -1.11)},
             "(2)": {"noncost": (0.186, 3.04)},
             "(3)": {"cost": (0.015, 0.35), "noncost": (0.191, 3.10)}},
     "sample": "NYSE/AMEX, 1983-2012 (Table 9: 358 months, ~1725 stocks); Table 10: 1964-2012",
 }
 
 
-# ------------------------------------------------------------------ estimators (pure functions)
 def svol_bar(B: np.ndarray, Q: np.ndarray, kind: str) -> np.ndarray:
     """Bar-level signed sqrt dollar volume from taker-buy quote volume B and total quote volume Q."""
     B = np.asarray(B, float)
@@ -166,7 +158,6 @@ def lambdas_from_bars(bars: pd.DataFrame, max_abs_r: float, exact: bool = False)
     return out
 
 
-# ------------------------------------------------------------------ readers (untrusted input)
 def _csv_frame(raw: bytes | io.IOBase, usecols: list[int], names: list[str], **kw) -> pd.DataFrame:
     df = pd.read_csv(raw, header=None, usecols=usecols, names=names, dtype=str, **kw)
     return df
@@ -178,9 +169,9 @@ def read_kline_zip(path: Path) -> pd.DataFrame:
         raw = zf.read(zf.namelist()[0])
     df = pd.read_csv(io.BytesIO(raw), header=None, usecols=[0, 4, 7, 8, 10],
                      names=["open_time", "close", "Q", "n_trades", "B"], dtype=str)
-    df = df.apply(pd.to_numeric, errors="coerce").dropna(subset=["open_time", "close"])  # drops a header row
+    df = df.apply(pd.to_numeric, errors="coerce").dropna(subset=["open_time", "close"])
     t = df["open_time"].astype("int64")
-    t = t.where(t < 10**14, t // 1000)                     # Binance spot: ms until 2024-12, us since 2025-01
+    t = t.where(t < 10**14, t // 1000)
     out = pd.DataFrame({"bar": (t // BAR_MS).astype("int64"), "close": df["close"].astype(float),
                         "Q": df["Q"].fillna(0.0).astype(float), "B": df["B"].fillna(0.0).astype(float),
                         "n_trades": df["n_trades"].fillna(0).astype(float)})
@@ -203,7 +194,7 @@ def read_aggtrades_zip(path: Path, chunksize: int = 2_000_000) -> pd.DataFrame:
                              dtype=str, chunksize=chunksize)
         for ch in reader:
             num = ch[["id", "p", "q", "ts"]].apply(pd.to_numeric, errors="coerce")
-            ok = num.notna().all(axis=1).to_numpy()            # drops a header row if present
+            ok = num.notna().all(axis=1).to_numpy()
             if not ok.any():
                 continue
             num, bm = num[ok], _bool(ch.loc[ok, "bm"])
@@ -256,7 +247,7 @@ def kline_month_lambda(path: str, max_abs_r: float) -> dict:
         bars = bars[(bars["bar"] >= lo) & (bars["bar"] <= hi)]
         res = lambdas_from_bars(bars, max_abs_r)
         res["error"] = ""
-    except Exception as e:                                     # corrupt/untrusted file: record, do not crash
+    except Exception as e:
         res = {"error": f"{type(e).__name__}: {e}"[:200]}
     return {"symbol": sym, "measure_month": month, **res}
 
@@ -288,7 +279,6 @@ def aggtrades_month_lambda(path: str, kline_path: str | None, max_abs_r: float) 
     return res
 
 
-# ------------------------------------------------------------------ downloads (cached, idempotent)
 _tls = threading.local()
 
 
@@ -387,7 +377,7 @@ def download(key: str) -> dict:
                     f.write(chunk)
                     h.update(chunk)
             c = _get(url + ".CHECKSUM")
-        except requests.RequestException:          # connection broken mid-body: retry from scratch
+        except requests.RequestException:
             tmp.unlink(missing_ok=True)
             time.sleep(2 ** attempt)
             continue
@@ -409,7 +399,6 @@ def download_many(keys: list[str], workers: int) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["key", "status", "bytes"])
 
 
-# ------------------------------------------------------------------ base panel
 def base_run() -> tuple[str, Path]:
     run_id = (ROOT / "results" / "LATEST").read_text().strip()
     man = json.loads((ROOT / "results" / run_id / "run_manifest.json").read_text())
@@ -462,7 +451,6 @@ def select_validation(panel: pd.DataFrame, spec: dict, lag: int, seed: int, size
     return sel[sel["status"] != "not_needed"].reset_index(drop=True)
 
 
-# ------------------------------------------------------------------ tests on the panel
 def cs_fit_resid(df: pd.DataFrame, y: str, xs: list[str], by: str) -> tuple[pd.Series, pd.Series]:
     """Monthly cross-sectional OLS of y on [1, xs]: (fitted, residual) aligned with df."""
     fit = pd.Series(np.nan, index=df.index)
@@ -527,12 +515,12 @@ def table9_10(p: pd.DataFrame, lags: int) -> dict[str, pd.DataFrame]:
                          "n_months": int(p.dropna(subset=cols)["month"].nunique())})
     out["T9A"] = pd.DataFrame(rows)
 
-    s = p.dropna(subset=["lnlam", "lnA_C", "lnA", "ret_adj"] + controls)   # common sample for all models
+    s = p.dropna(subset=["lnlam", "lnA_C", "lnA", "ret_adj"] + controls)
     out["T9B"] = _fm_block(s, "ret_adj", {"(0) same sample": ["lnA_C"], "(1)": ["lnlam"], "(2)": ["lnlam", "lnA_C"]},
                            lags, controls)
 
     costs = {"lambda": ["lnlam"]}
-    if "lnedge" in s and s["lnedge"].notna().any():          # set by attach_edge on the base panel
+    if "lnedge" in s and s["lnedge"].notna().any():
         costs["lambda+EDGE"] = ["lnlam", "lnedge"]
     t10 = []
     for cname, xs in costs.items():
@@ -646,7 +634,6 @@ def attach_edge(panel: pd.DataFrame, edge: pd.DataFrame, lag: int, winsor) -> tu
     return p.drop(columns=["edge"]), share
 
 
-# ------------------------------------------------------------------ provenance
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -674,7 +661,6 @@ def git_info() -> dict:
         return {"sha": None, "dirty": None}
 
 
-# ------------------------------------------------------------------ summary (generated from the CSVs)
 def _fmt(x, d=3):
     return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x:.{d}f}"
 
@@ -839,7 +825,6 @@ def write_summary(out: Path, hlz: float) -> None:
     (out / "SUMMARY.md").write_text("\n".join(L) + "\n")
 
 
-# ------------------------------------------------------------------ main
 def plan(spec: dict, panel: pd.DataFrame, lag: int, workers: int) -> pd.DataFrame:
     """List 5m kline sizes for the base-panel coins over the full possible window (for the budget)."""
     syms = sorted(panel["symbol"].unique())
@@ -886,7 +871,6 @@ def main(argv: list[str] | None = None) -> None:
         print(plan(spec, panel, lag, spec["download_workers"]).to_string())
         return
 
-    # downloads ------------------------------------------------------------
     t = T()
     need = needed_coin_months(panel, spec, lag)
     kkeys = [kline_key(s, m) for s, m in zip(need["symbol"], need["measure_month"])]
@@ -921,7 +905,6 @@ def main(argv: list[str] | None = None) -> None:
     log.info("downloads: %s", dl_all.groupby(["kind", "status"]).size().to_dict())
     n_failed = int((dl_all["status"] == "failed_after_retries").sum())
     if n_failed and not a.allow_partial:
-        # a flaky connection must not silently yield results on a subset: fail; a rerun downloads only the rest
         raise SystemExit(f"{n_failed} downloads failed after retries (e.g. "
                          + ", ".join(dl_all.loc[dl_all['status'] == 'failed_after_retries', 'key'].head(3))
                          + "). Rerun `make upgrade-hf_lambda`: cached files are kept and only the rest is fetched "
@@ -929,7 +912,6 @@ def main(argv: list[str] | None = None) -> None:
     if a.download_only:
         return
 
-    # lambda estimation -------------------------------------------------------
     t = T()
     paths = sorted({str(local_path(k)) for k in kkeys if local_path(k).exists()})
     with ProcessPoolExecutor(max_workers=a.workers) as ex:
@@ -941,7 +923,6 @@ def main(argv: list[str] | None = None) -> None:
     if "n_bars" not in lam:
         lam["n_bars"] = 0
     lam["n_bars"] = lam["n_bars"].fillna(0).astype(int)
-    # back to panel asset ids (X#2 uses the files of X); flag months where two ids share one file
     lam = lam.rename(columns={"symbol": "raw_symbol"})
     lam = need.assign(raw_symbol=need["symbol"].map(raw_symbol)).merge(lam, on=["raw_symbol", "measure_month"], how="inner")
     lam["shared_file"] = lam.duplicated(["raw_symbol", "measure_month"], keep=False)
@@ -955,7 +936,6 @@ def main(argv: list[str] | None = None) -> None:
     val = pd.DataFrame(vrows)
     timings["lambda_aggtrades"] = round(T() - t, 2)
 
-    # tests --------------------------------------------------------------------
     t = T()
     edge, edge_status = load_edge(CACHE / "edge_monthly.parquet")
     panel_e = panel
@@ -985,7 +965,6 @@ def main(argv: list[str] | None = None) -> None:
     t10["paper_t"] = [_paper_t10(m, v)[1] for m, v in zip(t10["model"], t10["var"])]
     timings["tests"] = round(T() - t, 2)
 
-    # coverage ----------------------------------------------------------------
     lm = need.merge(lam, on=["symbol", "measure_month"], how="left")
     ok = lm["n_bars"].fillna(0) >= spec["min_bars"]
     cov_m = lm.assign(has_file=lm["error"].notna(), ok=ok, nonpos=ok & (lm["lam_sqrt_sides"] <= 0),
@@ -1006,7 +985,6 @@ def main(argv: list[str] | None = None) -> None:
                    "klines5m_gb": round(dl["bytes"].sum() / 2**30, 3),
                    "aggtrades_gb": round(dla["bytes"].sum() / 2**30, 3)}]).to_csv(OUT_DIR / "coverage.csv", index=False)
 
-    # validation summary ------------------------------------------------------------
     vs = []
     if len(val):
         val["months"] = val["measure_month"]
@@ -1026,7 +1004,6 @@ def main(argv: list[str] | None = None) -> None:
     pd.DataFrame(vs, columns=["pair", "months", "n", "pearson_log", "spearman", "median_ratio"]).to_csv(
         OUT_DIR / "validation_summary.csv", index=False)
 
-    # write ----------------------------------------------------------------------------
     t9a.to_csv(OUT_DIR / "T9A_corr.csv", index=False)
     t9b.to_csv(OUT_DIR / "T9B_fm.csv", index=False)
     diag.to_csv(OUT_DIR / "T9B_diagnostics.csv", index=False)

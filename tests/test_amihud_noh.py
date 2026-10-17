@@ -30,7 +30,7 @@ def _toy_random(seed=0, start="2020-01-01", end="2021-03-31", n_sym=2, gap=True)
     for i in range(n_sym):
         dates = pd.date_range(start, end, freq="D")
         keep = rng.random(len(dates)) > 0.05
-        if gap and i == 0:                          # two months with no data at all
+        if gap and i == 0:
             keep &= ~((dates >= "2020-05-01") & (dates < "2020-07-01"))
         n = len(dates)
         close = 10 * np.exp(np.cumsum(rng.normal(0, 0.04, n)))
@@ -55,7 +55,6 @@ def _brute(daily, sym, s, window, drop_max, scale=1e6):
             "CV2": var / dv.mean() ** 2}
 
 
-# ---------------------------------------------------------------- rolling 12-month measures
 @pytest.mark.parametrize("drop_max", [True, False])
 def test_rolling_measures_match_bruteforce(drop_max):
     d = _toy_random()
@@ -71,17 +70,15 @@ def test_rolling_measures_match_bruteforce(drop_max):
 
 
 def test_drop_max_by_hand():
-    # closes give |r| = 0.10, 0.20, 0.10, 0.50 on days 2..5; dvol (millions) 1, 2, 4, 5
     d = daily_returns(_daily("X", pd.date_range("2020-01-01", periods=5), [100, 110, 88, 96.8, 145.2],
                              [9e9, 1e6, 2e6, 4e6, 5e6]))
     m = an.rolling_an_measures(d, window=1, min_days=4, drop_max=True).iloc[0]
     ar, dv = np.array([.1, .2, .1, .5]), np.array([1., 2., 4., 5.])
     assert m["n_days"] == 4
-    assert m["absR"] == pytest.approx((ar.sum() - 0.5) / 3)                 # drop the 0.50 day
-    assert m["IDVOL"] == pytest.approx((np.sum(1 / dv) - 1.0) / 3)          # drop 1/1
-    il = ar / dv                                                            # 0.1, 0.1, 0.025, 0.1
+    assert m["absR"] == pytest.approx((ar.sum() - 0.5) / 3)
+    assert m["IDVOL"] == pytest.approx((np.sum(1 / dv) - 1.0) / 3)
+    il = ar / dv
     assert m["ILLIQ"] == pytest.approx((il.sum() - 0.1) / 3)
-    # b, CV2 on all four days
     assert m["b"] == pytest.approx(np.polyfit(dv, ar, 1)[0])
     assert m["CV2"] == pytest.approx(dv.var() / dv.mean() ** 2)
 
@@ -98,7 +95,7 @@ def test_negative_cov_when_absret_rises_with_volume():
     with small CV the Taylor term -b CV^2 approximates the covariance (A&N Appendix A)."""
     rng = np.random.default_rng(5)
     n = 120
-    dv = 1e6 * (10 + rng.normal(0, 0.5, n))                     # CV ~ 0.05
+    dv = 1e6 * (10 + rng.normal(0, 0.5, n))
     ar = 0.01 + 0.002 * (dv / 1e6 - 10) + rng.normal(0, 1e-4, n)
     sign = np.where(rng.random(n) < 0.5, -1, 1)
     close = 100 * np.cumprod(np.r_[1.0, 1 + sign[1:] * ar[1:]])
@@ -109,25 +106,24 @@ def test_negative_cov_when_absret_rises_with_volume():
 
 
 def test_min_days_and_calendar_window():
-    d = _toy_random(seed=1, n_sym=1)            # S0 has no data in May-June 2020
+    d = _toy_random(seed=1, n_sym=1)
     m = an.rolling_an_measures(d, window=2, min_days=1)
     months = set(m["month"].astype(str))
-    assert "2020-06" not in months              # window May-June is empty
-    assert "2020-07" in months                  # window June-July has July days only
+    assert "2020-06" not in months
+    assert "2020-07" in months
     j = m.set_index("month").loc[pd.Period("2020-07", "M")]
     assert j["n_days"] == int(d[(d["month"] == pd.Period("2020-07", "M")) & d["valid"]].shape[0])
     m200 = an.rolling_an_measures(d, window=2, min_days=200)
     assert m200.empty
 
 
-# ---------------------------------------------------------------- cross-sectional helpers
 def test_censor_cs_drops_extremes_per_month():
     df = pd.DataFrame({"month": np.repeat([1, 2], 200), "x": np.r_[np.arange(200.0), np.arange(200.0) * 10]})
     out = an.censor_cs(df, ["x"], "month", (0.01, 0.99))
     for mth, g in out.groupby("month"):
         raw = df[df["month"] == mth]["x"]
         assert g["x"].min() >= raw.quantile(0.01) and g["x"].max() <= raw.quantile(0.99)
-    assert len(out) == 2 * 196                  # 0,1 and 198,199 fall outside the linear-interpolated quantiles
+    assert len(out) == 2 * 196
     nan = df.assign(x=df["x"].where(df.index != 50))
     assert 50 not in an.censor_cs(nan, ["x"], "month", (0.0, 1.0)).index
 
@@ -159,7 +155,6 @@ def test_lag_merge_shifts_two_months():
     assert q["s"].astype(str).tolist() == ["2020-01", "2020-02"]
 
 
-# ---------------------------------------------------------------- FM wiring: known premium
 def _toy_panel(premium, seed=0, T=80, N=150):
     rng = np.random.default_rng(seed)
     rows = []
@@ -179,7 +174,6 @@ def test_fm_recovers_dif_premium_and_null():
     assert abs(null.loc["DIF", "t"]) < 3
 
 
-# ---------------------------------------------------------------- verdict logic
 def test_classify_and_supports():
     assert an.classify(2.5, 1.96) == "+" and an.classify(2.5, 3.0) == "0"
     assert an.classify(-3.5, 3.0) == "-" and an.classify(np.nan, 1.96) == "n/a"
@@ -189,7 +183,6 @@ def test_classify_and_supports():
     assert an.supports("-", "0", "+") == "neither"
     assert an.supports("+", "+", "+") == "both"
     assert an.supports("0", "-", "+") == "neither"
-    # "-/0": LS allow an insignificant or a significantly negative residual coefficient
     assert an.supports("0", "-/0", "+") == an.LS_NULL
     assert an.supports("-", "-/0", "+") == "LS"
     assert an.supports("+", "-/0", "+") == "A&N"
@@ -205,32 +198,31 @@ def _vt(ts, ls="0", anp="+"):
 
 
 def test_verdict_rule():
-    v = _vt({})                                                   # everything insignificant
+    v = _vt({})
     vc = an.verdict_counts(v, 3.0).iloc[0]
     assert vc["verdict"] == "none" and vc["AN_1.96"] == 0 and vc["LS_null_1.96"] > 0
-    assert v.loc[v["test"] == "V0", "supports_1.96"].iloc[0] == "A&N"     # premise row, not counted
+    assert v.loc[v["test"] == "V0", "supports_1.96"].iloc[0] == "A&N"
     vc = an.verdict_counts(_vt({("V1", "monthly"): 3.5, ("V1", "12m"): 2.2}), 3.0).iloc[0]
     assert vc["verdict"] == "AN" and vc["AN_1.96"] == 2 and vc["AN_3"] == 1
     vc = an.verdict_counts(_vt({("V1", "monthly"): 2.2}), 3.0).iloc[0]
     assert vc["verdict"] == "AN_weak"
     vc = an.verdict_counts(_vt({("V3", "monthly"): -4.0, ("V5", "12m"): -2.5}), 3.0).iloc[0]
     assert vc["verdict"] == "LS" and vc["LS_1.96"] == 2
-    vc = an.verdict_counts(_vt({("V6", "monthly"): 5.0}), 3.0).iloc[0]   # non-discriminating test ignored
+    vc = an.verdict_counts(_vt({("V6", "monthly"): 5.0}), 3.0).iloc[0]
     assert vc["verdict"] == "none"
-    vc = an.verdict_counts(_vt({}), 3.0).iloc[0]          # V3/V5 insignificant: LS not rejected, not "neither"
+    vc = an.verdict_counts(_vt({}), 3.0).iloc[0]
     assert vc["none_1.96"] == 0 and vc["LS_null_1.96"] == vc["n_tests"]
 
 
 def test_fm_block_min_obs_drops_small_cross_sections():
     df = _toy_panel(0.0, T=10, N=40)
-    df = df[~((df["month"] < 3) & (df.index % 40 >= 20))]       # first 3 months: 20 coins only
+    df = df[~((df["month"] < 3) & (df.index % 40 >= 20))]
     model = {"m": ["lnA_C", "ln_absret", "DIF"]}
     a = an.fm_block(df, model, ["ret_adj"], 2, "toy").iloc[0]
     b = an.fm_block(df, model, ["ret_adj"], 2, "toy", min_obs=30).iloc[0]
     assert (a["n_months"], a["min_n"]) == (10, 20) and (b["n_months"], b["min_n"]) == (7, 40)
 
 
-# ---------------------------------------------------------------- end to end on synthetic data
 def _py(script, *args, cwd):
     r = subprocess.run([sys.executable, "-I", str(SRC / script), *args], cwd=cwd,
                        capture_output=True, text=True, timeout=600)
@@ -270,7 +262,6 @@ def test_entry_script_end_to_end(tmp_path):
     s = (out / "SUMMARY.md").read_text()
     assert "Verdict" in s and base_id in s and "nan" not in s.lower().replace("n/a", "")
 
-    # a changed daily file must stop the run unless explicitly allowed
     daily.assign(close=daily["close"] * 1.01).to_parquet(daily_path, index=False)
     r = subprocess.run([sys.executable, "-I", str(SRC / "amihud_noh.py"), str(cfg_path), "--results-dir", str(res),
                         "--cache-dir", str(cache), "--out", str(out)], cwd=tmp_path, capture_output=True, text=True)

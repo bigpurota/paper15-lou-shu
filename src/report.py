@@ -30,16 +30,10 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PAPER = Path(__file__).resolve().parent / "paper_numbers.yaml"
 T_CRIT = 1.96
-Z_POWER80 = 0.8416212335729143          # Phi^{-1}(0.80): MDE = (1.96 + 0.84) * SE
+Z_POWER80 = 0.8416212335729143
 CONTROLS = ["mom", "ret_1"]
-# Lou & Shu (2017), pp. 13-14: "one standard deviation change (2.53) in ln(A_C)" gives 0.46%/mo in model (2).
-# Used when paper_numbers.yaml has no lou_shu_2017.table4_text.sd_lnA_C entry (same rule as
-# robustness_extra.PAPER_SD_LNA_C, so README, slides and robustness/mde.csv quote one paper effect).
 PAPER_SD_LNA_C = 2.53
 
-# (id, section, label, kind); kind 't' = rule on sign and t-stat, 'level' = sign and order of magnitude,
-# 'ratio' = order of magnitude only (positive by construction, so the sign carries no information).
-# Ids are letters only (they become LaTeX macro names).
 METRICS = [
     ("corrAAC", "T1", "corr(A, A_C)", "level"),
     ("corrAabs", "T1", "corr(A, |Ret|)", "level"),
@@ -89,9 +83,6 @@ SECTIONS = {
     "A&N": "Amihud & Noh (2021) critique (upgrade 1, base run)",
 }
 
-# Why our number differs / matches. Templates: {name} is filled from the diagnostics
-# (report_diagnostics.csv) and from the row itself ({us}, {us_t}, {paper}, {paper_t}, {mde},
-# {months_needed}). "Hypothesis:" marks explanations we have not tested.
 WHY = {
     "corrAAC": "Matches. A and A_C share the 1/DVol term, and across coins ln DVol varies much more than "
                "ln|Ret| (Q75/Q25 {qratioAC} for A_C vs {qratioAbs} for |Ret|), so A is mostly A_C, as in the paper.",
@@ -196,7 +187,6 @@ WHY = {
 }
 
 
-# ----------------------------------------------------------------------------------------- helpers
 
 def nan_tuple():
     return (math.nan, None)
@@ -246,7 +236,6 @@ def _months_split(months: list[str]) -> tuple[str, str]:
     return f"{first[0]}..{first[-1]}", f"{second[0]}..{second[-1]}"
 
 
-# ------------------------------------------------------------------------------------ paper / ours
 
 def paper_values(p: dict) -> dict[str, tuple[float, float | None]]:
     ls, an = p["lou_shu_2017"], p["amihud_noh_2021"]
@@ -262,7 +251,7 @@ def paper_values(p: dict) -> dict[str, tuple[float, float | None]]:
     for sig, key in [("A", "A"), ("A_C", "AC"), ("ResA", "ResA")]:
         for row in ["raw", "alpha"]:
             v[f"HL{key}{row}Coef"] = (t3[sig][row]["hl"], t3[sig][row]["t"])
-    ct = lambda d: (d["coef"], d["t"])  # noqa: E731
+    ct = lambda d: (d["coef"], d["t"])
     v["FMlnA"] = ct(t4["(1)"]["lnA"])
     v["FMlnAC"] = ct(t4["(2)"]["lnA_C"])
     v["FMResLnA"] = ct(t4["(3)"]["ResLnA"])
@@ -352,9 +341,9 @@ def match(kind: str, paper: tuple, us: tuple) -> str:
             return "no"
         return "yes" if abs(math.log10(abs(uv) / abs(pv))) <= 0.5 else "sign only"
     sig_us = ut is not None and abs(ut) >= T_CRIT
-    if abs(pt) >= T_CRIT:                     # paper significant
+    if abs(pt) >= T_CRIT:
         return "no" if not same else ("yes" if sig_us else "sign only")
-    if not sig_us:                            # paper insignificant: so are we
+    if not sig_us:
         return "yes"
     return "sign only" if same else "no"
 
@@ -373,7 +362,6 @@ def months_needed(t: float | None, n: float) -> float:
     return n * (T_CRIT / t) ** 2
 
 
-# ------------------------------------------------------------------------------------- diagnostics
 
 class Diag:
     """Collects diagnostics: id (letters only), value, label (text), description, source."""
@@ -487,7 +475,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
         D.add("winIvolT", _fm(w[w["test"] == "T4"], "(5)", "ivol")[1], "t of IVOL, model (5), winsorized returns",
               "R_winsor_returns.csv")
 
-    # sorts: most influential month, leave-one-out, median, share positive; sub-period sort H-L
     ps_ = _read(rd, "panel_summary")
     psum = ps_.set_index("month")["mean_ret"] if ps_ is not None else None
     t3s = _read(rd, "T3_sorts")
@@ -552,7 +539,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
     D.add("paperSubCRatioMax", sub_c / min(others), "paper A.3 Panel C (2) ln A_C / smallest other (2) ln A_C slope",
           "paper_numbers.yaml", d=1)
 
-    # panel diagnostics: volume-volatility link, per-s.d. effects, FM leave-one-month-out
     panel = _panel(rd, man)
     src = "panel cache (run_manifest.json: panel_cache)"
     if panel is not None:
@@ -566,8 +552,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
               for _, g in panel[["month", "ln_absret", "lnVOL"]].dropna().groupby("month") if len(g) >= 10]
         D.add("elasMean", np.mean(sl), "mean monthly cs slope of ln DVol on ln|Ret|", src)
         D.add("elasMed", np.median(sl), "median monthly cs slope of ln DVol on ln|Ret|", src)
-        # s.d. of ln A_C in the FM model (2) sample (rows with ret_adj, ln A_C and the controls), as in
-        # robustness_extra.real_se_frame, so that per-s.d. numbers agree with robustness/mde.csv
         fm2 = panel.dropna(subset=["ret_adj", "lnA_C"] + CONTROLS)
         sd = fm2.groupby("month")["lnA_C"].std(ddof=1).mean()
         D.add("sdLnAC", sd, "mean monthly cs s.d. of ln A_C, FM (2) sample", src)
@@ -584,7 +568,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
             D.add(f"fmTopVal{key}", vtop, f"FM {model} {var}: monthly slope in that month", src)
             D.add(f"fmEx{key}", m, f"FM {model} {var}: slope without that month", src)
             D.add(f"fmEx{key}T", tt, f"FM {model} {var}: NW t without that month", src)
-            # consistency check: the slope recomputed from the cached panel must equal T4_fm.csv
             D.add(f"fmReproDiff{key}", abs(c - _fm(t4, model, var)[0]),
                   f"|FM {model} {var} from panel - T4_fm.csv| (should be ~0)", src, d=6)
     sd_paper = float(ls.get("table4_text", {}).get("sd_lnA_C", PAPER_SD_LNA_C))
@@ -592,7 +575,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
     D.add("psPaper", ls["table4_panelA"]["(2)"]["lnA_C"]["coef"] * sd_paper,
           "paper FM (2) ln A_C slope per 1 s.d. of its ln A_C (0.183 x 2.53, paper pp. 13-14)", "paper_numbers.yaml")
 
-    # simulations: size of the tests in world 0 and power in world V
     ws = _read(sim_dir, "sim_world_summary")
     if ws is not None:
         w0 = ws[ws["world"].astype(str) == "0"].set_index("stat")
@@ -614,8 +596,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
                 D.add(f"crit{key}", w0r[col].abs().quantile(0.95), f"world 0: empirical 5% critical |t|, {stat}",
                       "sim_world0_reps.csv")
         if "hl_A_C_coef" in w0r:
-            # sampling s.d. of the H-L A_C spread across world-0 runs vs our real NW standard error
-            # (both: EW quintile spread, %/mo, ~300 coins x ~90 months)
             sim_se = w0r["hl_A_C_coef"].std(ddof=1)
             c, t = us["HLACrawCoef"]
             real_se = abs(c / t) if t else math.nan
@@ -623,7 +603,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
             D.add("realSeHlAC", real_se, "our NW s.e. of H-L A_C, %/mo", "T3_sorts.csv")
             D.add("seRatioHlAC", real_se / sim_se, "real s.e. / simulated s.e., H-L A_C", "T3_sorts.csv + sims", d=1)
             if "hl_A_C_t" in w0r:
-                # the same ratio with the mean NW s.e. of the world-0 runs (|coef / t|) in the denominator
                 sim_nw = (w0r["hl_A_C_coef"] / w0r["hl_A_C_t"]).abs().mean()
                 D.add("seRatioHlACnw", real_se / sim_nw, "real s.e. / mean world-0 NW s.e., H-L A_C",
                       "T3_sorts.csv + sims", d=1)
@@ -670,7 +649,6 @@ def build_diagnostics(rd: Path, sim_dir: Path, man: dict, paper_yaml: dict, us: 
     return D
 
 
-# --------------------------------------------------------------------------------- robustness
 
 def build_robustness(rd: Path, us: dict, diag: dict[str, float]) -> pd.DataFrame:
     """Our base estimate vs each variant; same conclusion = same sign and same side of |t| = 1.96."""
@@ -734,7 +712,6 @@ def build_robustness(rd: Path, us: dict, diag: dict[str, float]) -> pd.DataFrame
     return pd.DataFrame(rows)
 
 
-# ----------------------------------------------------------------------------------------- build
 
 def build(rd: Path, sim_dir: Path | None = None, man: dict | None = None):
     """Return (paper_vs_us table, robustness table, diagnostics table)."""
@@ -769,7 +746,6 @@ def build(rd: Path, sim_dir: Path | None = None, man: dict | None = None):
     return df, rob, D.frame()
 
 
-# --------------------------------------------------------------------------------------- writers
 
 def fmt(x: float, t: float | None) -> str:
     if x is None or not math.isfinite(x):
@@ -821,8 +797,8 @@ def key_findings(df: pd.DataFrame, rob: pd.DataFrame, diag: pd.DataFrame) -> lis
     n_same = int(sum(same_sign))
     n_yes_opp = int(sum(1 for m, ss in zip(t["match"], same_sign) if m == "yes" and not ss))
     r = df.set_index("id")
-    f = lambda i: fmt(r.loc[i, "us"], r.loc[i, "us_t"])  # noqa: E731
-    sig = lambda i: abs(r.loc[i, "us_t"]) >= T_CRIT  # noqa: E731
+    f = lambda i: fmt(r.loc[i, "us"], r.loc[i, "us_t"])
+    sig = lambda i: abs(r.loc[i, "us_t"]) >= T_CRIT
     same = int(rob["same_conclusion"].eq("yes").sum()) if len(rob) else 0
     res = rob[rob["statistic"].isin(["FM Res.lnA (3)", "FM Res.lnA (4)"])] if len(rob) else rob
     res_lost = sorted({f"{x.statistic}: {x.variant}" for x in res.itertuples() if x.same_conclusion == "no"})

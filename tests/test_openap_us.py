@@ -36,9 +36,9 @@ Missing data are indicated by -99.99 or -999.
 def test_parse_french_monthly_block_only():
     df = oa.parse_french_csv(FF_TEXT)
     assert list(df.columns) == ["Mkt-RF", "SMB", "HML", "RF"]
-    assert len(df) == 2                                   # annual block not read
+    assert len(df) == 2
     assert df.index[0] == pd.Period("1964-01", "M")
-    assert np.isnan(df.loc[pd.Period("1964-01", "M"), "HML"])   # -99.99 -> NaN
+    assert np.isnan(df.loc[pd.Period("1964-01", "M"), "HML"])
     assert df.loc[pd.Period("1964-02", "M"), "SMB"] == -1.0
 
 
@@ -110,7 +110,6 @@ def test_spanning_recovers_alpha_and_beta():
         assert sp.loc[(p, "one_factor"), "b_factor"] == pytest.approx(0.5, abs=0.02)
         assert sp.loc[(p, "five_factor"), "b_factor"] == pytest.approx(0.5, abs=0.02)
         assert sp.loc[(p, "five_factor"), "alpha"] == pytest.approx(0.3, abs=0.05)
-    # world with no own premium: one-factor alpha ~ 0
     ls0, ff0 = _toy_world(seed=3, alpha=0.0, beta=0.5)
     sp0 = oa.spanning_tests(ls0, ff0, "Illiquidity", "DolVol", oa.PERIODS, lags=6).set_index(["period", "spec"])
     assert abs(sp0.loc[("LS_1964_2012", "one_factor"), "t_alpha"]) < 3
@@ -141,7 +140,6 @@ def test_fetch_falls_back_on_quota_page_and_caches(tmp_path, monkeypatch):
     rec = oa.fetch(dest, ["https://drive.example/a", "https://mirror.example/b"])
     assert rec["url"] == "https://mirror.example/b" and "Quota exceeded" in rec["tried_before"][0]
     assert dest.read_bytes().startswith(b"date")
-    # second call: cached, no network
     monkeypatch.setattr(oa, "_get", lambda *a, **k: (_ for _ in ()).throw(AssertionError("network")))
     rec2 = oa.fetch(dest, ["https://drive.example/a"])
     assert rec2["cached"] and rec2["url"] == "https://mirror.example/b" and rec2["sha256"] == rec["sha256"]

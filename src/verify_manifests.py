@@ -87,20 +87,20 @@ def data_pairs(m: dict, mdir: Path) -> list[tuple[str, str, Path | None]]:
     out: list[tuple[str, str, Path | None]] = []
     if isinstance(m.get("data_source"), str) and isinstance(m.get("data_sha256"), str):
         out.append((m["data_source"], m["data_sha256"], ROOT / m["data_source"]))
-    for key in ["inputs", "input_data"]:                          # {name: {path|file, sha256}}
+    for key in ["inputs", "input_data"]:
         for name, v in (m.get(key) or {}).items():
             if isinstance(v, dict) and "sha256" in v:
                 p = v.get("path") or v.get("file")
                 out.append((p or name, v["sha256"], ROOT / p if p else None))
-    for p, s in (m.get("input_sha256") or {}).items():            # {repo-relative path: sha256}
+    for p, s in (m.get("input_sha256") or {}).items():
         out.append((p, s, ROOT / p))
-    for name, s in (m.get("inputs_sha256") or {}).items():        # report stage: files of the base run folder
+    for name, s in (m.get("inputs_sha256") or {}).items():
         out.append((rel(mdir / name), s, mdir / name))
     for name, s in (m.get("simulations_sha256") or {}).items():
         out.append((f"results/simulations/{name}", s, ROOT / "results" / "simulations" / name))
     if isinstance(m.get("panel_cache"), str) and isinstance(m.get("panel_cache_sha256"), str):
         out.append((m["panel_cache"], m["panel_cache_sha256"], ROOT / m["panel_cache"]))
-    d = m.get("data")                                              # {x: path, x_sha256: sha} (sentiment)
+    d = m.get("data")
     if isinstance(d, dict):
         for k, s in d.items():
             if k.endswith("_sha256"):
@@ -108,17 +108,17 @@ def data_pairs(m: dict, mdir: Path) -> list[tuple[str, str, Path | None]]:
                 p = d.get(stem) or d.get(stem + "_json") or d.get(stem + "_cache")
                 out.append((p or stem, s, ROOT / p if isinstance(p, str) else None))
     ds = m.get("data_sha256")
-    if isinstance(ds, dict):                                       # {name: sha} with paths in data_paths or elsewhere
+    if isinstance(ds, dict):
         paths = m.get("data_paths") or {}
         for name, s in ds.items():
             if not isinstance(s, str):
                 continue
             p = paths.get(name) or (m.get(name) if isinstance(m.get(name), str) else None)
-            if p is None and name.endswith(".parquet"):           # MOEX: file names in the raw cache folder
+            if p is None and name.endswith(".parquet"):
                 p = f"data/cache/{name}"
-            if p is None and name == "edge_monthly":              # src/hf_lambda.py: CACHE / edge_monthly.parquet
+            if p is None and name == "edge_monthly":
                 p = "data/cache/edge_monthly.parquet"
-            if p is None and name == "base_factors_csv" and m.get("base_run_id"):   # src/spread_edge.py
+            if p is None and name == "base_factors_csv" and m.get("base_run_id"):
                 p = f"results/{m['base_run_id']}/factors.csv"
             out.append((p or name, s, ROOT / p if p else None))
     return out
@@ -149,7 +149,6 @@ def verify(results_dir: Path | None = None) -> list[dict]:
                 compare(rows, name, "code", rel(code_file(k)), s, code_file(k))
         for item, s, p in data_pairs(m, mp.parent):
             compare(rows, name, "data", item, s, p)
-    # pre-registration: the first real-data run used the pre-registered config
     first = []
     for mp in R.glob("*/run_manifest.json"):
         m = json.loads(mp.read_text())

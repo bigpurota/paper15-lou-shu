@@ -74,7 +74,7 @@ def test_match_rule():
     assert match("t", (0.56, 2.36), (0.9, 2.5)) == "yes"
     assert match("t", (0.56, 2.36), (0.9, 1.0)) == "sign only"
     assert match("t", (0.56, 2.36), (-0.9, -3.0)) == "no"
-    assert match("t", (-0.17, -1.05), (0.3, 0.5)) == "yes"          # both insignificant
+    assert match("t", (-0.17, -1.05), (0.3, 0.5)) == "yes"
     assert match("t", (-0.17, -1.05), (-0.5, -2.5)) == "sign only"
     assert match("level", (0.899, None), (0.85, None)) == "yes"
     assert match("level", (116.6, None), (20.0, None)) == "sign only"
