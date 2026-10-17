@@ -131,6 +131,33 @@
 \end{columns}
 \end{frame}
 
+\begin{frame}{Test design}
+\vskip0.5cm
+\begin{tikzpicture}
+\fill[hserose] (0,0) rectangle (4.6,0.16);
+\fill[hsegray] (4.9,0) rectangle (9.5,0.16);
+\fill[hse] (9.8,0) rectangle (14.4,0.16);
+\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (2.3,-0.5) {month $t-2$\\{\fontsize{10}{11}\selectfont MEASURE}};
+\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (7.2,-0.5) {month $t-1$\\{\fontsize{10}{11}\selectfont SKIP}};
+\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (12.1,-0.5) {month $t$\\{\fontsize{10}{11}\selectfont RETURN}};
+\end{tikzpicture}
+\vskip1cm
+\[ \fontsize{13}{15}\selectfont r_{i,t} = \gamma_0 + \gamma_1 X_{i,t-2} + \text{controls} + \varepsilon_{i,t} \]
+\vskip0.5cm
+\centering\one{Quintile sorts and Fama–MacBeth, as in the paper.}
+\end{frame}
+
+\begin{frame}{The paper's result}
+\vskip0.5cm
+\begin{columns}[T]
+\begin{column}{0.3\textwidth}\centering\tikz\node[gbox]{H-L on $A$};\par\vskip0.3cm\midnum{\V{pvu.HLArawCoef.paper}}{\%/month}\end{column}
+\begin{column}{0.3\textwidth}\centering\tikz\node[ebox]{H-L on $A_C$};\par\vskip0.3cm\midnum{\V{pvu.HLACrawCoef.paper}}{\%/month}\end{column}
+\begin{column}{0.3\textwidth}\centering\tikz\node[rbox]{H-L on Res.$A$};\par\vskip0.3cm\midnum{\V{pvu.HLResArawCoef.paper}}{\%/month}\end{column}
+\end{columns}
+\vskip1cm
+\centering\one{Volume is priced, the rest is not: the premium is not for price impact.}
+\end{frame}
+
 \begin{frame}{First, simulations}
 \vskip0.3cm
 \begin{columns}[T]
@@ -200,49 +227,11 @@ s.d. of monthly return & — & \V{d.retSd}\% \\
 \one{The altcoin season makes the volume spread. Without it: \V{d.exMeanAC}\% per month.}
 \end{frame}
 
-\begin{frame}{Test design}
-\vskip0.5cm
-\begin{tikzpicture}
-\fill[hserose] (0,0) rectangle (4.6,0.16);
-\fill[hsegray] (4.9,0) rectangle (9.5,0.16);
-\fill[hse] (9.8,0) rectangle (14.4,0.16);
-\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (2.3,-0.5) {month $t-2$\\{\fontsize{10}{11}\selectfont MEASURE}};
-\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (7.2,-0.5) {month $t-1$\\{\fontsize{10}{11}\selectfont SKIP}};
-\node[align=center,font=\fontsize{6.5}{8}\selectfont] at (12.1,-0.5) {month $t$\\{\fontsize{10}{11}\selectfont RETURN}};
-\end{tikzpicture}
-\vskip1cm
-\[ \fontsize{13}{15}\selectfont r_{i,t} = \gamma_0 + \gamma_1 X_{i,t-2} + \text{controls} + \varepsilon_{i,t} \]
-\vskip0.5cm
-\centering\one{Quintile sorts and Fama–MacBeth, as in the paper.}
-\end{frame}
-
-\begin{frame}{The paper's result}
-\vskip0.5cm
-\begin{columns}[T]
-\begin{column}{0.3\textwidth}\centering\tikz\node[gbox]{H-L on $A$};\par\vskip0.3cm\midnum{\V{pvu.HLArawCoef.paper}}{\%/month}\end{column}
-\begin{column}{0.3\textwidth}\centering\tikz\node[ebox]{H-L on $A_C$};\par\vskip0.3cm\midnum{\V{pvu.HLACrawCoef.paper}}{\%/month}\end{column}
-\begin{column}{0.3\textwidth}\centering\tikz\node[rbox]{H-L on Res.$A$};\par\vskip0.3cm\midnum{\V{pvu.HLResArawCoef.paper}}{\%/month}\end{column}
-\end{columns}
-\vskip1cm
-\centering\one{Volume is priced, the rest is not: the premium is not for price impact.}
-\end{frame}
-
 \begin{frame}{Our replication next to the paper}
 \centering
 \includegraphics[height=5.3cm]{\basedir/fig_quintiles.png}
 \par\vskip0.2cm
 \one{Same signs, but noisy: H-L on $A_C$ \V{pvu.HLACrawCoef}.}
-\end{frame}
-
-\begin{frame}{The paper versus us}
-\vskip0.6cm
-\begin{columns}[T]
-\begin{column}{0.3\textwidth}\centering\bignum{\V{sc.samesign}/\V{sc.ls_n}}{signs agree}\end{column}
-\begin{column}{0.3\textwidth}\centering\bignum{\V{sc.rep196}/\V{sc.paper_sig}}{significant results repeat}\end{column}
-\begin{column}{0.3\textwidth}\centering\bignum{\V{mde.hlAC.ratio}×}{smallest premium we could detect, vs the paper's}\end{column}
-\end{columns}
-\vskip1cm
-\centering\one{The direction replicates. With \V{n.months} months instead of \V{d.paperMonths}, significance does not.}
 \end{frame}
 
 \begin{frame}{Upgrades}
@@ -255,6 +244,17 @@ s.d. of monthly return & — & \V{d.retSd}\% \\
 \end{columns}
 \vskip1cm
 \centering\one{Amihud tracks true price impact, but no upgrade settles the debate.}
+\end{frame}
+
+\begin{frame}{The paper versus us}
+\vskip0.6cm
+\begin{columns}[T]
+\begin{column}{0.3\textwidth}\centering\bignum{\V{sc.samesign}/\V{sc.ls_n}}{signs agree}\end{column}
+\begin{column}{0.3\textwidth}\centering\bignum{\V{sc.rep196}/\V{sc.paper_sig}}{significant results repeat}\end{column}
+\begin{column}{0.3\textwidth}\centering\bignum{\V{mde.hlAC.ratio}×}{smallest premium we could detect, vs the paper's}\end{column}
+\end{columns}
+\vskip1cm
+\centering\one{The direction replicates. With \V{n.months} months instead of \V{d.paperMonths}, significance does not.}
 \end{frame}
 
 \begin{frame}{Overfitting}
