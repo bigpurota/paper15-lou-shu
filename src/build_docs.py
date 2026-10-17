@@ -37,13 +37,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import pandas as pd  # noqa: E402
-import yaml  # noqa: E402
+import pandas as pd
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = [ROOT / "README.md", ROOT / "slides" / "PLAN.md"]
-DECK = ROOT / "slides" / "deck.tex"          # hand-written slide text; numbers only via \V{key}
-GEN = ROOT / "slides" / "gen"                # generated: values.tex (every key) and the slide tables
+DECK = ROOT / "slides" / "deck.tex"
+GEN = ROOT / "slides" / "gen"
 HLZ_DEFAULT = 3.0
 
 INLINE_RE = re.compile(r"<!--v:([A-Za-z0-9_.\-]+)-->(.*?)<!--/v-->")
@@ -51,7 +51,6 @@ PLACEHOLDER_RE = re.compile(r"\{\{([A-Za-z0-9_.\-]+)\}\}")
 BLOCK_RE = re.compile(r"(<!-- BEGIN:([A-Za-z0-9_.\-]+) -->)(.*?)(<!-- END:\2 -->)", re.S)
 
 
-# ------------------------------------------------------------------------------------ formatting
 def fx(x, d: int = 2) -> str:
     """Fixed decimals; refuses NaN so that a missing input fails loudly instead of printing 'nan'."""
     x = float(x)
@@ -123,7 +122,6 @@ def deck_roles(tex: str) -> dict:
     return out
 
 
-# ------------------------------------------------------------------------------------ registry
 class Values(dict):
     def __init__(self) -> None:
         super().__init__()
@@ -161,7 +159,7 @@ def one(df: pd.DataFrame, **eq) -> pd.Series:
 
 
 def md_table(header: list[str], rows: list[list[str]]) -> str:
-    esc = lambda s: str(s).replace("|", "\\|")  # noqa: E731
+    esc = lambda s: str(s).replace("|", "\\|")
     lines = ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
     lines += ["| " + " | ".join(esc(c) for c in r) + " |" for r in rows]
     return "\n".join(lines)
@@ -170,12 +168,10 @@ def md_table(header: list[str], rows: list[list[str]]) -> str:
 def git_state() -> dict:
     def run(*args):
         return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    # same scope as the run manifests (src/run.py git_info): code and config only, generated outputs excluded
     return {"sha": run("rev-parse", "HEAD"), "dirty": bool(run("status", "--porcelain", "--", *CODE_PATHS)),
             "dirty_scope": "code+config (" + ", ".join(CODE_PATHS) + "); generated outputs excluded"}
 
 
-# code state that a pytest log refers to: the content of the code paths (no git needed, so it works on the ZIP)
 CODE_PATHS = ["src", "tests", "config.yaml", "Makefile", "mk", "requirements.txt"]
 CODE_SKIP_DIRS = {"__pycache__", ".pytest_cache"}
 CODE_SKIP_SUFFIX = {".pyc", ".log"}
@@ -207,7 +203,6 @@ def code_state_hash() -> str:
     return "tree:" + h.hexdigest()[:16]
 
 
-# a commit-SHA-like reference in a deliverable: 7-40 hex characters (with at least one digit) next to "commit"
 COMMIT_REF_RE = re.compile(
     r"\bcommit\w*\W{1,3}(?:\w+\W{1,3}){0,2}?`?(?=[0-9a-f]*\d)[0-9a-f]{7,40}\b"
     r"|\b(?=[0-9a-f]*\d)[0-9a-f]{7,40}`?\W{1,3}(?:\w+\W{1,3}){0,1}?commit", re.I)
@@ -243,7 +238,6 @@ def deviation_ranges(path: Path) -> str:
     return ", ".join(parts)
 
 
-# ------------------------------------------------------------------------------------ base run
 def base_values(V: Values, B: dict, R: Path) -> None:
     rd = R / (R / "LATEST").read_text().strip()
     B["dir"] = rd
@@ -272,11 +266,9 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     V.put("d.daily_rows", num(man["rows"]["daily_rows"]))
     V.put("d.daily_symbols", num(man["rows"]["daily_symbols"]))
 
-    # labels already formatted by report.py
     for r in V.csv(rd / "report_diagnostics.csv").itertuples():
         V.put(f"d.{r.id}", r.label)
 
-    # paper vs us rows
     pvu = V.csv(rd / "paper_vs_us.csv")
     B["pvu"] = pvu
     for r in pvu.itertuples():
@@ -301,18 +293,15 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     V.put("sc.an_n", len(an))
     V.put("sc.an_opp", int((an.match == "no").sum()))
     V.put("sc.samesign", int((ls.us * ls.paper > 0).sum()))
-    # 'yes' also covers 'both insignificant', which can have opposite signs (the IMLA_C alphas)
     yes_opp = ls[(ls.match == "yes") & (ls.us * ls.paper < 0)]
     V.put("sc.yes_oppsign", len(yes_opp))
     V.put("sc.yes_oppsign_rows", "; ".join(yes_opp.metric) if len(yes_opp) else "none")
     res = ls[ls.id.str.contains("ResLnA")]
     B["res_rows"] = res
     V.put("sc.res_n", len(res))
-    # |t| >= 1.96 regardless of the paper (includes rows where the paper itself is not significant)
     V.put("sc.res_sig", int((res.us_t.abs() >= 1.96).sum()))
     res_ps = res[res.paper_t.abs() >= 1.96]
     V.put("sc.res_paper_sig", len(res_ps))
-    # the paper's significance repeated: paper significant and match == 'yes' (same sign, |t| >= 1.96)
     V.put("sc.res_rep196", int((res_ps.match == "yes").sum()))
     rep = ls[(ls.paper_t.abs() >= 1.96) & (ls.match == "yes")]
     V.put("sc.rep196", len(rep))
@@ -321,7 +310,6 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     V.put("sc.rep196_other_n", len(oth))
     V.put("sc.rep196_other_rows", "; ".join(f"{r.metric} (t {fx(r.us_t)})" for r in oth.itertuples())
           if len(oth) else "none")
-    # full-sample rows of the volume part (A and A_C: sorts, alphas, FM slopes); sub-period rows excluded
     vol = ls[ls.id.isin(["HLArawCoef", "HLAalphaCoef", "HLACrawCoef", "HLACalphaCoef", "FMlnA", "FMlnAC",
                          "FMlnACfour", "FMlnACfive", "TtwolnAC", "RawlnA", "RawlnAC"])]
     V.put("sc.vol_n", len(vol))
@@ -330,7 +318,6 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     V.put("sc.lvl_n", len(lv))
     V.put("sc.lvl_yes", int((lv.match == "yes").sum()))
 
-    # quintiles, ours and paper
     t3 = V.csv(rd / "T3_sorts.csv")
     pn = yaml.safe_load(V.text(ROOT / "src" / "paper_numbers.yaml"))
     B["paper"] = pn
@@ -355,8 +342,6 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     rob = V.csv(rd / "robustness_vs_base.csv")
     V.put("rob.n", len(rob))
     V.put("rob.same", int((rob.same_conclusion == "yes").sum()))
-    # 'same conclusion' = same sign and same side of 1.96: split it into 'insignificant stays insignificant'
-    # and 'significant stays significant', so the count is not read as robustness of significant results
     rob_yes = rob[rob.same_conclusion == "yes"]
     V.put("rob.same_insig", int((rob_yes.base_t.abs() < 1.96).sum()))
     V.put("rob.same_sig", int((rob_yes.base_t.abs() >= 1.96).sum()))
@@ -387,7 +372,6 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     plc = V.csv(rd / "placebo.csv")
     sh = plc[plc.test == "shuffle within month"]
     V.put("plc.shuffle_reps", int(sh.n.iloc[0]))
-    # placebo.py: for the shuffle rows `t` is the mean t over the permutations, `sd_t` its s.d. across them
     V.put("plc.shuffle_maxabs_meant", fx(sh.t.abs().max(), 2))
     V.put("plc.shuffle_sd_t_min", fx(sh.sd_t.min(), 2))
     V.put("plc.shuffle_sd_t_max", fx(sh.sd_t.max(), 2))
@@ -397,7 +381,6 @@ def base_values(V: Values, B: dict, R: Path) -> None:
     V.put("plc.leak_maxabs_t", fx(lk.t.abs().max(), 2))
 
 
-# ------------------------------------------------------------------------------------ simulations
 def sim_values(V: Values, B: dict, R: Path) -> None:
     sd = R / "simulations"
     ws = V.csv(sd / "sim_world_summary.csv")
@@ -446,7 +429,6 @@ def sim_values(V: Values, B: dict, R: Path) -> None:
         fails.append(f"world {r.world}, {stat}: {pc(r.value, 1)} ({why})")
     V.put("sim.checks.failed", "; ".join(fails) if fails else "none")
     V.put("sim.checks.nfail", len(fails))
-    # criteria of the form 'share <= x' for signals that should be unpriced: say how loose they are
     rule = chk.rule.astype(str).str.strip()
     loose = chk[rule.str.startswith("<=")]
     V.put("sim.checks.loose_n", len(loose))
@@ -461,12 +443,10 @@ def sim_values(V: Values, B: dict, R: Path) -> None:
         for stat, key in [("fm2_lnA_C", "fm2"), ("hl_A_C", "hlAC")]:
             r = one(pw, premium=prem, stat=stat)
             V.put(f"pow.{fx(100 * prem, 2)}.{key}", pc(r["share_t_gt_1.96"]))
-            # binomial 95% CI written by simulate.py for the share of |t| > 1.96 (n_reps per point)
             V.put(f"pow.{fx(100 * prem, 2)}.{key}.ci", f"{pc(r.ci95_lo)}–{pc(r.ci95_hi)}")
     V.put("pow.reps", int(pw.n_reps.min()))
 
 
-# ------------------------------------------------------------------------------------ upgrades
 def manifest_id(V: Values, B: dict, U: Path, name: str) -> dict:
     m = V.json(U / name / "run_manifest.json")
     V.put(f"run.{name}", m["run_id"])
@@ -527,7 +507,7 @@ def an_values(V: Values, B: dict, U: Path) -> None:
     V.put("an.corr_res_dif", fx(iv.loc["monthly", "corr_res_perp_DIF_perp"], 2))
     V.put("an.r2_res_abs", fx(iv.loc["monthly", "r2_res_on_ln_absret"], 2))
     V.put("an.r2_res_dif", fx(iv.loc["monthly", "r2_res_on_ln_absret_DIF"], 2))
-    from amihud_noh import scale_ratios  # same pairs as the key-regressions table of the A&N SUMMARY.md
+    from amihud_noh import scale_ratios
     rat = scale_ratios(V.csv(d / "fm.csv"), pr)
     V.put("an.scale_min", fx(rat.ratio.min(), 1))
     V.put("an.scale_max", fx(rat.ratio.max(), 0))
@@ -550,7 +530,6 @@ def hf_values(V: Values, B: dict, U: Path) -> None:
     cov = V.csv(d / "coverage.csv").iloc[0]
     V.put("hf.months", int(cov.n_measure_months))
     V.put("hf.coinmonths", num(cov.n_lambda_ok))
-    # coverage.csv stores GiB (bytes / 2**30); the README data table uses decimal MB, so convert to 10^9 bytes
     V.put("hf.gb5m", fx(cov.klines5m_gb * 2**30 / 1e9, 1))
     V.put("hf.gbagg", fx(cov.aggtrades_gb * 2**30 / 1e9, 1))
     sl = V.csv(d / "fm_slopes_monthly.csv")
@@ -586,7 +565,7 @@ def hf_values(V: Values, B: dict, U: Path) -> None:
     for key, pref in [("h1", "first half"), ("h2", "second half")]:
         r = one(dg[dg.variant.str.startswith(pref)], model="(2)", var="lnA_C")
         V.put(f"hf.{key}.ac_t", fx(r.t, 2))
-        r = one(dg[dg.variant.str.startswith(pref)], model="(0)", var="lnA_C")   # A_C alone, no λ
+        r = one(dg[dg.variant.str.startswith(pref)], model="(0)", var="lnA_C")
         V.put(f"hf.{key}.b0", ct(r.coef, r.t))
     lam = dg[(dg["var"] == "lnlam")]
     V.put("hf.lam_tmin", fx(lam.t.abs().min(), 2))
@@ -608,8 +587,6 @@ def hf_values(V: Values, B: dict, U: Path) -> None:
     r = one(vol, model="(0)", var="lnA_C")
     V.put("hf.vol.b0ac", ct(r.coef, r.t))
     V.put("hf.corr.ATC.paper", fx(B["paper"]["lou_shu_2017"]["table9"]["corr_ATC_lambda"], 3))
-    # paper's January / other-month slopes (Table 8: ln λ; Table 11: ln AT_C and ln λ), typed from the paper
-    # into src/paper_numbers.yaml; used in words on slides 9-10
     ls = B["paper"]["lou_shu_2017"]
     for key, tab, name in [("t8.jan_lam", "table8", "jan_ln_lambda"), ("t8.rest_lam", "table8", "nonjan_ln_lambda"),
                            ("t11.jan_atc", "table11", "jan_ln_ATC"), ("t11.rest_atc", "table11", "nonjan_ln_ATC"),
@@ -841,12 +818,10 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
     def field(test, name):
         m = re.search(name + r"=([^|]+)", str(test))
         return m.group(1).strip() if m else "?"
-    # Bonferroni survivors from sentiment/panel_b.csv, described by their own state and controls
     ss = surv[surv.source == "upgrade:sentiment"]
     V.put("lg.all.bonf_sent", "; ".join(f"{field(r.test, 'state')} with controls {field(r.test, 'controls')}, "
                                         f"{field(r.test, 'portfolio')}" for r in ss.itertuples()) or "none")
     V.put("lg.all.bonf_sent_n", len(ss))
-    # hf_lambda survivors: which windows / variants they come from
     hs = surv[surv.source == "upgrade:hf_lambda"]
     V.put("lg.all.bonf_hf_n", len(hs))
     hk = hs.apply(kind, axis=1) if len(hs) else pd.Series(dtype=str)
@@ -866,7 +841,6 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
     crit_res = float(w0r.crit_abs_t_5pct.max())
     V.put("w0.crit_res_min", fx(w0r.crit_abs_t_5pct.min(), 2))
     V.put("w0.crit_res_max", fx(crit_res, 2))
-    # distribution-free 95% CI of the 95% quantile of |t| (order statistics; binomial ranks), from the world-0 runs
     from scipy.stats import binom
     w0reps = V.csv(U.parent / "simulations" / "sim_world0_reps.csv")
     los, his = [], []
@@ -881,7 +855,6 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
     res = B["res_rows"]
     res_ps = res[res.paper_t.abs() >= 1.96]
     V.put("sc.res_rep_w0", int(((res_ps.match == "yes") & (res_ps.us_t.abs() >= crit_res)).sum()))
-    # world 0 calibrated fm3/fm4 only, full sample at the base N x T: the rows that calibration covers
     cal = res_ps[res_ps.id.isin(["FMResLnA", "FMResLnAfour"])]
     V.put("sc.res_cal_n", len(cal))
     V.put("sc.res_cal_w0", int(((cal.match == "yes") & (cal.us_t.abs() >= crit_res)).sum()))
@@ -906,13 +879,8 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
         V.put(f"mde.{k}.ratio", fx(real / paper, 1))
     sim_mde = one(mde, stat="fm2_lnA_C", method="sim_scaled_to_real_crit_1.96").mde
     V.put("mde.fm2.sim", fx(sim_mde, 2))
-    # an order of magnitude only: real NW-based MDE against a simulation MDE rescaled to our N x T from a coarse
-    # (20-replication) power curve
     V.put("mde.fm2.sim_ratio", fx(one(mde, stat="fm2_lnA_C", method="real_se_nw_crit_1.96").mde / sim_mde, 0))
-    # the same ratio as robustness/SUMMARY.md prints it (2 decimals), to name that wording in the README
     V.put("mde.fm2.sim_ratio2", fx(one(mde, stat="fm2_lnA_C", method="real_se_nw_crit_1.96").mde / sim_mde, 2))
-    # per-s.d. numbers are each in their own s.d. (ours: mean monthly cs s.d. in the FM sample; paper: 2.53, pp. 13-14),
-    # so also give them per log unit of ln A_C and with the paper's slope scaled to our s.d.
     r_real = one(mde, stat="fm2_lnA_C", method="real_se_nw_crit_1.96")
     r_pap = one(mde, stat="fm2_lnA_C", world="paper")
     V.put("mde.fm2.sd", fx(r_real.sd_signal, 2))
@@ -932,7 +900,6 @@ def robustness_values(V: Values, B: dict, U: Path) -> None:
         V.put(f"loyo.{k}.years", int(lo.loc[st, "n_years"]))
 
 
-# ------------------------------------------------------------------------------------ reproducibility evidence
 REPRO_KEYS = ["repro.status", "repro.clone_run", "repro.steps", "repro.rc", "repro.data_min", "repro.n_files",
               "repro.n_csv", "repro.n_identical", "repro.n_textdiff", "repro.n_numdiff", "repro.daily",
               "repro.verdict", "repro.tests", "repro.groups", "repro.n_png", "repro.n_png_ident", "repro.not_covered",
@@ -956,7 +923,6 @@ def repro_values(V: Values, R: Path) -> None:
         V.put("repro.status", "done")
         V.put("repro.clone_run", sm["clone_base_run"])
         tg = [x["target"] for x in sm["steps"]]
-        # repeated attempts of one target (hf_lambda after network drops) are shown once, with their count
         V.put("repro.steps", " → ".join(t + (f" ({tg.count(t)} attempts)" if tg.count(t) > 1 else "")
                                          for t in dict.fromkeys(tg)))
         hfa = sm.get("hf_attempts") or []
@@ -968,7 +934,6 @@ def repro_values(V: Values, R: Path) -> None:
         hf = [x for x in sm["steps"] if x["target"] == "upgrade-hf_lambda"]
         V.put("repro.hf_min", fx(sum(x["seconds"] for x in hf) / 60, 0) if hf else "n/a")
         V.put("repro.hf_n", len(hf))
-        # the current src/hf_lambda.py stops on failed downloads unless --allow-partial is passed
         fix = "--allow-partial" in (ROOT / "src" / "hf_lambda.py").read_text()
         if len(hfa) > 1:
             fails = [f"{a['n_failed']} ({', '.join(f'{n} {k}' for k, n in a['failed_downloads'].items())})"
@@ -991,7 +956,7 @@ def repro_values(V: Values, R: Path) -> None:
               "upgrades not regenerated by this clone, so not compared: " + V["repro.not_covered"])
         ck = V.csv(d / "repro_check.csv")
         kind = ck["kind"] if "kind" in ck else pd.Series("csv", index=ck.index).where(ck.group != "data", "parquet")
-        cs = ck[kind == "csv"]                       # result CSVs only (data and figures are reported separately)
+        cs = ck[kind == "csv"]
         V.put("repro.n_identical", int((cs.status == "identical").sum()))
         V.put("repro.n_textdiff", int((cs.status == "numbers_identical_text_differs").sum()))
         ok_other = {"identical_totals": "a download log whose totals per kind agree (max abs diff {d}; its rows are "
@@ -1008,7 +973,6 @@ def repro_values(V: Values, R: Path) -> None:
         dl = ck[ck.group == "data"]
         V.put("repro.daily", f"{dl.status.iloc[0]} ({num(dl.rows_clone.iloc[0])} rows)" if len(dl) else "not compared")
         V.put("repro.n_csv", int(len(cs)))
-        # the comparison leaves out columns named like run-time columns (src/repro_check.py SKIP_COLS); say so
         if "skipped_cols_rule" in sm:
             dif_, same_ = sm.get("skipped_cols_differ") or [], sm.get("skipped_cols_identical") or []
             V.put("repro.skip_short", "timing columns excluded" if not dif_ or all(
@@ -1058,7 +1022,6 @@ def repro_values(V: Values, R: Path) -> None:
     V.put("fc.contract_xfail", f"the {len(hh)} historical base runs whose manifests hold home-directory paths"
           if hh else "none expected")
     V.put("fc.hist_n", {1: "one", 2: "two", 3: "three", 4: "four"}.get(len(hist), str(len(hist))))
-    # every file under results/ that still holds a home-directory path (history and old logs, never regenerated)
     leak = sorted(str(q.relative_to(ROOT)) for q in R.rglob("*") if q.is_file() and q.suffix in
                   (".json", ".md", ".txt", ".csv") and re.search(r"/Users/|/home/", q.read_text(errors="replace")))
     V.put("fc.hist_home", ", ".join(f"`{x}`" for x in leak) if leak else "none")
@@ -1071,8 +1034,6 @@ def repro_values(V: Values, R: Path) -> None:
           "`src/report.py`" if fc.get("base_n_text_or_rows") else "all are identical")
     V.put("fc.n_man", fc["n_manifests"])
     V.put("fc.n_canon", fc["n_canonical"])
-    # the base run's report stage (report_manifest.json) is not one of the counted run manifests: if `make report`
-    # rewrote it after the clone run, the outputs are not all the clone's, and every provenance sentence says so
     rpm = R / fc["canonical_base_run"] / "report_manifest.json"
     rg = V.json(rpm)["git"] if rpm.exists() else None
     if rg and (rg["sha"][:7] != str(fc["code_commit_run"])[:7] or rg.get("dirty")):
@@ -1142,7 +1103,6 @@ def tests_log_values(V: Values, R: Path) -> None:
     V.put("tests.code_match", match)
 
 
-# ------------------------------------------------------------------------------------ pre-registration
 PREREG = ROOT / "docs" / "preregistration" / "config_preregistered.yaml"
 
 
@@ -1167,7 +1127,6 @@ def prereg_values(V: Values, B: dict, R: Path) -> None:
     V.put("prereg.firstrun", first["run_id"])
     V.put("prereg.firstrun.cfg8", first["config_sha256"][:8])
     V.put("prereg.cfgmatch", "matches" if pre_cfg == first["config_sha256"] else "does NOT match")
-    # the pre-registered first run (before the J1 data audit): its T4 Res.lnA slopes
     t4 = V.csv(mp.parent / "T4_fm.csv")
     r = one(t4, model="(3)", var="ResLnA")
     V.put("fr.fm3res", ct(r.coef, r.t))
@@ -1175,7 +1134,6 @@ def prereg_values(V: Values, B: dict, R: Path) -> None:
     V.put("fr.t4_tmax", fx(t4.t.abs().max(), 2))
 
 
-# ------------------------------------------------------------------------------------ provenance from the files
 def verify_values(V: Values, B: dict, R: Path) -> None:
     """Hashes recorded in the canonical manifests against the files here (src/verify_manifests.py, `make verify`).
     Only config and code enter the docs: data/ is not in the ZIP and its presence depends on the machine."""
@@ -1199,7 +1157,6 @@ def verify_values(V: Values, B: dict, R: Path) -> None:
     B["verify_rows"] = rows
 
 
-# ------------------------------------------------------------------------------------ blocks
 def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     out: dict[str, str] = {}
     rd: Path = B["dir"]
@@ -1222,7 +1179,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
            if V["repro.status"] == "done" else "")
         + " (see “Reproducibility”)._")
 
-    # paper vs us: the generated report itself (sections Key findings + Paper vs us)
     md = V.text(rd / "paper_vs_us.md")
     m = re.search(r"## Key findings\n(.*?)\n## Robustness", md, re.S)
     if not m:
@@ -1270,7 +1226,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     out["figure_main"] = (f"![Quintiles of A / A_C / Res.A: paper and us]({V['base.dir']}/fig_quintiles.png)\n\n"
                           f"_File: `{V['base.dir']}/fig_quintiles.png` (generated by `src/figures.py`)._")
 
-    # audit list
     ev = B["audit_events"]
     rows = []
     for r in ev.itertuples():
@@ -1279,7 +1234,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     out["audit"] = md_table(["coin", "date", "type", "factor (redenomination) / reopen ÷ prev. close", "treatment"],
                             rows)
 
-    # simulations
     ws = B["sim_ws"]
 
     def srow(w, stat, col, expect):
@@ -1321,7 +1275,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
                           f"{V['pow.reps']} replications per point, so each share is coarse, see the 95% CI "
                           "of the share of |t| > 1.96):\n\n" + pt)
 
-    # upgrades table
     U = "results/upgrades"
     urows = [
         ["1. Amihud & Noh (2021): the missing term",
@@ -1416,7 +1369,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     ]
     out["upgrades"] = md_table(["upgrade", "question", "result (t: Newey–West, 6 lags)", "verdict", "folder"], urows)
 
-    # overfitting
     lg_src = f"base {V['lg.base.3']}, " + V["lg.all.3_by_source"]
     out["overfitting"] = "\n".join([
         f"- **Pre-registration.** The specification (`config.yaml`, `DEVIATIONS.md` D1–D11) was fixed before the "
@@ -1502,7 +1454,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         f"`{V['base.dir']}/robustness_vs_base.csv` marks its {V['rob.posthoc_n']} post hoc rows in the variant label.",
     ])
 
-    # runtime and disk
     rrows = [["`make run` (base run)", fsec(B["manifest"]["timings_sec"]["total"]), f"`{V['base.dir']}/run_manifest.json`"],
              ["`make sims` (simulations, parallel)", V["sim.wall"], "`results/simulations/sim_manifest.json`"]]
     rep = rd / "report_manifest.json"
@@ -1526,16 +1477,13 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     out["runtime"] = (rt + "\n\nDownload time is not written to the manifests because it depends on the network. "
                       "Size of the raw data (measured when the docs are built):\n\n" + dt)
 
-    # manifest fields
     man = B["manifest"]
     out["manifest_fields"] = ("Fields of the base run's `run_manifest.json`: " + ", ".join(f"`{k}`" for k in man)
                               + ".")
 
-    # slide 8 compact table
     pvu = B["pvu"].set_index("id")
     sel = ["corrAAC", "QratioAC", "corrAabs", "HLArawCoef", "HLACrawCoef", "HLACalphaCoef", "HLResArawCoef",
            "FMlnA", "FMlnAC", "FMResLnA", "FMResLnAfour", "IMLAalpha"]
-    # 'yes' with opposite signs (both insignificant) is marked with an asterisk, explained under the table
     def mark(i):
         m = pvu.loc[i, "match"]
         opp = pvu.loc[i, "kind"] == "t" and pvu.loc[i, "us"] * pvu.loc[i, "paper"] < 0
@@ -1544,8 +1492,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     T = B.setdefault("tables", {})
     T["slide8"] = (["metric", "paper (NYSE/AMEX 1964–2012)", "us (Binance)", "match"], srows)
 
-    # slide 9: lambda (paper: Table 9 is NYSE/AMEX 1983-2012; Table 10's caption says 1964-2012, but it reports
-    # 358 months and needs λ, so it is the same 1983-2012 λ sample)
     T["slide9"] = (["", "paper (T9, T10: λ sample 1983–2012, 358 mo.)",
                     f"us (Binance {V['hf.first']}…{V['hf.last']}, 5-min bars)"], [
         ["corr(λ, A)", V["hf.corr.A.paper"], V["hf.corr.A"]],
@@ -1558,8 +1504,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
         ["T10: non-cost part, model (3)", V["hf.t10.n3.paper"], V["hf.t10.n3"]],
     ])
 
-    # slide 10: mispricing. Paper columns of Tables 11-13 are turnover sorts (AT_C) with Baker-Wurgler /
-    # Pastor-Stambaugh states; ours are A_C with Fear & Greed / AR(2) of EW A: only sign and t compare
     T["slide10"] = (["test", "paper (AT_C; BW / PS)", "us (A_C; Fear & Greed / AR(2) of A)"], [
         ["Sentiment → L−S (Table 13)", V["se.ls.paper"], V["se.ls"]],
         ["Sentiment → short leg", V["se.short.paper"], V["se.short"]],
@@ -1576,7 +1520,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
                        "uses the Baker–Wurgler / Pástor–Stambaugh indices; we use A_C, Fear & Greed and the AR(2) "
                        "residual of the EW mean of A._")
 
-    # team and repository (README header and title slide): from slides/meta.yaml, filled by the team
     meta = B.get("meta", {})
     team = ", ".join(meta.get("team") or [])
     repo = meta.get("repo_url") or ""
@@ -1598,7 +1541,6 @@ def blocks(V: Values, B: dict, R: Path) -> dict[str, str]:
     return out
 
 
-# ------------------------------------------------------------------------------------ LaTeX for the deck
 TEX_ESC = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_",
            "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}", "`": ""}
 
@@ -1618,7 +1560,6 @@ def tex_table(header: list[str], rows: list[list[str]], widths: list[float]) -> 
     return "\n".join(lines) + "\n"
 
 
-# column widths as shares of \\linewidth; with the column separation they add up to about 1
 TEX_WIDTHS = {"slide8": [0.38, 0.21, 0.21, 0.11], "slide9": [0.33, 0.30, 0.31],
               "slide10": [0.33, 0.29, 0.32], "sims": [0.05, 0.16, 0.33, 0.12, 0.09, 0.09]}
 
@@ -1632,7 +1573,6 @@ def tex_outputs(V: Values, B: dict) -> dict[Path, str]:
     head = ["% generated by src/build_docs.py from results/: do not edit", ""]
     vals = [f"\\expandafter\\def\\csname v@{k}\\endcsname{{{tex(V[k])}}}" for k in sorted(V)]
     extra = [f"\\def\\basedir{{../{V['base.dir']}}}",
-             # an empty team list must look incomplete on the title slide (and --strict fails on it)
              f"\\def\\teamnames{{{tex(', '.join(meta.get('team') or [])) or TEAM_MISSING_TEX}}}",
              f"\\def\\repourl{{{tex(meta.get('repo_url') or '')}}}"]
     out = {GEN / "values.tex": "\n".join(head + vals + extra) + "\n"}
@@ -1646,7 +1586,6 @@ def deck_hand_typed(text: str) -> list[str]:
     t = re.sub(r"(?<!\\)%.*", "", text)
     t = re.sub(r"\\V\{[^}]*\}", "", t)
     t = re.sub(r"\\(includegraphics|input|url|href)(\[[^]]*\])?\{[^}]*\}", "", t)
-    # layout lengths (column widths, array stretch) are not results
     t = re.sub(r"\d*\.\d+\\(textwidth|linewidth|textheight)", "", t)
     t = re.sub(r"\\arraystretch\}?\{[^}]*\}", "", t)
     out = []
@@ -1662,7 +1601,6 @@ def deck_keys(text: str) -> set[str]:
     return set(re.findall(r"\\V\{([^}]*)\}", t))
 
 
-# ------------------------------------------------------------------------------------ render
 def render(text: str, V: Values, blk: dict[str, str], missing: set[str]) -> str:
     def inl(m):
         k = m.group(1)
@@ -1683,7 +1621,7 @@ def render(text: str, V: Values, blk: dict[str, str], missing: set[str]) -> str:
 
 
 DEC_RE = re.compile(r"(?<![\w.\-/])-?\d+\.\d+(?![\w.])")
-CONSTANTS = {"1.96"}  # the 5% two-sided normal critical value is a definition, not a result
+CONSTANTS = {"1.96"}
 
 
 def hand_typed(text: str) -> list[str]:
@@ -1704,7 +1642,6 @@ def hand_typed(text: str) -> list[str]:
 
 
 CYRILLIC_RE = re.compile(r"[\u0400-\u04FF]+")
-# Cyrillic words allowed in the English deliverables: quoted Russian data field names only (none so far)
 CYRILLIC_ALLOW: set[str] = set()
 
 
@@ -1755,7 +1692,6 @@ def main(argv=None) -> int:
     V.put("dev.range", deviation_ranges(ROOT / "DEVIATIONS.md"))
     V.put("sim.rules_note", "The pass rules (`src/simulate.py`) were written together with the first simulation "
           "results, so nothing shows that they came first.")
-    # date only (no commit id): when slides/deck.tex first appears in the version history; unknown without git
     try:
         first_deck = subprocess.run(["git", "log", "--diff-filter=A", "--format=%ad", "--date=format:%Y-%m-%d %H:%M",
                                      "--", "slides/deck.tex"], cwd=ROOT, capture_output=True, text=True).stdout
@@ -1804,7 +1740,6 @@ def main(argv=None) -> int:
             print(f"up to date: {doc.relative_to(ROOT)}")
         outputs[str(doc.relative_to(ROOT))] = hashlib.sha256(new.encode()).hexdigest()
         rendered[doc] = new
-    # the slide deck: generated values and tables, plus checks of the hand-written deck.tex
     for path, content in tex_outputs(V, B).items():
         rel = str(path.relative_to(ROOT))
         old = path.read_text() if path.exists() else None
@@ -1831,7 +1766,6 @@ def main(argv=None) -> int:
                 print("   ", h, file=sys.stderr)
             if a.strict:
                 rc = 1
-    # English-only deliverables (rendered content for the files this script writes, disk content otherwise)
     if a.strict:
         targets = list(dict.fromkeys(english_targets() + [q for q in rendered if q.parent == GEN]))
         for path in targets:
@@ -1843,7 +1777,6 @@ def main(argv=None) -> int:
                 print(f"{path.relative_to(ROOT)}: {len(bad)} line(s) with Cyrillic text:", file=sys.stderr)
                 for h in bad[:20]:
                     print("   ", h, file=sys.stderr)
-        # provenance must be checkable from the ZIP: no commit SHA (known SHA of this history, or hex next to "commit")
         shas = known_shas()
         for path in list(dict.fromkeys(targets + [ROOT / "slides" / "ROLES.md"])):
             if path not in rendered and not path.exists():

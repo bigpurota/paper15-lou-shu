@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-import verify_manifests as vm  # noqa: E402
+import verify_manifests as vm
 
 
 def _sha(b: bytes) -> str:
@@ -49,11 +49,11 @@ def test_verify_match_then_mismatch(tmp_path, monkeypatch):
     assert st[("code", "src/*.py (names and bytes)")] == "match"
     assert st[("code", "src/a.py")] == "match"
     assert st[("data", "results/r1/t.csv")] == "match"
-    assert st[("data", "data/cache/daily.parquet")] == "absent"        # data/ is not in the ZIP
+    assert st[("data", "data/cache/daily.parquet")] == "absent"
     assert st[("pre-registration", "docs/preregistration/config_preregistered.yaml")] == "match"
     assert vm.main(["--results-dir", str(root / "results")]) == 0
 
-    (root / "src" / "a.py").write_text("x = 2\n")                       # code edited after the run
+    (root / "src" / "a.py").write_text("x = 2\n")
     rows = vm.verify(root / "results")
     bad = {(r["check"], r["item"]) for r in rows if r["status"] == "MISMATCH"}
     assert bad == {("code", "src/*.py (names and bytes)"), ("code", "src/a.py")}

@@ -11,18 +11,16 @@ def _daily(symbol, dates, close, qv):
                          "quote_volume": np.asarray(qv, float)})
 
 
-# ---------------------------------------------------------------- daily_returns
 def test_daily_returns_gap_and_volume():
     dates = ["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-05", "2020-01-06", "2020-01-07"]
     d = daily_returns(_daily("X", dates, [100, 110, 99, 120, 132, 66], [1, 2, 0, 5, 6, np.nan]))
     r = d["r"].to_numpy()
-    assert np.isnan(r[0])                          # first day: no previous close
+    assert np.isnan(r[0])
     assert r[1] == pytest.approx(0.10)
     assert r[2] == pytest.approx(-0.10)
-    assert np.isnan(r[3])                          # 2020-01-04 missing -> gap
+    assert np.isnan(r[3])
     assert r[4] == pytest.approx(0.10)
     assert r[5] == pytest.approx(-0.50)
-    # valid: return defined and quote_volume > 0 (0 and NaN volume are invalid)
     assert d["valid"].tolist() == [False, True, False, False, True, False]
     assert (d["month"] == pd.Period("2020-01", "M")).all()
 
@@ -32,12 +30,11 @@ def test_daily_returns_sorts_and_separates_symbols():
     b = _daily("B", ["2020-01-01", "2020-01-02"], [50, 25], [1, 1])
     d = daily_returns(pd.concat([b, a], ignore_index=True))
     assert d["symbol"].tolist() == ["A", "A", "B", "B"]
-    assert np.isnan(d["r"].iloc[0]) and np.isnan(d["r"].iloc[2])   # no carry-over across symbols
+    assert np.isnan(d["r"].iloc[0]) and np.isnan(d["r"].iloc[2])
     assert d["r"].iloc[1] == pytest.approx(0.10)
     assert d["r"].iloc[3] == pytest.approx(-0.50)
 
 
-# ---------------------------------------------------------------- monthly_measures
 @pytest.fixture(scope="module")
 def toy():
     """Two symbols, Jan-Mar 2020 (X) and Jan + Mar 2020 (Y, February missing entirely)."""
@@ -50,7 +47,6 @@ def toy():
             qv = rng.lognormal(12, 1, len(dates))
             frames.append(_daily(sym, dates, close, qv))
     daily = pd.concat(frames, ignore_index=True)
-    # inject an invalid day (zero volume) and a calendar gap in X/January
     daily.loc[(daily.symbol == "X") & (daily.date == "2020-01-10"), "quote_volume"] = 0.0
     daily = daily[~((daily.symbol == "X") & (daily.date == "2020-01-20"))].reset_index(drop=True)
     d = daily_returns(daily)
@@ -74,7 +70,7 @@ def test_monthly_measures_match_numpy(toy, sym, month):
     assert row["A"] == pytest.approx(A, rel=1e-12)
     assert row["A_C"] == pytest.approx(AC, rel=1e-12)
     assert row["absret"] == pytest.approx(absret, rel=1e-12)
-    cov_pop = np.cov(ar, inv, ddof=0)[0, 1] * 1e6           # independent population covariance
+    cov_pop = np.cov(ar, inv, ddof=0)[0, 1] * 1e6
     assert row["COV"] == pytest.approx(cov_pop, rel=1e-8, abs=1e-12)
     assert row["COV"] == pytest.approx(row["A"] - row["absret"] * row["A_C"], rel=1e-12)
     assert row["DIF"] == pytest.approx(np.log(A) - np.log(absret) - np.log(AC), rel=1e-10)
@@ -90,12 +86,9 @@ def test_monthly_measures_match_numpy(toy, sym, month):
 def test_monthly_n_days_and_same_valid_days(toy):
     d, m = toy
     xj = m[(m.symbol == "X") & (m.month == pd.Period("2020-01", "M"))].iloc[0]
-    # 31 days - 1 dropped (20th) = 30 rows; invalid: Jan 1 (no prev), Jan 10 (zero vol), Jan 21 (gap)
     assert xj["n_days"] == 27
-    # Y in March: first day has no previous close (Feb missing) -> 30 valid days
     ym = m[(m.symbol == "Y") & (m.month == pd.Period("2020-03", "M"))].iloc[0]
     assert ym["n_days"] == 30
-    # zero-volume day must not leak into A_C (it would be inf)
     assert np.isfinite(m[["A", "A_C", "absret", "COV", "DIF"]].to_numpy()).all()
 
 
@@ -108,7 +101,7 @@ def test_monthly_ret_month_end_consecutive_only(toy):
     assert get("X", "2020-02") == pytest.approx(close_end["X", P("2020-02")] / close_end["X", P("2020-01")] - 1)
     assert get("X", "2020-03") == pytest.approx(close_end["X", P("2020-03")] / close_end["X", P("2020-02")] - 1)
     assert np.isnan(get("Y", "2020-01"))
-    assert np.isnan(get("Y", "2020-03"))             # Feb missing -> not consecutive
+    assert np.isnan(get("Y", "2020-03"))
     assert len(m) == 5
 
 
@@ -116,14 +109,12 @@ def test_monthly_measures_accepts_raw_daily():
     dates = pd.date_range("2020-01-01", "2020-01-05")
     raw = _daily("Z", dates, [1, 2, 1, 2, 4], [1e6, 2e6, 1e6, 4e6, 2e6])
     m = monthly_measures(raw, scale=1e6)
-    # valid days 2..5: |r| = 1, .5, 1, 1 ; DVol = 2e6, 1e6, 4e6, 2e6
     assert m["n_days"].iloc[0] == 4
     assert m["absret"].iloc[0] == pytest.approx(0.875)
     assert m["A_C"].iloc[0] == pytest.approx(np.mean([0.5, 1, 0.25, 0.5]))
     assert m["A"].iloc[0] == pytest.approx(np.mean([0.5, 0.5, 0.25, 0.5]))
 
 
-# ---------------------------------------------------------------- winsorize_cs, cs_residual
 def test_winsorize_cs_per_cross_section():
     df = pd.DataFrame({"month": [1] * 101 + [2] * 101,
                        "v": np.r_[np.arange(101.0), 1000 + np.arange(101.0)]})
@@ -132,7 +123,7 @@ def test_winsorize_cs_per_cross_section():
     assert a.min() == pytest.approx(1.0) and a.max() == pytest.approx(99.0)
     assert b.min() == pytest.approx(1001.0) and b.max() == pytest.approx(1099.0)
     np.testing.assert_allclose(a[1:100], np.arange(1.0, 100.0))
-    assert df["v"].max() == 1100.0                   # input not modified
+    assert df["v"].max() == 1100.0
 
 
 def test_winsorize_cs_keeps_nan():
@@ -148,7 +139,7 @@ def test_cs_residual_orthogonal_zero_mean():
     df = pd.DataFrame({"month": np.repeat([1, 2, 3], n), "x": rng.normal(size=3 * n)})
     df["y"] = np.repeat([1.0, -2.0, 5.0], n) + np.repeat([0.5, 3.0, -1.0], n) * df["x"] + rng.normal(size=3 * n)
     df.loc[7, "y"] = np.nan
-    df = df.sample(frac=1, random_state=3)           # shuffled rows: alignment must be by index
+    df = df.sample(frac=1, random_state=3)
     res = cs_residual(df, "y", "x", "month")
     assert isinstance(res, pd.Series)
     assert res.index.equals(df.index) or set(res.index) == set(df.index)

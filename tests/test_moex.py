@@ -18,9 +18,7 @@ def _cal(start, end, holidays=()):
     return cal[~cal.isin(pd.to_datetime(list(holidays)))]
 
 
-# ---------------------------------------------------------------- ex-dividend dates
 def test_ex_date_t2_regime_with_holiday():
-    # SBER 2017: registry 14.06.2017 (Wed), 12.06 holiday -> last cum 09.06 (Fri), ex 13.06 (Tue)
     cal = _cal("2017-06-01", "2017-06-30", ["2017-06-12"])
     d = pd.DataFrame({"secid": ["SBER"], "registry_date": [pd.Timestamp("2017-06-14")],
                       "last_cum_date": [pd.NaT], "amount": [6.0]})
@@ -30,21 +28,20 @@ def test_ex_date_t2_regime_with_holiday():
 def test_ex_date_t1_regime_and_weekend_registry():
     cal = _cal("2025-07-01", "2025-07-31")
     d = pd.DataFrame({"secid": ["SBER", "X"],
-                      "registry_date": [pd.Timestamp("2025-07-18"), pd.Timestamp("2025-07-20")],  # Fri, Sun
+                      "registry_date": [pd.Timestamp("2025-07-18"), pd.Timestamp("2025-07-20")],
                       "last_cum_date": [pd.NaT, pd.NaT], "amount": [34.84, 1.0]})
     ex = dm.ex_dates(d, cal, SPEC["t1_from"])
-    assert ex.iloc[0] == pd.Timestamp("2025-07-18")      # last cum 17.07 (smart-lab T-1), ex = R
-    assert ex.iloc[1] == pd.Timestamp("2025-07-18")      # Sunday R: buy Thu settles Fri <= R, ex Fri
+    assert ex.iloc[0] == pd.Timestamp("2025-07-18")
+    assert ex.iloc[1] == pd.Timestamp("2025-07-18")
 
 
 def test_ex_date_from_given_last_cum_day():
     cal = _cal("2016-10-01", "2016-10-31")
     d = pd.DataFrame({"secid": ["MTSS"], "registry_date": [pd.Timestamp("2016-10-17")],
-                      "last_cum_date": [pd.Timestamp("2016-10-14")], "amount": [11.99]})   # Fri
+                      "last_cum_date": [pd.Timestamp("2016-10-14")], "amount": [11.99]})
     assert dm.ex_dates(d, cal, SPEC["t1_from"]).iloc[0] == pd.Timestamp("2016-10-17")
 
 
-# ---------------------------------------------------------------- daily construction
 def _hist(secid, dates, close, value=1e6, volume=1000):
     n = len(dates)
     return pd.DataFrame({"secid": secid, "date": pd.to_datetime(dates), "close": close,
@@ -65,7 +62,7 @@ def test_dividend_added_back_on_ex_date():
     h = _hist("AAA", dates, [100.0, 90.0, 91.0])
     divs = pd.DataFrame({"secid": ["AAA"], "ex_date": [pd.Timestamp("2019-07-02")], "amount": [10.0]})
     d, flags = dm.build_daily(h, _no_splits(), divs)
-    assert d["r"].iloc[1] == pytest.approx(0.0)           # (90 + 10) / 100 - 1
+    assert d["r"].iloc[1] == pytest.approx(0.0)
     assert d["r"].iloc[2] == pytest.approx(91 / 90 - 1)
     assert d["tri"].iloc[-1] == pytest.approx(100 / 100 * 91 / 90)
     assert flags.empty
@@ -73,23 +70,22 @@ def test_dividend_added_back_on_ex_date():
 
 def test_dividend_on_non_trading_ex_date_goes_to_next_trade():
     cal_days = ["2019-07-01", "2019-07-02", "2019-07-03"]
-    other = _hist("ZZZ", cal_days, [1.0, 1.0, 1.0])                # defines the market calendar
+    other = _hist("ZZZ", cal_days, [1.0, 1.0, 1.0])
     h = pd.concat([other, _hist("AAA", ["2019-07-01", "2019-07-03"], [100.0, 95.0])])
     divs = pd.DataFrame({"secid": ["AAA"], "ex_date": [pd.Timestamp("2019-07-02")], "amount": [5.0]})
     d, _ = dm.build_daily(h, _no_splits(), divs)
     a = d[d["symbol"] == "AAA"]
     assert a["div"].iloc[1] == 5.0 and a["gross"].iloc[1] == pytest.approx(1.0)
-    assert np.isnan(a["r"].iloc[1])                       # previous trade was not the previous market day
+    assert np.isnan(a["r"].iloc[1])
 
 
 def test_reverse_split_adjusts_return_and_volume():
-    # VTBR-like 5000:1 consolidation on 2024-07-15
     dates = ["2024-07-11", "2024-07-12", "2024-07-15", "2024-07-16"]
     h = _hist("VTB", dates, [0.02, 0.02, 101.0, 102.0], volume=[5e9, 5e9, 1e6, 1e6])
     sp = pd.DataFrame({"secid": ["VTB"], "date": [pd.Timestamp("2024-07-15")], "before": [5000], "after": [1]})
     d, flags = dm.build_daily(h, sp, _no_divs())
     assert d["r"].iloc[2] == pytest.approx(101.0 / (0.02 * 5000) - 1)
-    assert d["volume_adj"].iloc[0] == pytest.approx(1e6)    # 5e9 old shares = 1e6 new shares
+    assert d["volume_adj"].iloc[0] == pytest.approx(1e6)
     assert d["volume_adj"].iloc[3] == pytest.approx(1e6)
     assert flags.empty
 
@@ -97,12 +93,12 @@ def test_reverse_split_adjusts_return_and_volume():
 def test_unrecorded_jump_breaks_chain_and_is_flagged():
     dates = pd.bdate_range("2019-01-01", "2019-03-29")
     close = np.full(len(dates), 10.0)
-    close[dates >= "2019-02-15"] = 1000.0                  # x100 jump without a recorded split
+    close[dates >= "2019-02-15"] = 1000.0
     d, flags = dm.build_daily(_hist("J", dates, close), _no_splits(), _no_divs())
     assert (flags["kind"] == "unexplained_jump").sum() == 1
     m = dm.monthly_tri_returns(d).set_index("month")["ret"]
-    assert np.isnan(m[pd.Period("2019-02", "M")])            # Feb spans the break
-    assert m[pd.Period("2019-03", "M")] == pytest.approx(0.0)  # Mar is inside the new segment
+    assert np.isnan(m[pd.Period("2019-02", "M")])
+    assert m[pd.Period("2019-03", "M")] == pytest.approx(0.0)
 
 
 def test_halt_gap_is_missing_daily_but_monthly_return_kept():
@@ -122,10 +118,9 @@ def test_monthly_tri_returns_known_answer():
     m = dm.monthly_tri_returns(d).set_index("month")["ret"]
     assert np.isnan(m[pd.Period("2020-01", "M")])
     assert m[pd.Period("2020-02", "M")] == pytest.approx(12.1 / 11 - 1)
-    assert np.isnan(m[pd.Period("2020-04", "M")])          # March missing -> not consecutive
+    assert np.isnan(m[pd.Period("2020-04", "M")])
 
 
-# ---------------------------------------------------------------- parsers
 def test_parse_dohod_and_smartlab():
     dohod = """<table><tr><th>Дата объявления дивиденда</th><th>Дата закрытия реестра</th>
       <th>Год для учета дивиденда</th><th>Дивиденд</th></tr>
@@ -143,7 +138,6 @@ def test_parse_dohod_and_smartlab():
 
 
 def test_parse_smartlab_reads_paid_table_after_expected_table():
-    # real smart-lab layout (e.g. LKOH): 'expected' table first, then 'paid' table with the same header
     hdr = "<tr><th>Тикер</th><th>дата T-1</th><th>дата отсечки</th><th>Период</th><th>дивиденд</th></tr>"
     sl = (f"<table><tr><td>Ожидаемые дивиденды</td></tr>{hdr}"
           "<tr><td>LKOH</td><td>08.12.2026</td><td>09.12.2026</td><td>3кв 2026</td><td>535₽</td></tr></table>"
@@ -152,10 +146,9 @@ def test_parse_smartlab_reads_paid_table_after_expected_table():
           "<tr><td>LKOH</td><td>30.04.2026</td><td>04.05.2026</td><td>4кв 2025</td><td>278₽</td></tr>"
           "<tr><td>LKOH</td><td>11.12.2025</td><td>12.12.2025</td><td>3кв 2025</td><td>397₽</td></tr></table>")
     b = dm.parse_smartlab(sl, "LKOH")
-    assert sorted(b["amount"]) == [278.0, 397.0, 535.0]              # paid history kept; repeat across tables once
+    assert sorted(b["amount"]) == [278.0, 397.0, 535.0]
 
 
-# ---------------------------------------------------------------- panel wiring (synthetic market)
 def _synthetic(n=130, seed=0):
     rng = np.random.default_rng(seed)
     cal = pd.bdate_range("2014-01-01", "2018-12-31")
@@ -168,7 +161,6 @@ def _synthetic(n=130, seed=0):
         value = np.exp(rng.normal(14 + 2 * rng.standard_normal(), 0.5, len(cal)))
         keep = rng.random(len(cal)) > 0.02
         rows.append(pd.DataFrame({"secid": s, "date": cal[keep], "close": close[keep], "value": value[keep],
-                                  # issuesize = 1 and volume = value -> TO = VALUE, AT family = A family / 1e6
                                   "volume": value[keep], "numtrades": 5}))
         info.append({"secid": s, "type": "preferred_share" if i < 5 else "common_share", "issuesize": 1.0})
     hist = pd.concat(rows, ignore_index=True)
@@ -197,7 +189,6 @@ def test_turnover_family_equals_volume_family_when_to_is_value(synth):
 def test_preferred_excluded_and_lag(synth):
     daily, _, _, monthly, panel, _, meta = synth
     assert not panel["symbol"].isin([f"S{i:03d}" for i in range(5)]).any()
-    # A of month t in the panel equals winsor-free A of month t-2 for an interior observation
     row = panel.dropna(subset=["A"]).iloc[len(panel) // 2]
     src = monthly[(monthly["symbol"] == row["symbol"]) & (monthly["month"] == row["month"] - 2)]
     lo, hi = panel[panel["month"] == row["month"]]["A"].min(), panel[panel["month"] == row["month"]]["A"].max()
@@ -219,7 +210,6 @@ def test_tests_run_and_paper_table(synth, tmp_path):
     t4 = rm.fm(panel, "ret_adj", 6)
     assert set(t3["signal"]) == {"A", "A_C", "ResA", "AT", "AT_C", "ResAT"}
     assert {"lnME", "mom", "ret_1"} <= set(t4["var"])
-    # identical families -> identical FM slopes on the Amihud variables
     a = t4[(t4["family"] == "A (RUB volume)") & (t4["model"] == "(4)")].set_index("var")
     b = t4[(t4["family"] == "AT (turnover)") & (t4["model"] == "(4)")].set_index("var")
     assert a.loc["ResLnA", "coef"] == pytest.approx(b.loc["ResLnAT", "coef"])
@@ -240,7 +230,7 @@ def test_ex_date_check_slope_one_for_true_dividends():
         p = 100 * np.exp(np.cumsum(rng.normal(0, 0.01, len(cal))))
         k = 100 + i
         D = p[k - 1] * rng.uniform(0.02, 0.15)
-        p[k:] -= D * p[k:] / p[k]                       # price drops by D on the ex-date
+        p[k:] -= D * p[k:] / p[k]
         rows.append(_hist(f"D{i}", cal, p))
         divs.append({"secid": f"D{i}", "ex_date": cal[k], "amount": D})
     d, _ = dm.build_daily(pd.concat(rows), _no_splits(), pd.DataFrame(divs))
@@ -301,12 +291,11 @@ def test_main_end_to_end_on_synthetic(tmp_path, monkeypatch):
     base = ["main", "filter 1M RUB", "no dividends (price returns)", "main without M9 corrections"]
     assert set(v["variant"]) == set(base) | {f"{b}, terciles" for b in base} | {
         "main, raw returns", "diagnostic: raw returns, months of ret_adj FM"}
-    assert v.set_index("variant").loc["main, raw returns", "HL_A_C"] != v.set_index("variant").loc["main, raw returns", "HL_A_C"]  # NaN: FM-only
+    assert v.set_index("variant").loc["main, raw returns", "HL_A_C"] != v.set_index("variant").loc["main, raw returns", "HL_A_C"]
     assert "t > 3" in s and "diagnostic" in s
 
 
 def test_me_is_split_adjusted_to_current_issuesize():
-    # 1:100 split in 2024 (GMKN-like): Dec-2023 price 15000 -> 150 in today's units; ISSUESIZE is today's
     days = list(pd.bdate_range("2023-12-01", "2023-12-29")) + list(pd.bdate_range("2024-04-01", "2024-04-30"))
     close = np.where(pd.DatetimeIndex(days) < "2024-04-08", 15000.0, 150.0)
     sp = pd.DataFrame({"secid": ["G"], "date": [pd.Timestamp("2024-04-08")], "before": [1], "after": [100]})
@@ -319,7 +308,6 @@ def test_me_is_split_adjusted_to_current_issuesize():
 
 
 def test_split_adjusted_dividend_converted_to_contemporaneous_units():
-    # GMKN-like: dividend 2.48 quoted in today's units (after a later 1:100 split) = 248 per old share
     days = list(pd.bdate_range("2019-06-03", "2019-06-07")) + list(pd.bdate_range("2024-04-08", "2024-04-12"))
     close = np.array([15000.0, 15000.0, 14752.0, 14752.0, 14752.0, 150.0, 150.0, 150.0, 150.0, 150.0])
     sp = pd.DataFrame({"secid": ["G"], "date": [pd.Timestamp("2024-04-08")], "before": [1], "after": [100]})
@@ -330,7 +318,6 @@ def test_split_adjusted_dividend_converted_to_contemporaneous_units():
 
 
 def test_infer_unrecorded_consolidation_but_not_a_crash():
-    # IRAO-like 100:1 consolidation (price x107, share volume / 100) vs a crash (price / 11, volume flat)
     d1 = pd.bdate_range("2014-11-03", "2014-12-18")
     d2 = pd.bdate_range("2015-01-20", "2015-03-02")
     days = d1.append(d2)
@@ -350,8 +337,6 @@ def test_infer_unrecorded_consolidation_but_not_a_crash():
 
 
 def test_verified_split_and_large_dividend():
-    # BELU-like 1:8 split across a short suspension: not a power of 10, inside the x8 guard -> only the
-    # verified list fixes it; LNZL-like 65% dividend is dropped by the guard unless verified
     days = pd.bdate_range("2024-08-01", "2024-08-30")
     close = np.where(days < "2024-08-22", 4680.0, 585.0)
     h = _hist("B8", days, close)

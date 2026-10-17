@@ -63,42 +63,26 @@ BOARD = "TQBR"
 HIST_COLS = "TRADEDATE,SECID,CLOSE,VALUE,VOLUME,NUMTRADES"
 log = logging.getLogger("data_moex")
 
-# Pre-registered data specification (also echoed into the run manifest by run_moex.py).
 DATA_SPEC = {
     "board": BOARD,
     "universe_first_month": "2014-01",
     "history_from": "2014-01-01",
     "history_till": "2026-09-30",
-    "halt": ["2022-02-28", "2022-03-23"],          # no trading on the MOEX stock market
-    "t1_from": "2023-07-31",                        # T+1 settlement from this date, T+2 before
-    "max_div_yield": 0.5,                           # dividend / previous close above this -> dropped (data error)
-    "split_guard": 8.0,                             # |log gross| above log(8) without a recorded split -> break
-    # dohod.ru and smart-lab.ru quote past dividends in today's share units (GMKN 2014: 2.48 instead of
-    # 248.48 RUB after the 2024 1:100 split; VTBR 2014: 5.80 instead of 0.00116 after the 5000:1
-    # consolidation): converted back with the ISS split history (amount x vol_mult at the ex-date)
+    "halt": ["2022-02-28", "2022-03-23"],
+    "t1_from": "2023-07-31",
+    "max_div_yield": 0.5,
+    "split_guard": 8.0,
     "div_split_adjusted": True,
-    # ISS split history starts in 2018. An unrecorded split is inferred only when BOTH the price ratio
-    # between consecutive trades is within 15% of 10^k (k != 0) AND the median share volume of the 20
-    # trades after vs before moves by the inverse factor (within x3); otherwise the jump only breaks
-    # the return chain (flagged). Example: IRAO 100:1 consolidation in Jan 2015.
     "infer_splits": True,
     "infer_price_tol": 0.15,
     "infer_volume_tol": 3.0,
     "infer_window": 20,
-    # Corrections found by the RUN-stage scan of every daily move > x2.5 not explained by a recorded
-    # split or dividend, each checked against a public source (DEVIATIONS M9). Added after the first
-    # MOEX run; they fix data, not specifications (the before/after numbers are both reported).
     "verified_splits": [
-        # Novabev (ex-Beluga): 7 bonus shares per share (1:8); last T+1 trading day 15.08.2024, trading
-        # resumed 22.08.2024 (price 4680 -> 714). Ratio 8 is not a power of 10 and the gross move (x0.15)
-        # is inside the x8 split guard, so neither the inference rule nor the jump guard caught it.
         {"secid": "BELU", "date": "2024-08-22", "before": 1, "after": 8,
          "source": "MOEX notice on BELU suspension before the share distribution (last trading day 15.08.2024); "
                    "Novabev 1:8 (7 additional shares per share)"},
     ],
     "verified_large_dividends": [
-        # Lenzoloto dividend for 2020: 15,219.50 RUB per common share, registry 13.07.2021 (yield 65% of the
-        # cum price; the price fell 47% on the ex-date). The max_div_yield guard would drop it as an error.
         {"secid": "LNZL", "registry_date": "2021-07-13",
          "source": "Board recommendation, 15,219.50 RUB per common share for 2020, registry date 13.07.2021"},
     ],
@@ -107,7 +91,6 @@ DATA_SPEC = {
 _local = threading.local()
 
 
-# ---------------------------------------------------------------- HTTP and raw cache
 def _session() -> requests.Session:
     if not hasattr(_local, "s"):
         _local.s = requests.Session()
@@ -166,7 +149,6 @@ def _cached_json(path: Path, fetch) -> dict:
     return obj
 
 
-# ---------------------------------------------------------------- downloads
 def month_ends(first: str, last: str) -> list[pd.Timestamp]:
     return [p.to_timestamp(how="end").normalize() for p in pd.period_range(first, last, freq="M")]
 
@@ -219,7 +201,7 @@ def fetch_dividend_pages(secid: str) -> dict[str, Path | None]:
             out[src] = None
         else:
             r = _get(url, ok404=True)
-            time.sleep(0.3)                      # be polite to third-party sites
+            time.sleep(0.3)
             if r is None:
                 _atomic_write(miss, b"")
                 out[src] = None
@@ -229,7 +211,6 @@ def fetch_dividend_pages(secid: str) -> dict[str, Path | None]:
     return out
 
 
-# ---------------------------------------------------------------- parsing
 class _Tables(HTMLParser):
     """Minimal HTML table extractor (stdlib only; text of each td/th, whitespace-collapsed)."""
     def __init__(self):
@@ -352,7 +333,6 @@ def history_frame(hist: dict, secid: str) -> pd.DataFrame:
     return df[["secid", "date", "close", "value", "volume", "numtrades"]]
 
 
-# ---------------------------------------------------------------- daily construction (pure, unit-tested)
 def market_calendar(hist: pd.DataFrame) -> pd.DatetimeIndex:
     """Trading days of the board = dates on which at least one SECID traded."""
     return pd.DatetimeIndex(np.sort(hist.loc[hist["value"] > 0, "date"].unique()))
@@ -371,14 +351,13 @@ def ex_dates(divs: pd.DataFrame, cal: pd.DatetimeIndex, t1_from: str) -> pd.Seri
         if pd.isna(c):
             R = d["registry_date"]
             L = 1 if R >= pd.Timestamp(t1_from) else 2
-            # trading days c such that cal[idx(c)+L] <= R
-            j = cal.searchsorted(R, side="right") - 1        # last trading day <= R
+            j = cal.searchsorted(R, side="right") - 1
             i = j - L
             if i < 0:
                 out.append(pd.NaT)
                 continue
             c = cal[i]
-        k = cal.searchsorted(pd.Timestamp(c), side="right")  # first trading day > c
+        k = cal.searchsorted(pd.Timestamp(c), side="right")
         out.append(cal[k] if k < len(cal) else pd.NaT)
     return pd.Series(out, index=divs.index, dtype="datetime64[ns]")
 
@@ -400,7 +379,7 @@ def infer_splits(hist: pd.DataFrame, splits: pd.DataFrame, spec: dict = DATA_SPE
             vb, va = np.median(v[max(0, i + 1 - w): i + 1]), np.median(v[i + 1: i + 1 + w])
             if vb <= 0 or va <= 0:
                 continue
-            vol_ratio = va / vb                                  # ~ 10^-k for a genuine split
+            vol_ratio = va / vb
             if abs(np.log(vol_ratio * 10.0 ** k)) <= np.log(spec["infer_volume_tol"]):
                 before, after = (10 ** k, 1) if k > 0 else (1, 10 ** (-k))
                 out.append({"secid": sec, "date": pd.Timestamp(dts[i + 1]), "before": before, "after": after})
@@ -441,7 +420,6 @@ def build_daily(hist: pd.DataFrame, splits: pd.DataFrame, divs: pd.DataFrame, sp
     h["prev_date"] = h.groupby("secid")["date"].shift(1)
     h["prev_close"] = h.groupby("secid")["close"].shift(1)
 
-    # split factor between consecutive trades (after/before), and volume in today's share units
     h["split"] = 1.0
     h["vol_mult"] = 1.0
     sp = splits.copy()
@@ -453,7 +431,6 @@ def build_daily(hist: pd.DataFrame, splits: pd.DataFrame, divs: pd.DataFrame, sp
         h.loc[m & (h["date"] < s["date"]), "vol_mult"] *= f
     h["volume_adj"] = h["volume"] * h["vol_mult"]
 
-    # dividends: attach each ex-date to the first trade on/after it (the previous trade is cum)
     h["div"] = 0.0
     if len(divs):
         for sec, dv in divs.dropna(subset=["ex_date"]).groupby("secid"):
@@ -464,7 +441,7 @@ def build_daily(hist: pd.DataFrame, splits: pd.DataFrame, divs: pd.DataFrame, sp
             for _, d in dv.iterrows():
                 k = np.searchsorted(dates, np.datetime64(d["ex_date"]), side="left")
                 if k == 0 or k >= len(idx):
-                    continue                                   # outside the stock's trading history
+                    continue
                 row = idx[k]
                 pc = h.at[row, "prev_close"]
                 amt = d["amount"] * (h.at[row, "vol_mult"] if spec.get("div_split_adjusted", True) else 1.0)
@@ -479,13 +456,11 @@ def build_daily(hist: pd.DataFrame, splits: pd.DataFrame, divs: pd.DataFrame, sp
                 h.at[row, "div"] += amt
 
     h["gross"] = (h["close"] + h["div"]) * h["split"] / h["prev_close"]
-    # unexplained jumps (unrecorded split/consolidation): break the chain, flag
     jump = h["gross"].notna() & (np.abs(np.log(h["gross"])) > np.log(spec["split_guard"])) & (h["split"] == 1.0)
     for _, j in h[jump].iterrows():
         flags.append({"secid": j["secid"], "date": j["date"], "kind": "unexplained_jump", "value": j["gross"]})
     h.loc[jump, "gross"] = np.nan
 
-    # daily return only between consecutive market trading days, never across the halt
     pos = pd.Series(np.arange(len(cal)), index=cal)
     p_now = h["date"].map(pos)
     p_prev = h["prev_date"].map(pos)
@@ -495,8 +470,6 @@ def build_daily(hist: pd.DataFrame, splits: pd.DataFrame, divs: pd.DataFrame, sp
     h["r"] = np.where(consecutive & ~spans_halt, h["gross"] - 1.0, np.nan)
     h["valid"] = h["r"].notna() & np.isfinite(h["r"]) & (h["value"] > 0)
 
-    # total-return index chained over every trade; a NaN gross (first trade, unexplained jump)
-    # starts a new segment `seg`, and monthly returns are only taken within one segment
     h["seg"] = (h["gross"].isna() | (h["secid"] != h["secid"].shift(1))).cumsum()
     gg = h["gross"].where(h["gross"].notna(), 1.0)
     h["tri"] = np.exp(np.log(gg).groupby(h["seg"]).cumsum())
@@ -570,7 +543,6 @@ def crosscheck_dividends(secids: list[str], cal: pd.DatetimeIndex, spec: dict = 
     return ev, summ
 
 
-# ---------------------------------------------------------------- orchestration
 def download_all(spec: dict = DATA_SPEC, workers: int = 6) -> dict[str, pd.DataFrame]:
     """Download (or read from the raw cache) everything and return parsed frames."""
     months = month_ends(spec["universe_first_month"], pd.Timestamp(spec["history_till"]).strftime("%Y-%m"))

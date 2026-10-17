@@ -36,7 +36,7 @@ from scipy.stats import norm
 
 from fama_macbeth import fama_macbeth, nw_mean
 from sorts import alpha, portfolio_returns
-from run import rel_path, resolve_panel_cache, resolve_repo_path   # repo-relative paths in manifests
+from run import rel_path, resolve_panel_cache, resolve_repo_path
 
 ROOT = Path(__file__).resolve().parents[1]
 log = logging.getLogger("robustness")
@@ -44,44 +44,29 @@ log = logging.getLogger("robustness")
 N_DRAWS = 2000
 BLOCK = 6
 POWER_TARGET = 0.80
-N_SEED_REPS = 20      # extra bootstrap seeds used only to measure Monte Carlo noise of the CI bounds
-# Lou & Shu (2017), pp. 13-14: "one standard deviation change (2.53) in ln(A_C)" (Model 2 effect 0.46%/mo).
-# Used when paper_numbers.yaml has no lou_shu_2017.table4_text.sd_lnA_C entry.
+N_SEED_REPS = 20
 PAPER_SD_LNA_C = 2.53
 CONTROLS = ["mom", "ret_1"]
-# FM models of Table 4 used here (dependent variable ret_adj) and the statistic picked from each
 FM_STATS = [("fm1_lnA", "(1)", ["lnA"], "lnA"),
             ("fm2_lnA_C", "(2)", ["lnA_C"], "lnA_C"),
             ("fm3_ResLnA", "(3)", ["ResLnA"], "ResLnA"),
             ("fm4_lnA_C", "(4)", ["lnA_C", "ResLnA"], "lnA_C"),
             ("fm4_ResLnA", "(4)", ["lnA_C", "ResLnA"], "ResLnA")]
 HL_SIGNALS = ["A", "A_C", "ResA"]
-# ledger: variables that are controls (their t-stats are reported but are not tests of the hypothesis)
 CONTROL_VARS = {"mom", "ret_1", "ivol", "beta", "const", "CMKT", "CMOM"}
 ESTIMATE_COLS = ["coef", "H-L", "alpha_HL_A", "alpha", "estimate", "mean_coef", "premium", "slope", "b"]
-# summaries that repeat numbers of other tables, and the papers' own numbers (not our tests)
-# (report.py writes paper_vs_us / robustness_vs_base / report_diagnostics into the base folder: they
-# restate base-run statistics already in the ledger)
 LEDGER_SKIP = {"paper_vs_us.csv", "paper_reference.csv", "paper_numbers.csv", "robustness_vs_base.csv",
                "report_diagnostics.csv"}
-# base-run diagnostics that carry no inference (a column like `mean_dvol_t` is a dollar volume
-# at month t, not a t-statistic)
 LEDGER_SKIP_PREFIXES = ("ret_", "audit_")
-# `<x>_t` columns whose prefix names a quantity measured at time t, not a t-statistic
 NOT_T_PREFIXES = ("mean_", "max_", "min_", "median_", "dvol", "vol", "ret", "price", "close")
-# t-columns of factor loadings / intercepts in time-series regressions: reported, not hypotheses
 LOADING_T = {"t_mkt-rf", "t_smb", "t_hml", "t_umd", "t_rmw", "t_cma", "t_factor", "t_cmkt",
              "t_cmom", "t_imla_c", "t_a", "t_const", "t_intercept"}
-# single portfolio legs (mean return of one quintile): descriptive, the test is the H-L / Long-Short
 LEG_NAMES = {"short", "long", "1", "2", "3", "4", "5", "q1", "q2", "q3", "q4", "q5"}
-# own outputs that are not new tests (re-inference of base estimates, summaries, the ledger itself);
-# only stability_loyo.csv and stability_excl2021.csv enter the ledger as new specifications
 OWN_NON_TESTS = {f"robustness/{f}" for f in ["ledger.csv", "ledger_summary.csv", "bootstrap_ci.csv",
                  "consistency_checks.csv", "stability_loyo_summary.csv", "mde.csv", "mde_inputs.csv",
                  "world0_calibration.csv"]}
 
 
-# ================================================================ bootstrap
 def mbb_indices(T: int, block: int, n_draws: int, rng: np.random.Generator) -> np.ndarray:
     """Moving-block bootstrap (Kunsch 1989): n_draws x T matrix of time indices.
 
@@ -127,7 +112,6 @@ def ci_row(name: str, est: float, nw_t: float, draws: np.ndarray, n_months: int)
             "share_draws_opposite_sign": opp, "n_draws_valid": int(d.size)}
 
 
-# ================================================================ monthly series of the key stats
 def monthly_series(panel: pd.DataFrame, cfg: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Months x stats frame: H-L of A, A_C, ResA (EW raw, %), and FM monthly slopes; plus factors."""
     t = cfg["tests"]
@@ -208,7 +192,6 @@ def bootstrap_table(S: pd.DataFrame, F: pd.DataFrame, lags: int, block: int, n_d
     return out
 
 
-# ================================================================ stability
 def _stat_on(S: pd.DataFrame, F: pd.DataFrame, keep: np.ndarray, col: str, lags: int, use_alpha: bool):
     s = S.loc[keep, col]
     if use_alpha:
@@ -272,7 +255,6 @@ def excl_year_table(S: pd.DataFrame, F: pd.DataFrame, lags: int, year: int = 202
     return pd.DataFrame(rows)
 
 
-# ================================================================ simulations: size and power
 def world0_calibration(w0: pd.DataFrame, hlz: float) -> pd.DataFrame:
     """False-positive rates of NW t under world 0 and the simulated 5% critical value of |t|."""
     rows = []
@@ -323,7 +305,7 @@ def mde_table(power: pd.DataFrame, w0cal: pd.DataFrame, sim_dims: dict, real_dim
     scale = np.sqrt(sim_dims["N"] * sim_dims["T"] / (real_dims["N"] * real_dims["T"]))
     for st, g in power.groupby("stat", sort=False):
         g = g.sort_values("premium")
-        prem = 100.0 * g["premium"].to_numpy(float)          # %/month per s.d.
+        prem = 100.0 * g["premium"].to_numpy(float)
         crit_sim = w0cal.set_index("stat")["crit_abs_t_5pct"].get(st, np.nan)
         base = {"stat": st, "world": g["world"].iloc[0], "units": "%/month per 1 s.d. of signal"}
         m_curve = mde_from_power_curve(prem, g["share_abs_t_gt_1.96"].to_numpy())
@@ -393,7 +375,6 @@ def real_se_frame(boot: pd.DataFrame, panel: pd.DataFrame, w0cal: pd.DataFrame) 
     return pd.DataFrame(rows)
 
 
-# ================================================================ specification ledger
 def _t_columns(df: pd.DataFrame) -> list[str]:
     out = []
     for c in df.columns:
@@ -445,11 +426,11 @@ def ledger_from_csv(path: Path, source: str, category: str) -> pd.DataFrame:
             var = next((str(r[c]) for c in ["var", "stat", "signal"] if c in df.columns and pd.notna(r[c])), "")
             leg = str(r["portfolio"]).lower() if "portfolio" in df.columns and pd.notna(r["portfolio"]) else ""
             if "symbol" in df.columns:
-                role = "measurement"         # per-asset first-stage estimates (e.g. lambda per coin-month)
+                role = "measurement"
             elif path.stem.startswith("describe") or path.stem.endswith("_describe"):
                 role = "descriptive"
             elif "leak" in ident:
-                role = "diagnostic"          # lag-0 leak check: a large |t| is the expected outcome
+                role = "diagnostic"
             elif category == "placebo" or "placebo" in path.stem or "shuffle" in ident:
                 role = "placebo"
             elif var in CONTROL_VARS or str(tcol).lower() in LOADING_T:
@@ -486,8 +467,6 @@ def build_ledger(base_dir: Path, upgrades_dir: Path | None = None, exclude: set[
     if not parts:
         return pd.DataFrame()
     L = pd.concat(parts, ignore_index=True)
-    # the same t to 6 decimals is the same test (tables often repeat a statistic with a different
-    # estimate column, e.g. a verdict table quoting the FM coefficient); t == 0 is never matched
     key = [(k if k != 0 else ("zero", i)) for i, k in enumerate(L["t"].round(6))]
     seen: dict = {}
     dup = []
@@ -541,7 +520,6 @@ def ledger_summary(L: pd.DataFrame, hlz: float, alpha_level: float = 0.05) -> pd
                  "n_bonferroni_sig": int((fam["p_bonferroni"] < alpha_level).sum()),
                  "n_bh_sig": int((fam["q_bh"] < alpha_level).sum()),
                  "bonferroni_crit_t": float(norm.isf(alpha_level / (2 * max(m, 1))))})
-    # a narrower family: the crypto base run only (Bonferroni / BH re-applied within it)
     bf = L[L["unique"] & (L["role"] == "test") & (L["source"] == "base")]
     if len(bf):
         sub = add_multiple_testing(bf.drop(columns=["p_normal", "in_family", "p_bonferroni", "q_bh",
@@ -558,7 +536,6 @@ def ledger_summary(L: pd.DataFrame, hlz: float, alpha_level: float = 0.05) -> pd
     return pd.DataFrame(rows)
 
 
-# ================================================================ provenance + IO
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -619,7 +596,6 @@ def consistency_checks(boot: pd.DataFrame, base_dir: Path) -> pd.DataFrame:
     return out
 
 
-# ================================================================ SUMMARY.md (generated)
 def _f(x, d=2):
     return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x:.{d}f}"
 
@@ -797,7 +773,6 @@ def write_summary(out: Path, base: str, tabs: dict, paper: dict, hlz: float, blo
     return text
 
 
-# ================================================================ main
 def run_ledger(base_dir: Path, upgrades_dir: Path, out: Path, hlz: float) -> pd.DataFrame:
     L = build_ledger(base_dir, upgrades_dir, exclude=OWN_NON_TESTS, hlz=hlz)
     L = add_multiple_testing(L)
@@ -840,8 +815,6 @@ def main(argv: list[str] | None = None) -> None:
         t0 = time.perf_counter()
 
     if a.ledger_only:
-        # the ledger must describe the same base run as the bootstrap/stability tables it is
-        # summarised with, so prefer the manifest's base_run_id over results/LATEST
         man_path = out / "run_manifest.json"
         if a.base is None and man_path.exists():
             mb = json.loads(man_path.read_text()).get("base_run_id")
@@ -859,7 +832,6 @@ def main(argv: list[str] | None = None) -> None:
             man["ledger_sources"] = sorted(str(p.relative_to(res_dir)) for p in upg_dir.glob("*/*.csv"))
             man["ledger_code_sha256"] = sha256_file(ROOT / "src" / "robustness_extra.py")
             man_path.write_text(json.dumps(man, indent=2))
-            # refresh SUMMARY.md so its ledger section matches ledger_summary.csv
             need = ["bootstrap_ci", "stability_loyo_summary", "stability_excl2021", "world0_calibration",
                     "mde", "consistency_checks"]
             if all((out / f"{k}.csv").exists() for k in need):
@@ -904,7 +876,6 @@ def main(argv: list[str] | None = None) -> None:
     tick("mde")
     for k, v in tabs.items():
         v.to_csv(out / f"{k}.csv", index=False)
-    # the ledger last, so it includes this upgrade's own tables
     tabs["ledger_summary"] = run_ledger(base_dir, upg_dir, out, hlz)
     tick("ledger")
     write_summary(out, base, tabs, paper, hlz, a.block, a.draws)

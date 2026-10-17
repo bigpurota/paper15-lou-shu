@@ -45,23 +45,20 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT_DEFAULT = ROOT / "results" / "upgrades" / "amihud_noh"
 CODE_FILES = ["amihud_noh.py", "measures.py", "fama_macbeth.py", "run.py", "data_audit.py"]
 CONTROLS = ["mom", "ret_1"]
-SENS_MIN_OBS = (None, 30, 50)   # minimum coins per FM cross-section; None = base rule k + 10
+SENS_MIN_OBS = (None, 30, 50)
 log = logging.getLogger("amihud_noh")
 
-# Main choices of this upgrade. NOT pre-registered: this module was written together with its results; only the
-# monthly DIF model (V1 monthly) was in src/analysis.py before the first real-data run.
 AN_SPEC = {
-    "window_months": 12,          # A&N: 12 months ending in s (Amihud 2002)
-    "min_days": 200,              # A&N fn. 9: >= 200 trading days with return and volume
-    "drop_max_day": True,         # A&N fn. 10: drop the day with the highest value of each variable
-    "censor": [0.01, 0.99],       # A&N fn. 10: censor coins in the extreme 1% of ILLIQ, |R|, IDVOL, DIF
+    "window_months": 12,
+    "min_days": 200,
+    "drop_max_day": True,
+    "censor": [0.01, 0.99],
     "censor_cols": ["ILLIQ", "absR", "IDVOL", "DIF"],
-    "dvol_scale": 1e6,            # dvol in millions of USDT, as A&N (logs make this irrelevant)
-    "b_cv2_all_days": True,       # b and CV^2 on all valid days of the window (A&N do not drop a day)
-    "dep_vars": ["ret_adj", "ret"],   # main = ret_adj (as our T4); ret = robustness (A&N: excess return)
+    "dvol_scale": 1e6,
+    "b_cv2_all_days": True,
+    "dep_vars": ["ret_adj", "ret"],
 }
 
-# Numbers from Amihud & Noh (2021) that are not in src/paper_numbers.yaml (text and Table C.1).
 AN_TEXT = {
     "source": "Amihud & Noh (2021): p. 4 (text), p. 6 (text), Table 1 (p. 15), Table C.1 (p. 20)",
     "mean_DIF": -0.17, "sd_DIF": 0.09, "corr_DIF_lnILLIQ": -0.37, "corr_DIF_lnLSIlliq": -0.41,
@@ -77,7 +74,6 @@ AN_TEXT = {
 }
 
 
-# ============================================================ (b) 12-month A&N measures
 def _wide(s: pd.Series, months: pd.PeriodIndex) -> pd.DataFrame:
     return s.unstack("symbol").reindex(months).fillna(0.0)
 
@@ -109,7 +105,7 @@ def rolling_an_measures(daily: pd.DataFrame, window: int = 12, min_days: int = 2
     months = pd.period_range(v["month"].min(), v["month"].max(), freq="M")
 
     roll_sum = lambda s: _wide(s, months).rolling(window, min_periods=1).sum()
-    roll_max = lambda s: _wide(s, months).rolling(window, min_periods=1).max()   # values are >= 0
+    roll_max = lambda s: _wide(s, months).rolling(window, min_periods=1).max()
     n = roll_sum(cnt)
     k = 1.0 if drop_max else 0.0
     out = {"n_days": n}
@@ -220,7 +216,6 @@ def lag_merge(an12: pd.DataFrame, panel: pd.DataFrame, lag: int) -> pd.DataFrame
     return panel[keep].merge(a, on=["symbol", "month"], how="inner")
 
 
-# ============================================================ FM helpers
 def fm_block(panel: pd.DataFrame, models: dict[str, list[str]], dep_vars: list[str], lags: int,
              sample: str, controls: list[str] = CONTROLS, min_obs: int | None = None) -> pd.DataFrame:
     """FM for each model x dependent variable. min_obs=None is the base rule (k + 10 coins per month);
@@ -231,7 +226,7 @@ def fm_block(panel: pd.DataFrame, models: dict[str, list[str]], dep_vars: list[s
             cols = [y] + xs + controls
             n_cs = panel[cols].dropna().groupby(panel["month"]).size()
             n_cs = n_cs[n_cs >= (min_obs or len(xs + controls) + 10)]
-            if len(n_cs) < 2:      # no usable cross-section (small synthetic data, high min_obs)
+            if len(n_cs) < 2:
                 rows += [{"sample": sample, "dep": y, "model": name, "var": x, "coef": np.nan, "t": np.nan,
                           "n_months": len(n_cs), "avg_obs": np.nan, "min_n": 0, "adj_r2": np.nan}
                          for x in xs + controls]
@@ -260,7 +255,6 @@ def pair_corr(df: pd.DataFrame, a: str, b: str, by: str = "month") -> float:
     return float(mean_cs_corr(df.dropna(subset=[a, b]), [a, b], by).iloc[0, 1])
 
 
-# ============================================================ models
 MONTHLY_MODELS = {
     "LS eq6: lnA_C+ln|Ret|": ["lnA_C", "ln_absret"],
     "AN col3: lnA_C+ln|Ret|+DIF": ["lnA_C", "ln_absret", "DIF"],
@@ -291,10 +285,6 @@ AN12_IVOL_MODELS = {
     "C5: lnIDVOL+RlnILLIQ_perp": ["lnIDVOL", "RlnILLIQ_perp"],
 }
 
-# Decisive tests: (id, question, sample, model, var, LS prediction, A&N prediction).
-# Prediction codes: "+" significantly positive, "-" significantly negative, "0" not significant,
-# "-/0" either (LS 2017, Introduction: the coefficient on the residual Amihud measure "is either
-# insignificant or significantly negative"; corrected at verification, it was "-").
 VERDICT_TESTS = [
     ("V1", "The omitted term DIF is priced beyond ln A_C and ln|Ret| (A&N col. 3)",
      "monthly", "AN col3: lnA_C+ln|Ret|+DIF", "DIF", "0", "+"),
@@ -379,7 +369,7 @@ def verdict_counts(v: pd.DataFrame, hlz: float, dep: str = "ret_adj") -> pd.Data
 def verdict_table(fm: pd.DataFrame, premise: pd.DataFrame, bars: tuple[float, float]) -> pd.DataFrame:
     """One row per decisive test x dependent variable; outcome at |t| >= 1.96 and >= HLZ bar."""
     rows = []
-    for _, r in premise.iterrows():   # V0: the premise cov(|r|, 1/dvol) < 0 <=> mean DIF < 0
+    for _, r in premise.iterrows():
         rows.append({"test": "V0", "question": "A&N premise: cov(|r|, 1/DVol) < 0, i.e. mean DIF < 0",
                      "sample": r["sample"], "dep": "-", "model": "mean of monthly CS mean DIF", "var": "DIF",
                      "coef": r["mean_DIF"], "t": r["t_mean_DIF"], "n_months": r["n_months"],
@@ -401,7 +391,6 @@ def verdict_table(fm: pd.DataFrame, premise: pd.DataFrame, bars: tuple[float, fl
     return v
 
 
-# ============================================================ the whole upgrade
 def run_upgrade(daily: pd.DataFrame, panel: pd.DataFrame, cfg: dict, spec: dict = AN_SPEC,
                 timings: dict | None = None) -> dict[str, pd.DataFrame]:
     """All tables of the upgrade. `panel` is the base panel (month as Period)."""
@@ -412,7 +401,6 @@ def run_upgrade(daily: pd.DataFrame, panel: pd.DataFrame, cfg: dict, spec: dict 
     lag = int(cfg["measures"]["lag_months"])
     out: dict[str, pd.DataFrame] = {}
 
-    # ---- (a) monthly version on the base panel
     t0 = time.perf_counter()
     p = panel.copy()
     p["lnLSIlliq"] = p["ln_absret"] + p["lnA_C"]
@@ -427,14 +415,11 @@ def run_upgrade(daily: pd.DataFrame, panel: pd.DataFrame, cfg: dict, spec: dict 
               "corr_DIF_lnA": pair_corr(p, "DIF", "lnA"), "corr_DIF_lnA_C": pair_corr(p, "DIF", "lnA_C"),
               "corr_DIF_ln_absret": pair_corr(p, "DIF", "ln_absret"),
               "corr_DIF_lnLSIlliq": pair_corr(p, "DIF", "lnLSIlliq"),
-              # base signals are winsorized one by one (analysis.WINSOR_COLS), so the identity
-              # lnA = ln|Ret| + lnA_C + DIF holds exactly only away from the tails
               "share_identity_broken": float(((p["lnA"] - p["ln_absret"] - p["lnA_C"] - p["DIF"]).abs()
                                               > 1e-8).mean())}
     fm_m = fm_block(p, MONTHLY_MODELS | MONTHLY_IVOL_MODELS, deps, lags, "monthly")
     timings["monthly"] = round(time.perf_counter() - t0, 3)
 
-    # ---- (b) 12-month A&N measures
     t0 = time.perf_counter()
     elig = eligible_months(daily, cfg)
     an12, cens = build_an12(daily, cfg, elig, spec)
@@ -483,11 +468,10 @@ def run_upgrade(daily: pd.DataFrame, panel: pd.DataFrame, cfg: dict, spec: dict 
     fm_12 = fm_block(q, AN12_MODELS | AN12_IVOL_MODELS, deps, lags, "12m")
     timings["an12_fm"] = round(time.perf_counter() - t0, 3)
 
-    # ---- (c) the IVOL channel
     t0 = time.perf_counter()
     ch = []
     for sample, df, res, ar in [("monthly", p, "ResLnA", "ln_absret"), ("12m", q, "RlnILLIQ", "ln_absR")]:
-        df = df.dropna(subset=[res, ar, "ivol", "DIF"])     # one common sample for all R^2 (nested models)
+        df = df.dropna(subset=[res, ar, "ivol", "DIF"])
         ch.append({"sample": sample, "residual": res,
                    f"corr_res_ln_absret": pair_corr(df, res, ar),
                    "corr_res_ivol": pair_corr(df, res, "ivol"),
@@ -509,7 +493,6 @@ def run_upgrade(daily: pd.DataFrame, panel: pd.DataFrame, cfg: dict, spec: dict 
     out["verdict"] = verdict_table(fm, premise, bars)
     out["verdict_counts"] = pd.concat([verdict_counts(out["verdict"], bars[1], dep) for dep in deps],
                                       ignore_index=True)
-    # sensitivity (added at verification, not pre-registered): early FM months have 15-23 coins
     vmodels = {t[3] for t in VERDICT_TESTS}
     mm = {k: v_ for k, v_ in (MONTHLY_MODELS | MONTHLY_IVOL_MODELS).items() if k in vmodels}
     m12_ = {k: v_ for k, v_ in (AN12_MODELS | AN12_IVOL_MODELS).items() if k in vmodels}
@@ -541,7 +524,6 @@ def cs_residual_multi(df: pd.DataFrame, y: str, xs: list[str], by: str, min_obs:
 
 
 
-# key-regression rows (ret_adj) that have one paper value: (sample, our model, our var, paper model, paper var)
 SCALE_PAIRS = [("monthly", "AN col3: lnA_C+ln|Ret|+DIF", "DIF", "AN col3", "DIF"),
                ("12m", "AN col3: ln|R|+lnIDVOL+DIF", "DIF", "AN col3", "DIF"),
                ("monthly", "AN col2: lnLSIlliq+DIF", "DIF", "AN col2", "DIF"),
@@ -592,7 +574,6 @@ def paper_reference() -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
-# ============================================================ SUMMARY.md (generated)
 def _f(x, nd=3):
     return "n/a" if x is None or not np.isfinite(x) else f"{x:.{nd}f}"
 
@@ -679,7 +660,6 @@ def summary_md(tables: dict[str, pd.DataFrame], manifest: dict, hlz: float) -> s
           f"(t {_f(c3[1], 2)}); +ln|Ret|+IVOL {_f(c4[0])} (t {_f(c4[1], 2)}); the part of Res.lnA orthogonal to "
           f"ln|Ret| and IVOL: {_f(c5[0])} (t {_f(c5[1], 2)}).", ""]
 
-    # fDIF: every variant (V4 uses only the main fDIF_int) and the Taylor diagnostic of eq. (8)
     L += ["## fDIF and the Taylor approximation (A&N eqs. 7–8)",
           f"- corr(DIF, ln(1−b·CV²/LSIlliq)) = {_f(d12['corr_DIF_DIF_approx'])}; share of windows where the argument is ≤ 0 "
           f"(approximation undefined) = {_f(d12['share_DIF_approx_undefined'])}; mean CV² = "
@@ -796,7 +776,6 @@ def summary_md(tables: dict[str, pd.DataFrame], manifest: dict, hlz: float) -> s
     return "\n".join(L)
 
 
-# ============================================================ entry point
 def prepare_daily(path: Path, cfg: dict) -> tuple[pd.DataFrame, dict]:
     """Load the daily file exactly as run.py does, including the data audit (asset ids SYM#k,
     redenomination adjustments), so that symbols and prices match the base panel."""
@@ -820,7 +799,7 @@ def _load_panel(path: Path) -> pd.DataFrame:
 
 
 def main(argv: list[str] | None = None) -> Path:
-    import run as base   # provenance helpers and the base loader (same daily cleaning as the base run)
+    import run as base
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("config")

@@ -55,15 +55,12 @@ DGP_DEFAULTS = dict(warmup_months=14, first_month="2015-01",
                     dvol_daily_sd=0.5, vol_mean=float(np.log(0.035)), vol_sd_asset=0.3,
                     vol_rho=0.8, vol_sd_time=0.25, mkt_sd=0.025, beta_lo=0.5, beta_hi=1.5,
                     t_df=5, impact_exp=0.5)
-# statistics collected per replication: (key, test table, model/signal, variable)
 FM_STATS = [("fm2_lnA_C", "(2)", "lnA_C"), ("fm3_ResLnA", "(3)", "ResLnA"),
             ("fm4_lnA_C", "(4)", "lnA_C"), ("fm4_ResLnA", "(4)", "ResLnA")]
 SORT_STATS = [("hl_A", "A"), ("hl_A_C", "A_C"), ("hl_ResA", "ResA")]
-# diagnostic only: same FM slopes with a 0-lag (heteroskedasticity-only) s.e. instead of NW(6)
 NW0_STATS = [("fm2_lnA_C_nw0", "lnA_C"), ("fm3_ResLnA_nw0", "ResLnA")]
 STAT_KEYS = [k for k, *_ in FM_STATS] + [k for k, _ in SORT_STATS] + [k for k, _ in NW0_STATS]
 DIAG_KEYS = ["corr_A_AC", "AC_q75_q25", "absret_q75_q25", "mean_absret_daily", "avg_coins", "n_months"]
-# pre-declared pass rules (share of replications)
 PASS_SHARE_SIG, MAX_SHARE_FALSE = 0.8, 0.2
 
 
@@ -99,7 +96,7 @@ def simulate_daily(world: str, cfg: dict, rng: np.random.Generator, premium: flo
 
     months = pd.period_range(p["first_month"], periods=T, freq="M")
     dates = pd.date_range(months[0].start_time, months[-1].end_time.normalize(), freq="D")
-    mi = np.asarray(dates.to_period("M").asi8 - months[0].ordinal)       # month index of each day
+    mi = np.asarray(dates.to_period("M").asi8 - months[0].ordinal)
     ndays = np.bincount(mi, minlength=T)
     D = len(dates)
 
@@ -118,7 +115,7 @@ def simulate_daily(world: str, cfg: dict, rng: np.random.Generator, premium: flo
     s = np.exp(lvol[:, mi])
     if world in ("P", "0"):
         g = p["impact_exp"]
-        s = s * np.exp(g * u - g ** 2 * su ** 2)                           # E[factor^2] = 1
+        s = s * np.exp(g * u - g ** 2 * su ** 2)
     df = p["t_df"]
     eps = rng.standard_t(df, (N, D)) / np.sqrt(df / (df - 2))
     m = rng.normal(0.0, p["mkt_sd"], D)
@@ -179,7 +176,7 @@ def _job(args) -> dict:
     world, cfg, rep, premium = args
     try:
         return run_world(world, cfg, rep, premium)
-    except Exception:                                             # keep the batch alive, report it
+    except Exception:
         return {"world": world, "rep": rep, "premium": premium, "error": traceback.format_exc()}
 
 
@@ -212,7 +209,7 @@ def checks(summary: pd.DataFrame) -> pd.DataFrame:
         rows.append({"world": world, "criterion": crit, "value": value, "rule": rule, "pass": bool(ok)})
     v = get("V", "fm2_lnA_C", "share_t_gt_1.96")
     add("V", "share t(lnA_C, model 2) > 1.96", v, f">= {PASS_SHARE_SIG}", v >= PASS_SHARE_SIG)
-    for st in ["fm3_ResLnA", "fm4_ResLnA"]:               # unpriced: two-sided, any significance counts
+    for st in ["fm3_ResLnA", "fm4_ResLnA"]:
         v = get("V", st, "share_abs_t_gt_1.96")
         add("V", f"share |t({st})| > 1.96 (should be unpriced)", v, f"<= {MAX_SHARE_FALSE}", v <= MAX_SHARE_FALSE)
     v = get("V", "hl_A_C", "share_t_gt_1.96")
@@ -308,7 +305,6 @@ def main(argv: list[str] | None = None) -> None:
     manifest = {
         "run_id": f"sim_{stamp}",
         "created_utc": stamp,
-        # common provenance keys (tests/test_manifests.py); the older flat keys below are kept for readers
         "git": {"sha": _git_sha(), "dirty": dirty_all},
         "code_sha256": {"src/*.py (concatenated, sorted)": code_agg},
         "data_sha256": "synthetic: no external data (simulated from config 'simulation' section; see config_sha256)",

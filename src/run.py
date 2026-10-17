@@ -42,7 +42,6 @@ PACKAGES = ["pandas", "numpy", "statsmodels", "matplotlib", "scipy", "PyYAML", "
 log = logging.getLogger("run")
 
 
-# ---------------------------------------------------------------- provenance helpers
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -68,8 +67,6 @@ def rel_path(path) -> str:
     p = Path(path)
     p = Path(os.path.normpath(p if p.is_absolute() else Path.cwd() / p))
     root = ROOT.resolve()
-    # lexical first: a path under the repo stays repo-relative even if a directory in it (e.g. data/)
-    # is a symlink to a location outside the repo
     for q, r in ((p, ROOT), (p, root), (p.resolve(), root)):
         try:
             return q.relative_to(r).as_posix()
@@ -77,7 +74,7 @@ def rel_path(path) -> str:
             pass
     try:
         return Path(os.path.relpath(p.resolve(), root)).as_posix()
-    except ValueError:                           # other drive (Windows): nothing relative exists
+    except ValueError:
         return p.name
 
 
@@ -125,11 +122,10 @@ def versions() -> dict:
 
 def peak_rss_mb() -> float:
     r = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return r / 2**20 if sys.platform == "darwin" else r / 2**10   # bytes on macOS, KiB on Linux
+    return r / 2**20 if sys.platform == "darwin" else r / 2**10
 
 
-# ---------------------------------------------------------------- data
-OPTIONAL_DAILY = ["open", "high", "low", "volume", "n_trades"]     # used by the data audit
+OPTIONAL_DAILY = ["open", "high", "low", "volume", "n_trades"]
 
 
 def load_daily(path: Path) -> pd.DataFrame:
@@ -161,13 +157,12 @@ def synthetic_daily(n_symbols: int = 80, start: str = "2018-01-01", end: str = "
         r = beta * mkt[a:b] + sig * rng.standard_normal(n)
         close = 10.0 * np.exp(np.cumsum(np.log1p(np.clip(r, -0.9, None))))
         dvol = np.exp(lvl + 0.5 * rng.standard_normal(n) + 5.0 * np.abs(r))
-        keep = rng.random(n) > 0.01                       # a few missing days (gaps)
+        keep = rng.random(n) > 0.01
         rows.append(pd.DataFrame({"symbol": f"C{i:03d}USDT", "date": dates[a:b][keep],
                                   "close": close[keep], "quote_volume": dvol[keep]}))
     return pd.concat(rows, ignore_index=True)
 
 
-# ---------------------------------------------------------------- outputs
 def _csv_ready(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     if not isinstance(df.index, pd.RangeIndex):

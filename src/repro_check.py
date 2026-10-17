@@ -37,7 +37,6 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "repro"
 UPGRADES = ["amihud_noh", "edge_spread", "hf_lambda", "moex", "openap_us", "robustness", "sentiment"]
 SKIP_COLS = ("sec", "time", "runtime")
-# same rule as tests/test_manifests.py: an absolute path, or a relative one that walks into a home directory
 ABS = re.compile(r"^(/|~|[A-Za-z]:[\\/])|/Users/|/home/")
 
 
@@ -50,8 +49,6 @@ def _max_diff(a: Path, b: Path) -> tuple[str, float | None]:
         return "missing_in_clone", None
     x, y = pd.read_csv(a), pd.read_csv(b)
     if a.name == "downloads.csv" and {"kind", "n", "gb"} <= set(x.columns) <= set(y.columns) | {"status"}:
-        # per-run download log: rows split by status (cached vs downloaded in THIS run) depend on what
-        # was already on disk; what must reproduce is the total number and size of files per kind
         x, y = (z.groupby("kind")[["n", "gb"]].sum().sort_index() for z in (x, y))
         if not x.index.equals(y.index):
             return "shape_or_columns_differ", None
@@ -59,7 +56,6 @@ def _max_diff(a: Path, b: Path) -> tuple[str, float | None]:
         return ("identical_totals" if d < 1e-9 else "numeric_diff"), d
     if ({"id", "value"} <= set(x.columns) and list(x.columns) == list(y.columns) and x["id"].is_unique
             and y["id"].is_unique and set(x["id"]) != set(y["id"])):
-        # an id -> value table (report_diagnostics.csv) that gained or lost ids: the ids both sides share must agree
         common = sorted(set(x["id"]) & set(y["id"]))
         xv, yv = (z.set_index("id").loc[common, "value"] for z in (x, y))
         d = float((pd.to_numeric(xv, errors="coerce") - pd.to_numeric(yv, errors="coerce")).abs().max())
@@ -72,7 +68,6 @@ def _max_diff(a: Path, b: Path) -> tuple[str, float | None]:
     d = float((x[num] - y[num]).abs().max().max()) if num else 0.0
     if d != 0:
         return "numeric_diff", d
-    # text columns (wording, translation) may be edited after the clone's commit; numbers are what must reproduce
     return ("identical" if text_same else "numbers_identical_text_differs"), d
 
 
@@ -154,7 +149,6 @@ def _walk(x):
         yield x
 
 
-# ------------------------------------------------------------------------------------ mode 1: clone A
 def fresh(clone: Path, log: Path | None) -> dict:
     rows = []
     da = pd.read_parquet(ROOT / "data/cache/daily.parquet")
@@ -176,8 +170,6 @@ def fresh(clone: Path, log: Path | None) -> dict:
         rows.append(_csv_row("simulations", f"results/simulations/{f.name}", f, clone / "results/simulations" / f.name))
     not_covered = []
     for u in UPGRADES:
-        # results/ is tracked in git, so the clone starts with OUR committed outputs: an upgrade counts as
-        # reproduced only if the clone regenerated it (its run_manifest.json differs from the cloned commit)
         man = f"results/upgrades/{u}/run_manifest.json"
         regenerated = subprocess.run(["git", "-C", str(clone), "diff", "--quiet", "HEAD", "--", man]).returncode == 1
         if not (clone / man).exists() or not regenerated:
@@ -246,15 +238,12 @@ def fresh(clone: Path, log: Path | None) -> dict:
     return summary
 
 
-# ------------------------------------------------------------------------------------ mode 2: clone B
 def final(clone: Path, log: Path | None, make_log: Path | None) -> dict:
     out = OUT / "final_clone"
     out.mkdir(parents=True, exist_ok=True)
     steps = _steps(log)
     mk_all = [s for s in steps if s["target"] == "all"]
     mtxt = make_log.read_text(errors="replace") if make_log and make_log.exists() else ""
-    # make all runs pytest twice: the code tests first (`make tests`, without tests/test_manifests.py) and
-    # the output-manifest contract last (`check-outputs`, tests/test_manifests.py on the outputs just written)
     tests = re.findall(r"^(\d+ passed[^\n]*?) in [0-9.]+s", mtxt, re.M)
 
     canonical = (clone / "results/LATEST").read_text().strip()
@@ -279,7 +268,6 @@ def final(clone: Path, log: Path | None, make_log: Path | None) -> dict:
     can = mf[mf.role == "canonical"]
     run_sha = sorted(set(can.git_sha))
 
-    # canonical base run against the previous base run with the same config hash (its last 8 hex in the id)
     tag = canonical.split("_")[-1]
     prev = sorted(p.name for p in (ROOT / "results").iterdir()
                   if p.is_dir() and p.name.endswith("_" + tag) and p.name < canonical)
@@ -291,8 +279,6 @@ def final(clone: Path, log: Path | None, make_log: Path | None) -> dict:
     cmp = pd.DataFrame(cmp_rows, columns=["file", "status", "max_abs_diff"])
     cmp.to_csv(out / "base_vs_previous.csv", index=False)
 
-    # the clone's results/ against this repository's (the canonical outputs were committed from the clone)
-    # (results/repro/ is written by this script and results/docs_manifest.json by every `make docs`: both excluded)
     ident = []
     for p in sorted((clone / "results").rglob("*")):
         rel = p.relative_to(clone / "results")
@@ -328,7 +314,7 @@ def final(clone: Path, log: Path | None, make_log: Path | None) -> dict:
                        "whose manifests hold absolute or home-directory paths"),
         "canonical_base_run": canonical, "repo_latest": repo_latest,
         "n_manifests": int(len(mf)), "n_canonical": int(len(can)),
-        "canonical_all_same_commit_clean": bool(len(run_sha) == 1 and (can.dirty == False).all()),  # noqa: E712
+        "canonical_all_same_commit_clean": bool(len(run_sha) == 1 and (can.dirty == False).all()),
         "historical_runs": mf[mf.role == "historical"][["run_id", "git_sha", "dirty", "n_home_paths"]].to_dict("records"),
         "n_canonical_with_home_paths": int((can.n_home_paths > 0).sum()),
         "home_path_note": ("relative paths in some canonical manifests resolve into a home directory (../../Users/...), "
@@ -350,9 +336,6 @@ def final(clone: Path, log: Path | None, make_log: Path | None) -> dict:
                           "a file that differs was rewritten in this repository after the clone run"),
     }
     summary["logs"] = _copy_logs(clone, [x for x in (log, make_log) if x], out)
-    # the verdict needs make all rc 0, one clean commit in every canonical manifest, an identical base run against
-    # the previous one, and no numeric difference or missing file between the clone's results/ and ours (text-only
-    # rewrites made here after the clone run, e.g. report wording, are listed in results_files_differing)
     num_bad = idf.status.isin(["numeric_diff", "shape_or_columns_differ", "missing_in_repo"]).sum() if len(idf) else 0
     ok = (summary["make_all"] and summary["make_all"]["rc"] == 0 and summary["canonical_all_same_commit_clean"]
           and summary["base_n_not_identical"] == 0 and num_bad == 0)

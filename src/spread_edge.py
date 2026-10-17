@@ -55,7 +55,7 @@ from fama_macbeth import fama_macbeth, nw_mean
 from measures import cs_residual, mean_cs_corr, winsorize_cs
 from sorts import alpha, assign_quantiles
 import data_audit
-import run as base   # repo-relative path helpers (rel_path, resolve_panel_cache)
+import run as base
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw" / "klines"
@@ -64,21 +64,17 @@ OHLC_PATH = CACHE / "ohlc_daily.parquet"
 EDGE_PATH = CACHE / "edge_monthly.parquet"
 OUT = ROOT / "results" / "upgrades" / "edge_spread"
 CODE_FILES = ["spread_edge.py", "fama_macbeth.py", "measures.py", "sorts.py", "data_binance.py", "data_audit.py"]
-RULES = ["floor", "drop", "abs"]                 # non-positive EDGE rules for correlations / FM
-COST_RULES = ["pooled", "floor", "abs"]          # half-spread rules for costs
-WINDOWS = {"m1": 1, "m12": 12}                   # EDGE from one month (main) or mean s2 over 12 months
-# Exchange fee per side (fraction): Binance spot base-tier maker/taker fee 0.1%. NOT pre-registered;
-# added at verification as an extra, clearly labelled column (net of half-spread AND fee).
+RULES = ["floor", "drop", "abs"]
+COST_RULES = ["pooled", "floor", "abs"]
+WINDOWS = {"m1": 1, "m12": 12}
 FEE_PER_SIDE = 0.001
 
-# Lou & Shu (2017) numbers this upgrade is compared with (NYSE/AMEX 1983-2012, FF3-adjusted returns,
-# controls ln ME, B/M, Ret[-12,-2], Ret[-1]). ES = percent effective spread from TAQ.
 PAPER = {
     "source_t9a": "Table 9 Panel A (p. 53): corr(ES, .)",
     "corr_ES_A": 0.731, "corr_ES_A_C": 0.705, "corr_ES_ResA": 0.215,
     "source_t9c": "Table 9 Panel C (p. 53)",
     "fm_lnES_alone": {"coef": -0.248, "t": -1.94},
-    "fm_lnAC_with_benchmarks": {"coef": 0.210, "t": 3.71},   # model (4): QS, ES, RS, lambda, A_C
+    "fm_lnAC_with_benchmarks": {"coef": 0.210, "t": 3.71},
     "source_t10": "Table 10 left panel (p. 54); cost = fit of lnA on ln lambda, QS, ES, RS",
     "t10_cost_alone": {"coef": -0.047, "t": -1.11},
     "t10_noncost_alone": {"coef": 0.186, "t": 3.04},
@@ -87,7 +83,6 @@ PAPER = {
 }
 
 
-# ======================================================================== EDGE estimator
 def edge_from_ohlc(o, h, l, c) -> dict:
     """EDGE (Ardia, Guidotti & Kroencke 2024) from one calendar-complete sequence of OHLC prices.
 
@@ -107,17 +102,15 @@ def edge_from_ohlc(o, h, l, c) -> dict:
     if len(lo_) < 3:
         return nan
     mid = (lh + ll) / 2
-    # previous day (index t-1) and current day (index t) for t = 1..n-1
     hp, lp, cp, mp = lh[:-1], ll[:-1], lc[:-1], mid[:-1]
     oc, hc, lcur, mc = lo_[1:], lh[1:], ll[1:], mid[1:]
     n_pairs = int((np.isfinite(hp) & np.isfinite(lp) & np.isfinite(cp) & np.isfinite(oc)
                    & np.isfinite(hc) & np.isfinite(lcur)).sum())
-    # log-return building blocks
-    a1 = mc - oc          # mid - open
-    a2 = oc - mp          # open - previous mid
-    a3 = mc - cp          # mid - previous close
-    a4 = cp - mp          # previous close - previous mid
-    a5 = oc - cp          # open - previous close
+    a1 = mc - oc
+    a2 = oc - mp
+    a3 = mc - cp
+    a4 = cp - mp
+    a5 = oc - cp
 
     def _ind(cond, *need):
         """Indicator that is NaN where any input it depends on is missing."""
@@ -126,7 +119,6 @@ def edge_from_ohlc(o, h, l, c) -> dict:
             miss |= np.isnan(x)
         return np.where(miss, np.nan, cond.astype(float))
 
-    # tau = 0 when the current bar is flat at the previous close (no price change at all)
     tau = _ind((hc != lcur) | (lcur != cp), hc, lcur, cp)
     with np.errstate(invalid="ignore"), _quiet():
         q_open = np.nanmean(tau * _ind(oc != hc, oc, hc)) + np.nanmean(tau * _ind(oc != lcur, oc, lcur))
@@ -134,11 +126,9 @@ def edge_from_ohlc(o, h, l, c) -> dict:
         p_tau = np.nanmean(tau)
         if np.nansum(tau) < 2 or q_open == 0 or q_close == 0:
             return {**nan, "n_pairs": n_pairs}
-        # demean the returns entering the products; tau = 0 periods carry no information
         b1 = a1 - np.nanmean(a1) / p_tau * tau
         b3 = a3 - np.nanmean(a3) / p_tau * tau
         b5 = a5 - np.nanmean(a5) / p_tau * tau
-        # two moment conditions for S^2, combined with inverse-variance weights
         m1 = -4.0 / q_open * b1 * a2 - 4.0 / q_close * b3 * a4
         m2 = -4.0 / q_open * b1 * a5 - 4.0 / q_close * b5 * a4
         e1, e2 = np.nanmean(m1), np.nanmean(m2)
@@ -146,7 +136,6 @@ def edge_from_ohlc(o, h, l, c) -> dict:
     s2 = (v2 * e1 + v1 * e2) / (v1 + v2) if v1 + v2 > 0 else (e1 + e2) / 2.0
     if not np.isfinite(s2):
         return {**nan, "n_pairs": n_pairs}
-    # w2 = weight on the second moment (built on the open - previous close gap a5); diagnostic only
     w2 = float(v1 / (v1 + v2)) if v1 + v2 > 0 else 0.5
     return {"s2": float(s2), "edge": float(np.sign(s2) * np.sqrt(abs(s2))), "n_pairs": n_pairs, "w2": w2}
 
@@ -205,7 +194,6 @@ def edge_window(em: pd.DataFrame, months: int, min_months: int | None = None) ->
     return out[["symbol", "month", "edge", "s2", "edge_abs"]]
 
 
-# ======================================================================== data
 def _zip_fingerprint() -> float:
     return max((p.stat().st_mtime for p in RAW.glob("*/*.zip")), default=0.0)
 
@@ -214,7 +202,7 @@ def build_ohlc(symbols: list[str] | None = None, path: Path = OHLC_PATH, rebuild
     """Re-parse daily klines zips into (symbol, date, open, high, low, close, quote_volume)."""
     if path.exists() and not rebuild and path.stat().st_mtime >= _zip_fingerprint():
         return pd.read_parquet(path)
-    from data_binance import _read_zip          # parser shared with the base pipeline (not edited)
+    from data_binance import _read_zip
     symbols = symbols or sorted(p.name for p in RAW.iterdir() if p.is_dir())
     frames = []
     for sym in symbols:
@@ -223,7 +211,7 @@ def build_ohlc(symbols: list[str] | None = None, path: Path = OHLC_PATH, rebuild
             continue
         df = pd.concat([_read_zip(f) for f in files], ignore_index=True)
         t = pd.to_numeric(df["open_time"])
-        t = t.where(t < 1e14, t // 1000)          # Binance switched spot timestamps ms -> us in 2025
+        t = t.where(t < 1e14, t // 1000)
         frames.append(pd.DataFrame({
             "symbol": sym, "date": pd.to_datetime(t, unit="ms").dt.normalize(),
             **{c: pd.to_numeric(df[c], errors="coerce") for c in ["open", "high", "low", "close", "quote_volume"]}}))
@@ -242,7 +230,7 @@ def align_to_daily(ohlc: pd.DataFrame, daily: pd.DataFrame) -> tuple[pd.DataFram
     """
     dd = daily[["symbol", "date", "close"]].rename(columns={"close": "close_daily", "symbol": "asset"}).copy()
     dd["asset"] = dd["asset"].astype(str)
-    dd["symbol"] = dd["asset"].str.split("#").str[0]      # audit asset ids <SYM>#k -> raw ticker
+    dd["symbol"] = dd["asset"].str.split("#").str[0]
     dd["date"] = pd.to_datetime(dd["date"]).dt.tz_localize(None).dt.normalize()
     oo = ohlc.copy()
     oo["date"] = pd.to_datetime(oo["date"]).dt.tz_localize(None).dt.normalize()
@@ -261,7 +249,6 @@ def align_to_daily(ohlc: pd.DataFrame, daily: pd.DataFrame) -> tuple[pd.DataFram
     return m.drop(columns=["close_daily"]), stats
 
 
-# ======================================================================== analysis
 def edge_signal(edge: pd.Series, month: pd.Series, rule: str) -> pd.Series:
     """Level of EDGE used in logs and costs under a non-positive-estimate rule (see module doc)."""
     e = edge.astype(float)
@@ -322,14 +309,11 @@ def table10(p: pd.DataFrame, lags: int) -> pd.DataFrame:
     s = p.dropna(subset=["lnA", "lnEDGE"]).copy()
     s["NonCost"] = cs_residual(s, "lnA", "lnEDGE", "month")
     s["Cost"] = s["lnA"] - s["NonCost"]
-    # first-stage slope b_t on the same sample as the decomposition (before the FM sample filter)
     b = s.groupby("month").apply(lambda g: np.polyfit(g["lnEDGE"], g["lnA"], 1)[0] if len(g) > 2 else np.nan)
     s = s.dropna(subset=["Cost", "NonCost", "ret_adj", "mom", "ret_1"])
     fm = _fm(s, {"(1) cost": ["Cost"], "(2) non-cost": ["NonCost"], "(3) both": ["Cost", "NonCost"]}, lags)
     r2 = s.groupby("month").apply(lambda g: np.corrcoef(g["lnA"], g["lnEDGE"])[0, 1] ** 2 if len(g) > 2 else np.nan)
     fm["first_stage_r2_mean"] = float(r2.mean())
-    # Cost = a_t + b_t lnEDGE, so the monthly Cost slope is the lnEDGE slope / b_t: months with b_t ~ 0
-    # (or < 0) dominate the FM mean. Diagnostics so the cost coefficient is not read at face value.
     cser = fama_macbeth(s, "ret_adj", ["Cost", "mom", "ret_1"], lags=lags).attrs["coef_series"]["Cost"]
     fm["first_stage_slope_share_neg"] = float((b < 0).mean())
     fm["first_stage_slope_min_abs"] = float(b.abs().min())
@@ -353,7 +337,6 @@ def _half_spread(p: pd.DataFrame, em: pd.DataFrame, rule: str) -> pd.Series:
         v = pd.Series(e.reindex(key).to_numpy(), index=p.index)
         out = out.fillna(v)
     if rule == "pooled":
-        # leg-level spread: root of the mean s2 over the coins of the quintile (noise averages out)
         imputed = out.isna()
         s2 = out.groupby([p["month"], p["q"]]).transform("mean").clip(lower=0)
         return (np.sqrt(s2) / 2.0).rename("hs"), imputed
@@ -395,7 +378,6 @@ def costs(panel: pd.DataFrame, em: pd.DataFrame, signal: str, q: int, rule: str,
             old = prev.get(leg, pd.Series(dtype=float))
             u = w.index.union(old.index)
             dw = (w.reindex(u, fill_value=0.0) - old.reindex(u, fill_value=0.0)).abs()
-            # exiting coins: charge their own last half-spread; fall back to the leg median
             hs_u = hs.reindex(u).fillna(prev.get(leg + "_hs", pd.Series(dtype=float)).reindex(u)).fillna(hs.median())
             rec[f"turnover_{leg}"] = float(dw.sum())
             rec[f"cost_{leg}"] = float((dw * hs_u).sum()) * 100.0
@@ -419,7 +401,6 @@ def costs(panel: pd.DataFrame, em: pd.DataFrame, signal: str, q: int, rule: str,
     row = {"signal": signal, "rule": rule, "n_months": len(s),
            "turnover_long": s["turnover_long"].mean(), "turnover_short": s["turnover_short"].mean(),
            "half_spread_long_pct": s["hs_long"].mean(), "half_spread_short_pct": s["hs_short"].mean(),
-           # leg-months where the estimated half-spread is exactly 0 (pooled: mean s2 of the leg <= 0)
            "share_months_hs_zero_long": float((s["hs_long"] == 0).mean()),
            "share_months_hs_zero_short": float((s["hs_short"] == 0).mean()),
            "cost_ls_pct": s["cost_ls"].mean(), "share_hs_imputed": float(imputed.mean()),
@@ -429,7 +410,6 @@ def costs(panel: pd.DataFrame, em: pd.DataFrame, signal: str, q: int, rule: str,
         row[f"{c}_pct"], row[f"{c}_t"] = m_, t_
     row["hl_net_pct_per_year"] = 12 * row["hl_net_pct"]
     row["breakeven_cost_multiple"] = row["hl_gross_pct"] / row["cost_ls_pct"] if row["cost_ls_pct"] > 0 else np.nan
-    # estimator-free: the uniform per-side cost (half-spread + fee, %) at which the mean net H-L is 0
     to = (s["turnover_long"] + s["turnover_short"]).mean()
     row["breakeven_cost_per_side_pct"] = row["hl_gross_pct"] / to if to > 0 else np.nan
     if factors is not None:
@@ -441,7 +421,6 @@ def costs(panel: pd.DataFrame, em: pd.DataFrame, signal: str, q: int, rule: str,
     return ts, pd.DataFrame([row])
 
 
-# ======================================================================== provenance
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -467,14 +446,14 @@ def bidask_check(ohlc: pd.DataFrame, em: pd.DataFrame, n: int, seed: int) -> pd.
         return pd.DataFrame([{"status": "bidask not installed"}])
     ver = im.version("bidask")
     ok = em.dropna(subset=["edge"])
-    gap = ok[ok["n_pairs"] < ok["n_days"] - 1]                 # months with missing days: up to n/3
+    gap = ok[ok["n_pairs"] < ok["n_days"] - 1]
     g = gap.sample(n=min(n // 3, len(gap)), random_state=seed)
     rest = ok.drop(g.index)
     cand = pd.concat([g, rest.sample(n=min(n - len(g), len(rest)), random_state=seed)])
     d = ohlc.assign(month=ohlc["date"].dt.to_period("M").astype(str)).set_index(["symbol", "month"]).sort_index()
     rows = []
     for _, r in cand.iterrows():
-        full = calendar_month(d.loc[(r["symbol"], r["month"])].reset_index(drop=True))   # gaps -> NaN rows
+        full = calendar_month(d.loc[(r["symbol"], r["month"])].reset_index(drop=True))
         ref = bidask.edge(full["open"].to_numpy(), full["high"].to_numpy(), full["low"].to_numpy(),
                           full["close"].to_numpy(), sign=True)
         rows.append({"symbol": r["symbol"], "month": r["month"], "edge_ours": r["edge"], "edge_bidask": ref,
@@ -483,7 +462,6 @@ def bidask_check(ohlc: pd.DataFrame, em: pd.DataFrame, n: int, seed: int) -> pd.
     return pd.DataFrame(rows)
 
 
-# ======================================================================== summary
 def _f(x, nd=2):
     return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x:.{nd}f}"
 
@@ -511,7 +489,6 @@ def write_summary(out: Path, ctx: dict) -> None:
     k = cs[(cs["signal"] == "A_C") & (cs["rule"] == "pooled")].iloc[0]
     ka = cs[(cs["signal"] == "A_C") & (cs["rule"] == "abs")].iloc[0]
     P = PAPER
-    # sign / significance counts over all 6 pre-listed variants (window x rule)
     one = fm9[(fm9["model"] == "(1) lnEDGE") & (fm9["var"] == "lnEDGE")]
     cst = t10[(t10["model"] == "(1) cost") & (t10["var"] == "Cost")]
     nco = t10[(t10["model"] == "(2) non-cost") & (t10["var"] == "NonCost")]
@@ -591,7 +568,6 @@ def write_summary(out: Path, ctx: dict) -> None:
     (out / "SUMMARY.md").write_text("\n".join(L) + "\n")
 
 
-# ======================================================================== main
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("config")
@@ -625,7 +601,7 @@ def main(argv: list[str] | None = None) -> None:
     lap("ohlc")
     daily = pd.read_parquet(daily_path)
     audit_info = {"enabled": False}
-    if data_audit.audit_config(cfg)["enabled"]:       # same audit as run.py, so EDGE sees the base's coin-days
+    if data_audit.audit_config(cfg)["enabled"]:
         daily, ev, _ = data_audit.audit(daily, cfg)
         audit_info = {"enabled": True, "events_by_type": {k: int(v) for k, v in ev["type"].value_counts().items()},
                       "daily_rows_clean": int(len(daily)), "assets_clean": int(daily["symbol"].nunique())}
@@ -648,7 +624,6 @@ def main(argv: list[str] | None = None) -> None:
           "share_zero": float((em.loc[ok, "edge"] == 0).mean()), "median_edge_pct": float(em.loc[ok, "edge"].median() * 100),
           "n_missing_lt_min_pairs": int((~ok).sum()),
           "median_weight_moment2": float(em.loc[ok, "w2"].median()), "mean_weight_moment2": float(em.loc[ok, "w2"].mean())}
-    # 24/7 market: the open - previous close gap (consecutive calendar days) that moment 2 is built on
     oo = ohlc.sort_values(["symbol", "date"])
     consec = oo.groupby("symbol")["date"].diff() == pd.Timedelta(days=1)
     pc = oo.groupby("symbol")["close"].shift()
@@ -674,7 +649,6 @@ def main(argv: list[str] | None = None) -> None:
             ts, row = costs(panel, em, sig, q, rule, lags, fac)
             ts_l.append(ts)
             cost_l.append(row)
-    # consistency: our gross H-L must equal the base run's T3 quintile H-L series month by month
     checks = {"bidask_max_abs_diff": float(chk["abs_diff"].max()) if "abs_diff" in chk else None,
               "bidask_n_coin_months": int(len(chk)), "bidask_n_with_gaps": int((chk.get("n_gaps", pd.Series(dtype=int)) > 0).sum())}
     t3p = base_dir / "T3_portfolios.csv"

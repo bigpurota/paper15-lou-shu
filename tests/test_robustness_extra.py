@@ -21,16 +21,13 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 
 
-# ---------------------------------------------------------------- moving-block bootstrap
 def test_mbb_indices_shape_range_and_blocks():
     rng = np.random.default_rng(0)
     idx = rx.mbb_indices(93, 6, 500, rng)
     assert idx.shape == (500, 93)
     assert idx.min() >= 0 and idx.max() <= 92
-    # inside each block of 6 the indices are consecutive
     d = np.diff(idx[:, :90].reshape(500, 15, 6), axis=2)
     assert (d == 1).all()
-    # deterministic given the seed
     assert (rx.mbb_indices(93, 6, 500, np.random.default_rng(0)) == idx).all()
     with pytest.raises(ValueError):
         rx.mbb_indices(5, 6, 10, rng)
@@ -92,9 +89,8 @@ def test_bootstrap_seed_stability_flags_borderline():
     rng = np.random.default_rng(3)
     T = 90
     idx = pd.period_range("2019-01", periods=T, freq="M")
-    S = pd.DataFrame({"hl_far": rng.normal(3.0, 1.0, T),          # mean far from 0
+    S = pd.DataFrame({"hl_far": rng.normal(3.0, 1.0, T),
                       "fm_zero": rng.normal(0.0, 1.0, T)}, index=idx)
-    # a series whose mean sits exactly at the 2.5% bootstrap quantile edge: lower bound ~ 0
     z = rng.normal(0.0, 1.0, T)
     S["fm_edge"] = z - z.mean() + 1.96 * z.std(ddof=1) / np.sqrt(T)
     F = pd.DataFrame({"CMKT": rng.normal(size=T), "CMOM": rng.normal(size=T)}, index=idx)
@@ -113,13 +109,12 @@ def test_ci_row_flags():
     assert not r["ci_excludes_0"] and r["share_draws_opposite_sign"] == pytest.approx(0.25, abs=0.01)
 
 
-# ---------------------------------------------------------------- stability
 def _toy_series(seed=7):
     rng = np.random.default_rng(seed)
     months = pd.period_range("2019-01", "2022-12", freq="M")
     S = pd.DataFrame({"hl_A_C": rng.normal(0.2, 1.0, len(months)),
                       "fm2_lnA_C": rng.normal(0.1, 0.5, len(months))}, index=months)
-    S.loc[[p.year == 2021 for p in months], "hl_A_C"] += 10.0         # one huge year
+    S.loc[[p.year == 2021 for p in months], "hl_A_C"] += 10.0
     F = pd.DataFrame({"CMKT": rng.normal(size=len(months)), "CMOM": rng.normal(size=len(months))}, index=months)
     return S, F
 
@@ -143,7 +138,6 @@ def test_loyo_drops_one_year():
     assert r.loc["excl_2021", "estimate"] == pytest.approx(d21["estimate"])
 
 
-# ---------------------------------------------------------------- simulation calibration and MDE
 def test_world0_calibration_standard_normal():
     rng = np.random.default_rng(8)
     w0 = pd.DataFrame({"fm2_lnA_C_t": rng.normal(size=200000), "fm2_lnA_C_nw0_t": rng.normal(size=200000)})
@@ -157,14 +151,13 @@ def test_world0_calibration_standard_normal():
 def test_mde_from_power_curve_interpolates_and_monotonises():
     prem = np.array([0.0, 0.25, 0.5, 1.0])
     assert rx.mde_from_power_curve(prem, np.array([0.05, 0.35, 0.95, 1.0])) == pytest.approx(0.25 + 0.45 / 0.6 * 0.25)
-    # non-monotone noise: running max is used
     assert rx.mde_from_power_curve(prem, np.array([0.05, 0.6, 0.5, 1.0])) == pytest.approx(0.5 + 0.2 / 0.4 * 0.5)
     assert np.isnan(rx.mde_from_power_curve(prem, np.array([0.05, 0.1, 0.2, 0.3])))
 
 
 def test_mde_from_mean_t_known_answer():
     prem = np.array([0.0, 0.25, 0.5, 1.0])
-    mean_t = 7.5 * prem                       # E[t] linear, through 0
+    mean_t = 7.5 * prem
     assert rx.mde_from_mean_t(prem, mean_t) == pytest.approx((1.96 + norm.ppf(0.8)) / 7.5)
 
 
@@ -181,7 +174,7 @@ def test_mde_table_real_se_and_scaling():
     assert M.loc[("fm2_lnA_C", "real_se_nw_crit_1.96"), "mde"] == pytest.approx((1.96 + z) * 0.1 * 2.0)
     assert M.loc[("fm2_lnA_C", "real_se_boot_crit_world0_5pct"), "mde"] == pytest.approx((2.2 + z) * 0.12 * 2.0)
     base = M.loc[("fm2_lnA_C", "sim_mean_t_crit_1.96"), "mde"]
-    assert base == pytest.approx((1.96 + z) / 6.0 * 1.0)          # mean_t = 600 * premium(fraction) = 6 per %
+    assert base == pytest.approx((1.96 + z) / 6.0 * 1.0)
     assert M.loc[("fm2_lnA_C", "sim_scaled_to_real_crit_1.96"), "mde"] == pytest.approx(2.0 * base)
     assert M.loc[("fm2_lnA_C", "sim_power_curve"), "mde"] == pytest.approx(100 * (0.0025 + 0.45 / 0.6 * 0.0025))
 
@@ -189,7 +182,6 @@ def test_mde_table_real_se_and_scaling():
 def test_paper_effect_rows_from_yaml():
     paper = yaml.safe_load((SRC / "paper_numbers.yaml").read_text())
     P = rx.paper_effect_rows(paper).set_index("stat")
-    # the paper states the s.d. of ln(A_C) (2.53) and the one-s.d. effect (0.46%/mo) on p. 13
     assert P.loc["fm2_lnA_C", "sd_signal"] == pytest.approx(2.53)
     assert P.loc["fm2_lnA_C", "mde"] == pytest.approx(0.183 * 2.53, rel=1e-6)
     assert round(P.loc["fm2_lnA_C", "mde"], 2) == 0.46
@@ -198,7 +190,6 @@ def test_paper_effect_rows_from_yaml():
     assert P.loc["hl_A_C", "mde"] == paper["lou_shu_2017"]["table3_panelA"]["A_C"]["raw"]["hl"]
 
 
-# ---------------------------------------------------------------- ledger
 def _write(path: Path, df: pd.DataFrame):
     path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(path, index=False)
@@ -208,36 +199,35 @@ def test_ledger_counts_flags_duplicates_roles(tmp_path):
     base = tmp_path / "results" / "run1"
     _write(base / "T4_fm.csv", pd.DataFrame({"model": ["(1)", "(1)", "(2)"], "var": ["lnA", "mom", "lnA_C"],
                                              "coef": [0.1, 0.2, 0.3], "t": [2.5, 1.0, 3.5], "n_months": [90] * 3}))
-    _write(base / "T2_fm.csv", pd.DataFrame({"model": ["(1)"], "var": ["lnA"], "coef": [0.1], "t": [2.5]}))  # dup
+    _write(base / "T2_fm.csv", pd.DataFrame({"model": ["(1)"], "var": ["lnA"], "coef": [0.1], "t": [2.5]}))
     _write(base / "T3_sorts.csv", pd.DataFrame({"row": ["raw"], "signal": ["A"], "Q1": [1.0], "H-L": [0.6],
                                                 "t": [-1.0], "n_months": [93]}))
     _write(base / "placebo.csv", pd.DataFrame({"test": ["shuffle"], "var": ["x"], "coef": [0.0], "t": [2.1],
                                                "sd_t": [1.0], "share_abs_t_gt_1.96": [0.05]}))
     _write(base / "paper_vs_us.csv", pd.DataFrame({"id": ["a"], "paper": [1.0], "paper_t": [5.0],
                                                    "us": [1.0], "us_t": [9.0]}))
-    _write(base / "T1_corr.csv", pd.DataFrame({"measure": ["A"], "A": [1.0]}))                 # no t
+    _write(base / "T1_corr.csv", pd.DataFrame({"measure": ["A"], "A": [1.0]}))
     upg = tmp_path / "results" / "upgrades"
     _write(upg / "vw" / "fm.csv", pd.DataFrame({"spec": ["vw"], "estimate": [0.4], "t_nw": [-3.2]}))
-    _write(upg / "robustness" / "ledger.csv", pd.DataFrame({"estimate": [9.0], "t": [99.0]}))  # own, excluded
+    _write(upg / "robustness" / "ledger.csv", pd.DataFrame({"estimate": [9.0], "t": [99.0]}))
     _write(upg / "robustness" / "stability_loyo.csv",
            pd.DataFrame({"dropped_year": ["2021"], "stat": ["hl_A_C"], "estimate": [0.2], "t_nw": [0.5]}))
 
     L = rx.build_ledger(base, upg, exclude=rx.OWN_NON_TESTS, hlz=3.0)
     assert set(L["file"]) == {"T4_fm.csv", "T2_fm.csv", "T3_sorts.csv", "placebo.csv", "fm.csv", "stability_loyo.csv"}
     assert len(L) == 8
-    lnA = L[L["test"] == "model=(1) | var=lnA"]              # T2 is read first (sorted), T4's copy is the dup
+    lnA = L[L["test"] == "model=(1) | var=lnA"]
     assert list(lnA["unique"]) == [True, False]
     assert lnA["duplicate_of"].iloc[1].startswith("base/T2_fm.csv")
-    assert L.loc[L["file"] == "T3_sorts.csv", "estimate"].iloc[0] == 0.6          # H-L picked as estimate
+    assert L.loc[L["file"] == "T3_sorts.csv", "estimate"].iloc[0] == 0.6
     assert L.loc[L["file"] == "fm.csv", "estimate"].iloc[0] == 0.4
     roles = dict(zip(L["file"] + ":" + L["test"], L["role"]))
     assert roles["T4_fm.csv:model=(1) | var=mom"] == "control"
     assert L.loc[L["file"] == "placebo.csv", "role"].iloc[0] == "placebo"
     assert L.loc[L["file"] == "fm.csv", "source"].iloc[0] == "upgrade:vw"
-    assert L["abs_t_gt_3"].sum() == 2                     # 3.5 and -3.2
+    assert L["abs_t_gt_3"].sum() == 2
     L = rx.add_multiple_testing(L)
     fam = L[L["in_family"]]
-    # family: T4 lnA, T4 lnA_C, T3 H-L, vw, robustness stability (T2 dup, mom control, placebo excluded)
     assert len(fam) == 5 and (L["family_size"] == 5).all()
     p = 2 * norm.sf(fam["t"].abs().to_numpy())
     assert np.allclose(fam["q_bh"], multipletests(p, method="fdr_bh")[1])
@@ -254,10 +244,8 @@ def test_t_column_detection():
     assert rx._t_columns(df) == ["t", "beta_t"]
     assert rx._estimate_col(df, "beta_t") == "beta"
     assert rx._estimate_col(df, "t") == "coef"
-    # time-indexed quantities are not t-statistics
     df2 = pd.DataFrame({"mean_dvol_t": [1e7], "dvol_t": [1e6], "max_t": [0.5], "t": [1.0]})
     assert rx._t_columns(df2) == ["t"]
-    # a text column named like the t-column's prefix is never the estimate
     df3 = pd.DataFrame({"statistic": ["HL A"], "variant": ["winsorized"], "base": [1.5], "base_t": [0.98],
                         "variant_coef": [1.3], "variant_t": [0.81]})
     assert rx._estimate_col(df3, "variant_t") != "variant"
@@ -282,7 +270,7 @@ def test_ledger_roles_diagnostics_loadings_legs(tmp_path):
                                                     "t": [0.4, 1.1], "a": [0.0, 0.0], "t_a": [0.0, 0.1]}))
     _write(upg / "hf" / "lambda_monthly.csv", pd.DataFrame({"symbol": ["X"], "lam": [1e-5], "t_lam": [30.0]}))
     _write(upg / "an" / "describe.csv", pd.DataFrame({"sample": ["m"], "mean_DIF": [-0.2], "t_mean_DIF": [-27.0]}))
-    _write(upg / "an" / "verdict.csv", pd.DataFrame({"test": ["V0"], "coef": [-0.2], "t": [-27.0]}))  # dup
+    _write(upg / "an" / "verdict.csv", pd.DataFrame({"test": ["V0"], "coef": [-0.2], "t": [-27.0]}))
     _write(upg / "an" / "paper_reference.csv", pd.DataFrame({"var": ["lnA_C"], "coef": [0.1], "t": [3.9]}))
     L = rx.build_ledger(base, upg, hlz=3.0)
     assert set(L["file"]) == {"T4_fm.csv", "placebo.csv", "spanning.csv", "panel_a.csv", "panel_b.csv",
@@ -298,7 +286,6 @@ def test_ledger_roles_diagnostics_loadings_legs(tmp_path):
     assert r["panel_b.csv:t_a:1"] == "control"
 
 
-# ---------------------------------------------------------------- end to end on a synthetic base run
 def _py(script, *args, cwd):
     r = subprocess.run([sys.executable, "-I", str(SRC / script), *args], cwd=cwd,
                        capture_output=True, text=True, timeout=600)
@@ -351,18 +338,15 @@ def test_end_to_end_synthetic(tmp_path):
     assert "bootstrap_ci.csv" not in set(led["file"])
     summary = (out / "SUMMARY.md").read_text()
     assert base in summary and "Bootstrap" in summary
-    # determinism: same seed -> same bootstrap table
     first = boot.copy()
     _py("robustness_extra.py", str(tmp_path / "config.yaml"), "--results-dir", str(res),
         "--sims", str(tmp_path / "sims"), "--draws", "300", cwd=tmp_path)
     pd.testing.assert_frame_equal(first, pd.read_csv(out / "bootstrap_ci.csv"))
-    # --ledger-only reruns without touching the other tables
     _py("robustness_extra.py", str(tmp_path / "config.yaml"), "--results-dir", str(res), "--ledger-only", cwd=tmp_path)
     assert "ledger_rebuilt_utc" in json.loads((out / "run_manifest.json").read_text())
-    summ = (out / "SUMMARY.md").read_text()                 # ledger section regenerated from the new ledger
+    summ = (out / "SUMMARY.md").read_text()
     n_all = int(pd.read_csv(out / "ledger_summary.csv").set_index("source").loc["ALL", "n_unique"])
     assert f"unique tests {n_all};" in summ
-    # if LATEST moves on, --ledger-only keeps using the manifest's base run (same as the other tables)
     led_before = pd.read_csv(out / "ledger.csv")
     (res / "LATEST").write_text("some_other_run\n")
     _py("robustness_extra.py", str(tmp_path / "config.yaml"), "--results-dir", str(res), "--ledger-only", cwd=tmp_path)

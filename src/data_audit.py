@@ -41,12 +41,12 @@ import pandas as pd
 
 DEFAULTS = {
     "enabled": True,
-    "min_factor": 8.0,                 # |price jump across a halt| that cannot be ignored
-    "round_tol_log10": 0.1,            # open/prev_close within 10^(+-0.1) (~26%) of a power of ten
+    "min_factor": 8.0,
+    "round_tol_log10": 0.1,
     "new_asset_min_gap_days": 14,
-    "volume_window_days": 7,           # trading days before/after the event for volume medians
-    "vol_tol_log10": 1.0,              # base-volume ratio within one order of magnitude of F
-    "dvol_tol_log10": 1.0,             # dollar-volume ratio within one order of magnitude of 1
+    "volume_window_days": 7,
+    "vol_tol_log10": 1.0,
+    "dvol_tol_log10": 1.0,
     "open_mismatch_ratio": 1.5,
 }
 PRICE_COLS = ["open", "high", "low", "close"]
@@ -113,7 +113,7 @@ def detect_events(daily: pd.DataFrame, cfg: dict | None = None) -> pd.DataFrame:
     for sym, x in d[~(zero | broken)].groupby("symbol", sort=True):
         x = x.reset_index(drop=True)
         gap = x["date"].diff().dt.days
-        ref = x["open"] if "open" in x else x["close"]       # reopening price after a halt
+        ref = x["open"] if "open" in x else x["close"]
         lr = np.log10(ref / x["close"].shift(1))
         cand = x.index[(gap > 1) | (lr.abs() >= mism)]
         for i in cand:
@@ -124,7 +124,7 @@ def detect_events(daily: pd.DataFrame, cfg: dict | None = None) -> pd.DataFrame:
             vr, dvr = _vol_ratio(x, i, "volume", w), _vol_ratio(x, i, "quote_volume", w)
             vol_ok = (np.isfinite(vr) and abs(np.log10(vr) - np.log10(F)) <= a["vol_tol_log10"]) if is_round else False
             dvol_ok = np.isfinite(dvr) and abs(np.log10(dvr)) <= a["dvol_tol_log10"]
-            if "volume" not in x:                            # no base volume: price evidence only
+            if "volume" not in x:
                 vol_ok = is_round
             ev = (f"gap={g:.0f}d; prev_close={x['close'].iloc[i - 1]:.6g}; reopen={ref.iloc[i]:.6g}; "
                   f"reopen/prev_close={10 ** l:.6g}; base_vol_ratio={vr:.4g}; dollar_vol_ratio={dvr:.4g}")
@@ -137,7 +137,7 @@ def detect_events(daily: pd.DataFrame, cfg: dict | None = None) -> pd.DataFrame:
             elif g == 1 and abs(l) >= mism:
                 kind, fac = "open_mismatch", 10 ** l
             else:
-                continue                                     # ordinary short halt, price continuous
+                continue
             events.append({"symbol": sym, "date": x["date"].iloc[i], "type": kind, "factor": fac, "evidence": ev})
     ev = pd.DataFrame(events, columns=["symbol", "date", "type", "factor", "evidence"])
     ev["action"] = ev["type"].map(ACTIONS)
@@ -151,7 +151,6 @@ def apply_events(daily: pd.DataFrame, events: pd.DataFrame) -> pd.DataFrame:
     if len(drop):
         zero, broken = _bad_rows(d)
         d = d[~(zero | broken)].reset_index(drop=True)
-    # new asset ids: cumulative count of breaks per symbol
     brk = events[events["action"] == "new_asset"]
     if len(brk):
         seg = pd.Series(0, index=d.index)
@@ -161,13 +160,11 @@ def apply_events(daily: pd.DataFrame, events: pd.DataFrame) -> pd.DataFrame:
                 seg[m & (d["date"] >= t)] += 1
         d["symbol"] = np.where(seg > 0, d["symbol"].astype(str) + "#" + (seg + 1).astype(str), d["symbol"].astype(str))
         d["symbol"] = d["symbol"].astype(str)
-    # split adjustment within the asset that contains the event (after the re-labelling)
     adj = events[events["action"] == "split_adjust"]
     if len(adj):
         div = pd.Series(1.0, index=d.index)
         for _, e in adj.iterrows():
             base_sym = d["symbol"].str.split("#").str[0]
-            # the asset id that holds the event date
             hold = d.loc[(base_sym == e["symbol"]) & (d["date"] == e["date"]), "symbol"]
             if hold.empty:
                 continue
@@ -192,7 +189,6 @@ def audit(daily: pd.DataFrame, cfg: dict | None = None) -> tuple[pd.DataFrame, p
     return clean, ev, pd.concat([summ, tot], ignore_index=True)
 
 
-# ---------------------------------------------------------------- diagnostics of the final panel
 def return_diagnostics(panel: pd.DataFrame, daily: pd.DataFrame, q: int = 5, top: int = 10) -> dict[str, pd.DataFrame]:
     """Distribution of panel returns, the most extreme coin-months and their influence on the sorts.
 

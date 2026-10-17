@@ -14,7 +14,7 @@ def test_parse_fng_and_monthly():
     days = pd.date_range("2020-01-01", "2020-02-29", freq="D")
     vals = list(range(len(days)))
     raw = {"data": [{"value": str(v % 101), "timestamp": str(int(d.timestamp()))} for d, v in zip(days, vals)]}
-    raw["data"].reverse()                      # API returns newest first
+    raw["data"].reverse()
     d = S.parse_fng(raw)
     assert d["date"].is_monotonic_increasing and len(d) == len(days)
     m = S.fng_monthly(d)
@@ -44,7 +44,7 @@ def test_ar2_recovers_coefficients():
     e, p = S.ar2_residual(s)
     assert p["phi1"] == pytest.approx(p1, abs=0.05) and p["phi2"] == pytest.approx(p2, abs=0.05)
     assert len(e) == n - 2 and abs(e.mean()) < 1e-10
-    assert abs(np.corrcoef(e.values, x[1:-1])[0, 1]) < 1e-8   # orthogonal to the first lag
+    assert abs(np.corrcoef(e.values, x[1:-1])[0, 1]) < 1e-8
 
 
 def test_illiq_states_start_and_gap_check():
@@ -75,7 +75,6 @@ def test_state_regression_known_answer_and_timing():
     y = 0.5 * lag + 1.0 * cmkt + 0.3 * rng.standard_normal(n)
     r = S.state_regression(y, lag, cmkt.to_frame("CMKT"), 6)
     assert r["b"] == pytest.approx(0.5, abs=0.05) and r["t"] > 10
-    # y depends on Sent_{t-1}; the contemporaneous Sent_t must not pick it up
     r0 = S.state_regression(y, sent, cmkt.to_frame("CMKT"), 6)
     assert abs(r0["t"]) < 3
 
@@ -144,7 +143,7 @@ def test_verdict_rules():
 
 def test_add_lagged_market_alignment_and_gap():
     m = pd.period_range("2020-01", "2020-04", freq="M")
-    fac = pd.DataFrame({"CMKT": [1.0, 2.0, 3.0, 4.0], "CMOM": 0.0}, index=m).drop(m[2])   # 2020-03 missing
+    fac = pd.DataFrame({"CMKT": [1.0, 2.0, 3.0, 4.0], "CMOM": 0.0}, index=m).drop(m[2])
     f = S.add_lagged_market(fac)
     assert np.isnan(f.loc[m[0], "CMKT_l1"]) and f.loc[m[1], "CMKT_l1"] == 1.0
-    assert np.isnan(f.loc[m[3], "CMKT_l1"])           # month t-1 absent -> NaN, never the value two months back
+    assert np.isnan(f.loc[m[3], "CMKT_l1"])

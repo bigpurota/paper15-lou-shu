@@ -42,31 +42,21 @@ import requests
 import statsmodels.api as sm
 import yaml
 
-from run import rel_path   # repo-relative paths in manifests
+from run import rel_path
 
 ROOT = Path(__file__).resolve().parents[1]
 log = logging.getLogger("openap_us")
 
-# ------------------------------------------------------------------ sources (pinned)
-OPENAP_RELEASE = "202510"   # OpenAP v2.0.0 (data release 2025.10), Drive folder 1qQDuTsnyvWfEJR6nPBQZ8xxlq6bkLG_y
-# Official Google Drive file ids, read from the release folder listing and openassetpricing.com/data.
+OPENAP_RELEASE = "202510"
 OPENAP_FILES = {
     "PredictorLSretWide.csv": "10sOryk_ddjkXagaajTKUk1nwJs2ZLRiI",
     "SignalDoc.csv": "1rdi0jTPSA6xtn6TpQAMT5WyEczQ1gK59",
 }
-# Fallback when Drive answers "Quota exceeded": a public GitHub copy of the same v2.0.0 files
-# (pulled from the same Drive ids by that repo's 00_download.py), pinned to a commit.
 OPENAP_MIRROR = ("https://raw.githubusercontent.com/edwardlg/assip-2026-projects/"
                  "9c4d74d3b27c9ac26713f8d7f8ec20fcdac9291e/04_anomaly_publication_decay/data/raw/{name}")
 FRENCH_URL = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/{name}"
 FRENCH_FILES = ["F-F_Research_Data_Factors_CSV.zip", "F-F_Momentum_Factor_CSV.zip"]
 
-# OpenAP construction facts, read from github.com/OpenSourceAP/CrossSection (master), not from SignalDoc:
-#  Portfolios/Code/01_PortfolioFunction.R: q_cut=NA -> 0.2 (quintiles); breakpoints from all stocks that pass
-#    `Filter` (NYSE breakpoints only if Quantile Filter == 'NYSE'); signal*Sign, LS = max port - min port;
-#    signal of month m is applied to returns of month m+1; held `Portfolio Period` months from `Start Month`.
-#  Signals/LegacyStataCode/Predictors/DolVol.do: DolVol(m) = log(l2.vol * abs(l2.prc)) -> one month's volume, t-3.
-#  Signals/LegacyStataCode/Predictors/Illiquidity.do: mean of 12 monthly means of |ret|/(|prc|*vol), months m-11..m.
 OPENAP_DEFAULT_LS_QUANTILE = 0.2
 OPENAP_TIMING = {
     "DolVol": "log dollar volume of a single month, t−3 (signal = volume at l2, applied to the next month's return)",
@@ -74,13 +64,11 @@ OPENAP_TIMING = {
 }
 
 MAIN_SIGNALS = ["Illiquidity", "DolVol"]
-# context only (not used in the spanning tests); kept if present in the release
 CONTEXT_SIGNALS = ["std_turn", "zerotrade1M", "zerotrade6M", "zerotrade12M", "zerotrade"]
 PERIODS = {"LS_1964_2012": ("1964-01", "2012-12"), "post_2013": ("2013-01", None)}
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36"}
 
 
-# ------------------------------------------------------------------ download (idempotent)
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -149,7 +137,6 @@ def download_all(raw: Path = ROOT / "data" / "raw") -> dict:
     return recs
 
 
-# ------------------------------------------------------------------ parsing
 def load_ls_wide(path: Path | str) -> pd.DataFrame:
     """OpenAP PredictorLSretWide: date x signal, monthly L-S returns in percent. Index = Period[M]."""
     df = pd.read_csv(path)
@@ -189,7 +176,6 @@ def load_french(ff_zip: Path | str, mom_zip: Path | str) -> pd.DataFrame:
     return ff.join(mom[["UMD"]], how="inner")
 
 
-# ------------------------------------------------------------------ statistics
 def ols_hac(y: pd.Series, X: pd.DataFrame | None, lags: int) -> dict:
     """OLS of y on const (+X) with Newey-West (Bartlett, `lags`) covariance. Returns a flat dict."""
     d = pd.concat([y.rename("y")] + ([X] if X is not None else []), axis=1).dropna()
@@ -284,7 +270,6 @@ def sign_checks(ls: pd.DataFrame, ff: pd.DataFrame, doc: pd.DataFrame, signals: 
         rows.append({"signal": s, "role": "main" if s in MAIN_SIGNALS else "context", "doc_sign": sign,
                      "long_side": ("top (high signal)" if sign == 1 else "bottom (low signal)" if sign == -1 else "?"),
                      "corr_SMB": d[s].corr(d["SMB"]), "b_SMB": r["SMB"], "t_SMB": r["t_SMB"],
-                     # expectation only for the main signals: both L-S are long small/illiquid stocks
                      "smb_check_pass": (bool(r["SMB"] > 0 and r["t_SMB"] > 1.96) if s in MAIN_SIGNALS else None),
                      "first_month": str(ls[s].first_valid_index()), "last_month": str(ls[s].last_valid_index())})
     return pd.DataFrame(rows)
@@ -301,7 +286,6 @@ def signal_meta(doc: pd.DataFrame, signals: list[str]) -> pd.DataFrame:
     return out
 
 
-# ------------------------------------------------------------------ summary (generated from the CSVs)
 def _f(x, nd=2):
     return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x:.{nd}f}"
 
@@ -370,7 +354,6 @@ def build_summary(means: pd.DataFrame, span: pd.DataFrame, corr: pd.DataFrame, s
     for r in corr.itertuples():
         span_txt = f", {r.start}–{r.end}" if hasattr(r, "start") else ""
         L.append(f"- {r.period}: Pearson {_f(r.pearson)}, Spearman {_f(r.spearman)}, N={r.n}{span_txt}")
-    # interpretation strictly from the numbers
     o_pre, o_post = sp.loc[(pre, "one_factor")], sp.loc[(post, "one_factor")]
     r_pre, r_post = m.loc[("Illiquidity", pre)], m.loc[("Illiquidity", post)]
     def sig(t):
@@ -379,7 +362,6 @@ def build_summary(means: pd.DataFrame, span: pd.DataFrame, corr: pd.DataFrame, s
     d_pre = m.loc[("Illiquidity", f"{post}_minus_{pre}")]
     d_dv = m.loc[("DolVol", f"{post}_minus_{pre}")]
     absorbed = abs(r_pre["t"]) > 1.96 and abs(o_pre["t_alpha"]) <= 1.96
-    # is clearing HLZ for the Illiquidity 'after - before' difference robust to the NW lag choice?
     def d_sig(signal, t):
         """sig() of an 'after - before' difference, unless clearing HLZ depends on the NW lag choice."""
         if sens is not None and len(sens):
@@ -460,7 +442,6 @@ def build_summary(means: pd.DataFrame, span: pd.DataFrame, corr: pd.DataFrame, s
     return "\n".join(L) + "\n"
 
 
-# ------------------------------------------------------------------ provenance
 def git_info() -> dict:
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()

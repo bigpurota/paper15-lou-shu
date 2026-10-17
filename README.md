@@ -5,7 +5,7 @@ X. Lou, T. Shu, *Price Impact or Trading Volume: Why Is the Amihud (2002) Measur
 Companion paper for the critique: Y. Amihud, J. Noh, *Illiquidity and Stock Returns II*, RFS, 2021.
 
 <!-- BEGIN:team -->
-**Team:** Andrey Tsember, Sofya Shapovalova, Ksenia Stepanova, Marat Bineman, Alexia Fox  
+**Team:** Andrey Tsember, Sofia Shapovalova, Ksenia Stepanova, Marat Bineman, Alexia Fox  
 **Repository:** https://github.com/bigpurota/paper15-lou-shu
 <!-- END:team -->
 
@@ -27,7 +27,7 @@ On Binance (<!--v:n.months-->93<!--/v--> months, on average <!--v:n.avgcoins-->2
 
 <!-- BEGIN:team_roles -->
 - Andrey Tsember: speaks on slides 9, 10, 11; Q&A owner of backup B5
-- Sofya Shapovalova: speaks on slides 4, 5; Q&A owner of backup B1, B2, B6
+- Sofia Shapovalova: speaks on slides 4, 5; Q&A owner of backup B1, B2, B6
 - Ksenia Stepanova: speaks on slides 6, 7, 8; Q&A owner of backup B3, B4
 - Marat Bineman: speaks on slides 1, 2, 3
 - Alexia Fox: speaks on slides 12, 13, 14; Q&A owner of backup B7

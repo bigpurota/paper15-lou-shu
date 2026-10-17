@@ -20,15 +20,15 @@ from test_estimators import _random_daily
 CFG = yaml.safe_load((Path(__file__).resolve().parents[1] / "config.yaml").read_text())
 
 
-SIGNAL_FIELDS = ("A", "A_C", "ivol")                 # shifted by measures.lag_months in build_panel
+SIGNAL_FIELDS = ("A", "A_C", "ivol")
 OTHER_FIELDS = ("ret", "ret_1", "mom", "CMKT", "beta", "ret_adj")
 
 
 def _daily_and_panel(lag: int | None = None):
     cfg = copy.deepcopy(CFG)
-    cfg["measures"]["winsor"] = [0.0, 1.0]                 # compare raw measures
+    cfg["measures"]["winsor"] = [0.0, 1.0]
     if lag is not None:
-        cfg["measures"]["lag_months"] = lag               # mutation: a look-ahead pipeline
+        cfg["measures"]["lag_months"] = lag
     daily = _random_daily(n_sym=30)
     panel, _ = analysis.build_panel(daily, cfg, "2020-01", "2022-12")
     d = daily.sort_values(["symbol", "date"]).copy()
@@ -76,7 +76,7 @@ def recompute_check(panel, d, n_rows: int = 40) -> tuple[dict, dict]:
         bad["ret_1"] += not _close(row["ret_1"], mret(s, t - 1), 1e-10, True)
         mm = [mret(s, t - k) for k in range(2, 13)]
         bad["mom"] += not _close(row["mom"], np.prod([1 + x for x in mm]) - 1, 1e-10, True)
-        bad["CMKT"] += not _close(row["CMKT"], cm.get(t, np.nan), 1e-10, False)    # panel CMKT is a fraction
+        bad["CMKT"] += not _close(row["CMKT"], cm.get(t, np.nan), 1e-10, False)
         xy = [(cm.get(t - k, np.nan), mret(s, t - k)) for k in range(1, 37)]
         xy = np.array([p for p in xy if np.all(np.isfinite(p))])
         b = np.polyfit(xy[:, 0], xy[:, 1], 1)[0] if len(xy) >= CFG["factors"]["beta_min_obs"] else np.nan
@@ -99,17 +99,17 @@ def recompute_check(panel, d, n_rows: int = 40) -> tuple[dict, dict]:
 def test_build_panel_has_no_look_ahead(built):
     bad, checked = recompute_check(*built)
     assert not any(bad.values()), bad
-    assert min(checked.values()) >= 10, checked        # the non-NaN branches were exercised
+    assert min(checked.values()) >= 10, checked
 
 
 @pytest.mark.parametrize("lag", [1, 0])
 def test_recompute_check_catches_look_ahead(lag):
     """Mutation test: the same check on a panel built with lag_months = 1 (or 0, i.e. same-month signal)
     must FAIL, and the failures must sit in the lagged signal fields, not in returns/controls."""
-    assert CFG["measures"]["lag_months"] == 2                     # the pre-registered value is unchanged
+    assert CFG["measures"]["lag_months"] == 2
     bad, _ = recompute_check(*_daily_and_panel(lag))
-    assert bad["A"] == bad["A_C"] == 40, bad                      # every sampled row is flagged
-    assert all(bad[f] == 0 for f in OTHER_FIELDS), bad            # ... and only through the shifted signal
+    assert bad["A"] == bad["A_C"] == 40, bad
+    assert all(bad[f] == 0 for f in OTHER_FIELDS), bad
 
 
 def test_recompute_check_passes_with_explicit_lag_2():
@@ -126,4 +126,4 @@ def test_leveraged_token_filter_keeps_real_coins():
     listed = {"BTCUSDT", "BTCUPUSDT", "BTCDOWNUSDT", "BNBUSDT", "BNBBULLUSDT", "JUPUSDT", "SYRUPUSDT", "USDCUSDT"}
     keep = {s for s in listed if eligible_symbol(s, CFG, listed)}
     assert keep == {"BTCUSDT", "BNBUSDT", "JUPUSDT", "SYRUPUSDT"}
-    assert eligible_symbol("JUPUSDT", CFG) is None      # without the listing: conservative (old rule)
+    assert eligible_symbol("JUPUSDT", CFG) is None
